@@ -19,6 +19,7 @@ users.ensureIndex({ fieldName: 'phone', unique: true });
 const normalizeOrder = (order) => (order ? { ...order, id: order.id || order._id } : order);
 const getOrderGain = (order = {}) => Number(order.delivery_fee ?? ((order.subtotal != null && order.price != null) ? (order.price - order.subtotal) : order.price ?? 0));
 const getOrderCollected = (order = {}) => Number(order.price ?? getOrderGain(order));
+const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function startOfToday(baseDate = new Date()) {
   const date = new Date(baseDate);
@@ -176,7 +177,7 @@ const db = {
     if (filter.status && filter.status !== 'all') query.status = filter.status;
     let list = await orders.find(query);
     if (filter.search) {
-      const re = new RegExp(filter.search, 'i');
+      const re = new RegExp(escapeRegExp(filter.search), 'i');
       list = list.filter(o => re.test(o.from_address) || re.test(o.to_address));
     }
     list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
@@ -200,7 +201,7 @@ const db = {
     return normalizeOrder(await orders.findOne({ _id: orderId }));
   },
   async cancelOrder(id) {
-    await orders.update({ _id: id }, { $set: { status: 'cancelled', updated_at: new Date().toISOString() } });
+    await orders.update({ _id: id }, { $set: { status: 'cancelled', payment_status: 'cancelled', cancelled_at: new Date().toISOString(), cancelled_by: 'admin', updated_at: new Date().toISOString() } });
   },
   async deleteOrder(id) {
     await notifs.remove({ order_id: id }, { multi: true });
@@ -346,4 +347,3 @@ const db = {
 })();
 
 module.exports = db;
-

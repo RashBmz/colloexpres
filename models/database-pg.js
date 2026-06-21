@@ -508,7 +508,17 @@ const db = {
 
   async cancelOrder(id) {
     await ensureReady();
-    await pool.query('UPDATE orders SET status = $2, updated_at = $3 WHERE id = $1', [id, 'cancelled', new Date().toISOString()]);
+    const now = new Date().toISOString();
+    await pool.query(
+      `UPDATE orders
+       SET status = $2,
+           payment_status = $3,
+           cancelled_at = $4,
+           cancelled_by = $5,
+           updated_at = $4
+       WHERE id = $1`,
+      [id, 'cancelled', 'cancelled', now, 'admin']
+    );
   },
 
   async deleteOrder(id) {
@@ -757,6 +767,5 @@ const db = {
 };
 
 module.exports = db;
-
 
 

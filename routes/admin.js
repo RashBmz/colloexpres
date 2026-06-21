@@ -77,9 +77,33 @@ router.post('/commandes/:id/assigner', adminWriteLimiter, async (req, res) => {
   const livreurId = cleanString(req.body.livreur_id, 64);
   const orderId = cleanString(req.params.id, 64);
   const io = req.app.get('io');
-  const order = await db.updateOrder(orderId, { livreur_id: livreurId, status: 'accepted', accepted_at: new Date().toISOString() });
+
+  const [livreur, existingOrder] = await Promise.all([
+    db.findUserById(livreurId),
+    db.findOrderWithUsers(orderId),
+  ]);
+  if (!livreur || livreur.role !== 'livreur') {
+    req.flash('error', 'Livreur introuvable');
+    return res.redirect('/admin/commandes');
+  }
+  if (!existingOrder) {
+    req.flash('error', 'Commande introuvable');
+    return res.redirect('/admin/commandes');
+  }
+  if (['delivered', 'cancelled'].includes(existingOrder.status)) {
+    req.flash('error', 'Cette commande ne peut plus etre assignee');
+    return res.redirect('/admin/commandes');
+  }
+
+  await db.updateOrder(orderId, {
+    livreur_id: livreurId,
+    status: 'accepted',
+    accepted_at: existingOrder.accepted_at || new Date().toISOString(),
+  });
+  const order = await db.findOrderWithUsers(orderId);
   io.to(`livreur_${livreurId}`).emit('order:assigned', { order });
-  io.to(`order_${orderId}`).emit('order:accepted', { livreurId });
+  io.to(`order_${orderId}`).emit('order:accepted', { livreurId, livreurName: livreur.name });
+  io.to('admin_room').emit('order:status_changed', { order });
   req.flash('success', 'Livreur assigne avec succes');
   res.redirect('/admin/commandes');
 });

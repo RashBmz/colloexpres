@@ -78,7 +78,9 @@ if (hasRemoteDatabase) {
   });
 }
 
-app.use(session(sessionConfig));
+const sessionMiddleware = session(sessionConfig);
+app.use(sessionMiddleware);
+io.engine.use(sessionMiddleware);
 
 app.use(flash());
 app.use((req, res, next) => {
@@ -98,24 +100,51 @@ app.use('/admin', requireAuth, requireRole('admin'), require('./routes/admin'));
 const connectedLivreurs = new Map();
 
 io.on('connection', (socket) => {
-  socket.on('livreur:register', (livreurId) => {
+  const getSocketUser = () => socket.request.session?.user || null;
+
+  socket.on('livreur:register', () => {
+    const user = getSocketUser();
+    if (!user || user.role !== 'livreur') return;
+    const livreurId = user.id;
     connectedLivreurs.set(String(livreurId), socket.id);
     socket.join(`livreur_${livreurId}`);
     io.to('admin_room').emit('livreur:online', { livreurId });
   });
 
   socket.on('admin:register', () => {
+    const user = getSocketUser();
+    if (!user || user.role !== 'admin') return;
     socket.join('admin_room');
     socket.emit('livreurs:connected', Array.from(connectedLivreurs.keys()));
   });
 
-  socket.on('client:track', (orderId) => {
-    socket.join(`order_${orderId}`);
+  socket.on('client:track', async (orderId) => {
+    try {
+      const user = getSocketUser();
+      if (!user) return;
+      const safeOrderId = String(orderId || '').slice(0, 80);
+      const order = await db.findOrderById(safeOrderId);
+      if (!order) return;
+      const canTrack = user.role === 'admin'
+        || (user.role === 'client' && order.client_id === user.id)
+        || (user.role === 'livreur' && order.livreur_id === user.id);
+      if (!canTrack) return;
+      socket.join(`order_${safeOrderId}`);
+    } catch (error) {
+      console.error('Erreur suivi Socket.IO:', error);
+    }
   });
 
-  socket.on('livreur:availability', async ({ livreurId, available }) => {
-    await db.updateUser(String(livreurId), { available: Boolean(available) });
-    io.to('admin_room').emit('livreur:status_changed', { livreurId, available: Boolean(available) });
+  socket.on('livreur:availability', async ({ available }) => {
+    try {
+      const user = getSocketUser();
+      if (!user || user.role !== 'livreur') return;
+      const livreurId = user.id;
+      await db.updateUser(String(livreurId), { available: Boolean(available) });
+      io.to('admin_room').emit('livreur:status_changed', { livreurId, available: Boolean(available) });
+    } catch (error) {
+      console.error('Erreur disponibilite Socket.IO:', error);
+    }
   });
 
   socket.on('disconnect', () => {
@@ -132,9 +161,25 @@ io.on('connection', (socket) => {
 app.set('connectedLivreurs', connectedLivreurs);
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`\nColloExpress demarre sur http://localhost:${PORT}`);
-  console.log(`Stockage actif: ${db.isPostgres ? 'Supabase/PostgreSQL' : 'Local NeDB'}`);
-  console.log(`Sessions: ${hasRemoteDatabase ? 'PostgreSQL' : 'MemoryStore local'}`);
-  console.log('Socket.IO pret\n');
-});
+
+async function startServer() {
+  try {
+    if (db.ready) {
+      await db.ready;
+    }
+
+    server.listen(PORT, () => {
+      console.log(`\nColloExpress demarre sur http://localhost:${PORT}`);
+      console.log(`Stockage actif: ${db.isPostgres ? 'Supabase/PostgreSQL' : 'Local NeDB'}`);
+      console.log(`Sessions: ${hasRemoteDatabase ? 'PostgreSQL' : 'MemoryStore local'}`);
+      console.log('Socket.IO pret\n');
+    });
+  } catch (error) {
+    console.error('\nImpossible de demarrer ColloExpress.');
+    console.error('Verifiez DATABASE_URL / DATABASE_SSL sur Render et Supabase.');
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+startServer();
