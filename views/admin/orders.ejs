@@ -1,0 +1,66 @@
+<%- include('../partials/head', { title: 'Commandes', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/admin/dashboard" class="back-btn">← Admin</a>
+    <h1 class="page-title">Commandes (<%= orders.length %>)</h1>
+  </header>
+
+  <!-- FILTER TABS -->
+  <div class="filter-tabs">
+    <a href="?status=all" class="filter-tab <%= status==='all'?'active':'' %>">Toutes</a>
+    <a href="?status=pending" class="filter-tab <%= status==='pending'?'active':'' %>">⏳ Attente</a>
+    <a href="?status=delivering" class="filter-tab <%= status==='delivering'?'active':'' %>">🛵 Livraison</a>
+    <a href="?status=delivered" class="filter-tab <%= status==='delivered'?'active':'' %>">✅ Livrées</a>
+  </div>
+
+  <form action="/admin/commandes" method="GET" style="padding:0 16px 8px">
+    <input class="field-input" type="text" name="search" value="<%= search %>" placeholder="🔍 Rechercher...">
+  </form>
+
+  <div class="orders-list" style="padding:8px 16px 100px">
+    <% if (orders.length === 0) { %>
+    <div class="empty-state"><div class="empty-icon">📦</div><p>Aucune commande</p></div>
+    <% } else { orders.forEach(order => { %>
+    <div class="order-card">
+      <div class="order-card-top">
+        <span class="order-id">#<%= String(order.id).padStart(4,'0') %></span>
+        <span class="status-badge status-<%= order.status %>">
+          <%= {pending:'En attente',accepted:'Accepté',picked_up:'Récupéré',delivering:'En livraison',delivered:'Livré ✓',cancelled:'Annulé'}[order.status] %>
+        </span>
+      </div>
+      <div class="order-route">
+        <span>📍 <%= order.from_address %></span>
+        <span class="route-arrow">→</span>
+        <span><%= order.to_address %></span>
+      </div>
+      <div class="order-meta">
+        <span>👤 <%= order.client_name %></span>
+        <% if (order.livreur_name) { %><span>🛵 <%= order.livreur_name %></span>
+        <% } else if (order.status === 'pending') { %>
+        <span style="color:var(--accent2)">⚠ Sans livreur</span>
+        <% } %>
+        <span>💵 <%= order.price %> DA</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <% if (order.status === 'pending') { %>
+        <form action="/admin/commandes/<%= order.id %>/annuler" method="POST">
+          <button type="submit" class="btn-danger-sm" onclick="return confirm('Annuler cette commande ?')">Annuler</button>
+        </form>
+        <% } %>
+        <form action="/admin/commandes/<%= order.id %>/supprimer" method="POST">
+          <button type="submit" class="btn-danger-sm" onclick="return confirm('Supprimer définitivement cette commande ?')">Supprimer</button>
+        </form>
+      </div>
+    </div>
+    <% }) } %>
+  </div>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
+    { href: '/admin/commandes', icon: '📦', label: 'Commandes', active: true },
+    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+</body></html>

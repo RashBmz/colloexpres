@@ -1,0 +1,762 @@
+
+require('dotenv').config({ quiet: true });
+
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { Pool } = require('pg');
+
+function uid() {
+  return crypto.randomUUID().replace(/-/g, '');
+}
+
+function toIso(value) {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function normalizeUser(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    id: row.id || row._id,
+    _id: row._id || row.id,
+    available: Boolean(row.available),
+    total_deliveries: Number(row.total_deliveries || 0),
+    total_earnings: Number(row.total_earnings || 0),
+    rating: Number(row.rating || 0),
+    created_at: toIso(row.created_at),
+  };
+}
+
+function normalizeOrder(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    id: row.id || row._id,
+    _id: row._id || row.id,
+    items: Array.isArray(row.items_json) ? row.items_json : Array.isArray(row.items) ? row.items : [],
+    subtotal: row.subtotal == null ? null : Number(row.subtotal),
+    delivery_fee: row.delivery_fee == null ? null : Number(row.delivery_fee),
+    price: Number(row.price || 0),
+    from_lat: row.from_lat == null ? null : Number(row.from_lat),
+    from_lng: row.from_lng == null ? null : Number(row.from_lng),
+    to_lat: row.to_lat == null ? null : Number(row.to_lat),
+    to_lng: row.to_lng == null ? null : Number(row.to_lng),
+    created_at: toIso(row.created_at),
+    updated_at: toIso(row.updated_at),
+    accepted_at: toIso(row.accepted_at),
+    delivered_at: toIso(row.delivered_at),
+    cancelled_at: toIso(row.cancelled_at),
+  };
+}
+
+function normalizeNotif(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    id: row.id || row._id,
+    _id: row._id || row.id,
+    read: Boolean(row.read),
+    created_at: toIso(row.created_at),
+  };
+}
+
+const getOrderGain = (order = {}) => Number(order.delivery_fee ?? ((order.subtotal != null && order.price != null) ? (order.price - order.subtotal) : order.price ?? 0));
+const getOrderCollected = (order = {}) => Number(order.price ?? getOrderGain(order));
+
+function startOfToday(baseDate = new Date()) {
+  const date = new Date(baseDate);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function startOfWeek(baseDate = new Date()) {
+  const date = startOfToday(baseDate);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + diff);
+  return date;
+}
+
+function startOfMonth(baseDate = new Date()) {
+  const date = startOfToday(baseDate);
+  date.setDate(1);
+  return date;
+}
+
+function startOfYear(baseDate = new Date()) {
+  const date = startOfToday(baseDate);
+  date.setMonth(0, 1);
+  return date;
+}
+
+function summarizeDeliveredOrders(ordersList) {
+  return {
+    count: ordersList.length,
+    gains: ordersList.reduce((sum, order) => sum + getOrderGain(order), 0),
+    collected: ordersList.reduce((sum, order) => sum + getOrderCollected(order), 0),
+  };
+}
+
+function buildLivreurPeriodStats(ordersList, baseDate = new Date()) {
+  const deliveredOrders = ordersList
+    .filter((order) => order.status === 'delivered' && order.delivered_at)
+    .map((order) => ({ ...order, deliveredDate: new Date(order.delivered_at) }))
+    .filter((order) => !Number.isNaN(order.deliveredDate.getTime()));
+
+  const today = startOfToday(baseDate);
+  const week = startOfWeek(baseDate);
+  const month = startOfMonth(baseDate);
+  const year = startOfYear(baseDate);
+
+  return {
+    day: summarizeDeliveredOrders(deliveredOrders.filter((order) => order.deliveredDate >= today)),
+    week: summarizeDeliveredOrders(deliveredOrders.filter((order) => order.deliveredDate >= week)),
+    month: summarizeDeliveredOrders(deliveredOrders.filter((order) => order.deliveredDate >= month)),
+    year: summarizeDeliveredOrders(deliveredOrders.filter((order) => order.deliveredDate >= year)),
+    all: summarizeDeliveredOrders(deliveredOrders),
+  };
+}
+
+function uniqueError(error) {
+  if (error && error.code === '23505') {
+    error.errorType = 'uniqueViolated';
+  }
+  return error;
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
+  max: Number(process.env.PG_POOL_MAX || 10),
+  idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS || 10000),
+  connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS || 10000),
+  keepAlive: true,
+  maxUses: Number(process.env.PG_MAX_USES || 7500),
+  allowExitOnIdle: false,
+  application_name: 'colloexpress',
+  statement_timeout: Number(process.env.PG_STATEMENT_TIMEOUT_MS || 10000),
+  query_timeout: Number(process.env.PG_QUERY_TIMEOUT_MS || 10000),
+});
+
+const ready = (async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL,
+      vehicle TEXT,
+      available BOOLEAN NOT NULL DEFAULT FALSE,
+      total_deliveries INTEGER NOT NULL DEFAULT 0,
+      total_earnings INTEGER NOT NULL DEFAULT 0,
+      rating NUMERIC(4,2) NOT NULL DEFAULT 5,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id TEXT PRIMARY KEY,
+      client_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      livreur_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      type TEXT,
+      resto_id TEXT,
+      resto_name TEXT,
+      from_address TEXT NOT NULL,
+      from_quarter TEXT,
+      from_lat DOUBLE PRECISION,
+      from_lng DOUBLE PRECISION,
+      to_address TEXT NOT NULL,
+      to_quarter TEXT,
+      to_lat DOUBLE PRECISION,
+      to_lng DOUBLE PRECISION,
+      description TEXT,
+      items_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+      notes TEXT,
+      size TEXT,
+      price INTEGER NOT NULL DEFAULT 0,
+      subtotal INTEGER,
+      delivery_fee INTEGER,
+      status TEXT NOT NULL,
+      payment_status TEXT NOT NULL,
+      accepted_at TIMESTAMPTZ,
+      delivered_at TIMESTAMPTZ,
+      cancelled_at TIMESTAMPTZ,
+      cancelled_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT,
+      title TEXT,
+      message TEXT,
+      order_id TEXT,
+      read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders(client_id)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_livreur_id ON orders(livreur_id)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_delivered_at ON orders(delivered_at DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_status_created_at ON orders(status, created_at DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_livreur_status ON orders(livreur_id, status, created_at DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_user_read_created_at ON notifications(user_id, read, created_at DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_users_role_available ON users(role, available)');
+
+  const existingAdmin = await pool.query('SELECT id FROM users WHERE phone = $1 LIMIT 1', ['admin']);
+  if (existingAdmin.rowCount === 0) {
+    await pool.query(
+      'INSERT INTO users (id, name, phone, password, role, available, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [uid(), 'Admin ColloExpress', 'admin', bcrypt.hashSync('admin123', 10), 'admin', false, new Date().toISOString()]
+    );
+  }
+})();
+
+async function ensureReady() {
+  await ready;
+}
+const db = {
+  isPostgres: true,
+  ready,
+
+  async findUserByPhone(phone) {
+    await ensureReady();
+    const { rows } = await pool.query('SELECT * FROM users WHERE phone = $1 LIMIT 1', [phone]);
+    return normalizeUser(rows[0]);
+  },
+
+  async findUserById(id) {
+    await ensureReady();
+    const { rows } = await pool.query('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
+    return normalizeUser(rows[0]);
+  },
+
+  async createUser(data) {
+    await ensureReady();
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO users (id, name, phone, password, role, vehicle, available, total_deliveries, total_earnings, rating, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         RETURNING *`,
+        [
+          data._id || data.id || uid(),
+          data.name,
+          data.phone,
+          data.password,
+          data.role,
+          data.vehicle || null,
+          Boolean(data.available),
+          Number(data.total_deliveries || 0),
+          Number(data.total_earnings || 0),
+          Number(data.rating ?? 5),
+          data.created_at || new Date().toISOString(),
+        ]
+      );
+      return normalizeUser(rows[0]);
+    } catch (error) {
+      throw uniqueError(error);
+    }
+  },
+
+  async updateUser(id, data) {
+    await ensureReady();
+    const allowed = ['name', 'phone', 'password', 'role', 'vehicle', 'available', 'total_deliveries', 'total_earnings', 'rating', 'created_at'];
+    const entries = Object.entries(data).filter(([key, value]) => allowed.includes(key) && value !== undefined);
+    if (!entries.length) return this.findUserById(id);
+    const values = entries.map(([, value]) => value);
+    const clause = entries.map(([key], index) => `${key} = $${index + 1}`).join(', ');
+    const { rows } = await pool.query(`UPDATE users SET ${clause} WHERE id = $${values.length + 1} RETURNING *`, [...values, id]);
+    return normalizeUser(rows[0]);
+  },
+
+  async getLivreurs() {
+    await ensureReady();
+    const { rows } = await pool.query("SELECT * FROM users WHERE role = 'livreur' ORDER BY total_deliveries DESC, created_at DESC");
+    return rows.map(normalizeUser);
+  },
+
+  async getAvailableLivreurs() {
+    await ensureReady();
+    const { rows } = await pool.query("SELECT * FROM users WHERE role = 'livreur' AND available = TRUE ORDER BY total_deliveries DESC");
+    return rows.map(normalizeUser);
+  },
+
+  async getClients() {
+    await ensureReady();
+    const { rows } = await pool.query(`
+      SELECT u.*, COUNT(o.id)::int AS order_count
+      FROM users u
+      LEFT JOIN orders o ON o.client_id = u.id
+      WHERE u.role = 'client'
+      GROUP BY u.id
+      ORDER BY u.created_at DESC
+    `);
+    return rows.map((row) => ({ ...normalizeUser(row), order_count: Number(row.order_count || 0) }));
+  },
+
+  async deleteLivreur(id) {
+    await ensureReady();
+    const result = await pool.query("DELETE FROM users WHERE id = $1 AND role = 'livreur'", [id]);
+    return result.rowCount;
+  },
+
+  async createOrder(data) {
+    await ensureReady();
+    const { rows } = await pool.query(
+      `INSERT INTO orders (
+        id, client_id, livreur_id, type, resto_id, resto_name, from_address, from_quarter, from_lat, from_lng,
+        to_address, to_quarter, to_lat, to_lng, description, items_json, notes, size, price, subtotal,
+        delivery_fee, status, payment_status, accepted_at, delivered_at, cancelled_at, cancelled_by, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15, $16::jsonb, $17, $18, $19, $20,
+        $21, $22, $23, $24, $25, $26, $27, $28, $29
+      ) RETURNING *`,
+      [
+        data._id || data.id || uid(),
+        data.client_id,
+        data.livreur_id || null,
+        data.type || null,
+        data.resto_id || null,
+        data.resto_name || null,
+        data.from_address,
+        data.from_quarter || '',
+        data.from_lat == null ? null : Number(data.from_lat),
+        data.from_lng == null ? null : Number(data.from_lng),
+        data.to_address,
+        data.to_quarter || '',
+        data.to_lat == null ? null : Number(data.to_lat),
+        data.to_lng == null ? null : Number(data.to_lng),
+        data.description || '',
+        JSON.stringify(data.items || []),
+        data.notes || '',
+        data.size || null,
+        Number(data.price || 0),
+        data.subtotal == null ? null : Number(data.subtotal),
+        data.delivery_fee == null ? null : Number(data.delivery_fee),
+        data.status || 'pending',
+        data.payment_status || 'pending',
+        data.accepted_at || null,
+        data.delivered_at || null,
+        data.cancelled_at || null,
+        data.cancelled_by || null,
+        data.created_at || new Date().toISOString(),
+        data.updated_at || data.created_at || new Date().toISOString(),
+      ]
+    );
+    return normalizeOrder(rows[0]);
+  },
+
+  async findOrderById(id) {
+    await ensureReady();
+    const { rows } = await pool.query('SELECT * FROM orders WHERE id = $1 LIMIT 1', [id]);
+    return normalizeOrder(rows[0]);
+  },
+
+  async findOrderWithUsers(id) {
+    await ensureReady();
+    const { rows } = await pool.query(`
+      SELECT o.*, c.name AS client_name, c.phone AS client_phone, l.name AS livreur_name, l.phone AS livreur_phone, l.vehicle AS livreur_vehicle
+      FROM orders o
+      LEFT JOIN users c ON c.id = o.client_id
+      LEFT JOIN users l ON l.id = o.livreur_id
+      WHERE o.id = $1
+      LIMIT 1
+    `, [id]);
+    return normalizeOrder(rows[0]);
+  },
+
+  async getOrdersByClient(clientId) {
+    await ensureReady();
+    const { rows } = await pool.query(`
+      SELECT o.*, l.name AS livreur_name, l.phone AS livreur_phone
+      FROM orders o
+      LEFT JOIN users l ON l.id = o.livreur_id
+      WHERE o.client_id = $1
+      ORDER BY o.created_at DESC
+    `, [clientId]);
+    return rows.map(normalizeOrder);
+  },
+
+  async getOrdersByLivreur(livreurId) {
+    await ensureReady();
+    const { rows } = await pool.query(`
+      SELECT o.*, c.name AS client_name, c.phone AS client_phone
+      FROM orders o
+      LEFT JOIN users c ON c.id = o.client_id
+      WHERE o.livreur_id = $1
+      ORDER BY o.created_at DESC
+      LIMIT 50
+    `, [livreurId]);
+    return rows.map(normalizeOrder);
+  },
+  async getActiveOrdersByLivreur(livreurId) {
+    await ensureReady();
+    const { rows } = await pool.query(`
+      SELECT o.*, c.name AS client_name, c.phone AS client_phone
+      FROM orders o
+      LEFT JOIN users c ON c.id = o.client_id
+      WHERE o.livreur_id = $1 AND o.status = ANY($2)
+      ORDER BY o.created_at DESC
+    `, [livreurId, ['accepted', 'picked_up', 'delivering']]);
+    return rows.map(normalizeOrder);
+  },
+
+  async getTodayOrdersByLivreur(livreurId) {
+    await ensureReady();
+    const { rows } = await pool.query(`
+      SELECT o.*, c.name AS client_name
+      FROM orders o
+      LEFT JOIN users c ON c.id = o.client_id
+      WHERE o.livreur_id = $1 AND o.status = 'delivered' AND o.delivered_at >= $2
+      ORDER BY o.delivered_at DESC
+    `, [livreurId, startOfToday().toISOString()]);
+    return rows.map(normalizeOrder);
+  },
+
+  async getPendingOrders() {
+    await ensureReady();
+    const { rows } = await pool.query(`
+      SELECT o.*, c.name AS client_name, c.phone AS client_phone
+      FROM orders o
+      LEFT JOIN users c ON c.id = o.client_id
+      WHERE o.status = 'pending'
+      ORDER BY o.created_at DESC
+    `);
+    return rows.map(normalizeOrder);
+  },
+
+  async getAllOrders(filter = {}) {
+    await ensureReady();
+    const conditions = [];
+    const values = [];
+    if (filter.status && filter.status !== 'all') {
+      values.push(filter.status);
+      conditions.push(`o.status = $${values.length}`);
+    }
+    if (filter.search) {
+      values.push(`%${filter.search}%`);
+      conditions.push(`(o.from_address ILIKE $${values.length} OR o.to_address ILIKE $${values.length} OR COALESCE(o.description, '') ILIKE $${values.length})`);
+    }
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const { rows } = await pool.query(`
+      SELECT o.*, c.name AS client_name, c.phone AS client_phone, l.name AS livreur_name
+      FROM orders o
+      LEFT JOIN users c ON c.id = o.client_id
+      LEFT JOIN users l ON l.id = o.livreur_id
+      ${where}
+      ORDER BY o.created_at DESC
+    `, values);
+    return rows.map(normalizeOrder);
+  },
+
+  async updateOrder(id, data) {
+    await ensureReady();
+    const nextData = { ...data, updated_at: new Date().toISOString() };
+    if (nextData.items) {
+      nextData.items_json = JSON.stringify(nextData.items);
+      delete nextData.items;
+    }
+    const allowed = [
+      'client_id', 'livreur_id', 'type', 'resto_id', 'resto_name', 'from_address', 'from_quarter', 'from_lat', 'from_lng',
+      'to_address', 'to_quarter', 'to_lat', 'to_lng', 'description', 'items_json', 'notes', 'size', 'price', 'subtotal',
+      'delivery_fee', 'status', 'payment_status', 'accepted_at', 'delivered_at', 'cancelled_at', 'cancelled_by', 'created_at', 'updated_at'
+    ];
+    const entries = Object.entries(nextData).filter(([key, value]) => allowed.includes(key) && value !== undefined);
+    if (!entries.length) return this.findOrderById(id);
+    const values = entries.map(([, value]) => value);
+    const clause = entries.map(([key], index) => key === 'items_json' ? `${key} = $${index + 1}::jsonb` : `${key} = $${index + 1}`).join(', ');
+    const { rows } = await pool.query(`UPDATE orders SET ${clause} WHERE id = $${values.length + 1} RETURNING *`, [...values, id]);
+    return normalizeOrder(rows[0]);
+  },
+
+  async acceptOrder(orderId, livreurId) {
+    await ensureReady();
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `UPDATE orders
+         SET status = 'accepted', livreur_id = $2, accepted_at = $3, updated_at = $3
+         WHERE id = $1 AND status = 'pending'
+         RETURNING *`,
+        [orderId, livreurId, new Date().toISOString()]
+      );
+      await client.query('COMMIT');
+      if (!result.rowCount) return null;
+      return normalizeOrder(result.rows[0]);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  async cancelOrder(id) {
+    await ensureReady();
+    await pool.query('UPDATE orders SET status = $2, updated_at = $3 WHERE id = $1', [id, 'cancelled', new Date().toISOString()]);
+  },
+
+  async deleteOrder(id) {
+    await ensureReady();
+    await pool.query('DELETE FROM notifications WHERE order_id = $1', [id]);
+    const result = await pool.query('DELETE FROM orders WHERE id = $1', [id]);
+    return result.rowCount;
+  },
+
+  async createNotif(data) {
+    await ensureReady();
+    const { rows } = await pool.query(
+      `INSERT INTO notifications (id, user_id, type, title, message, order_id, read, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [data._id || data.id || uid(), data.user_id, data.type || null, data.title || '', data.message || '', data.order_id || null, Boolean(data.read), data.created_at || new Date().toISOString()]
+    );
+    return normalizeNotif(rows[0]);
+  },
+
+  async getNotifsByUser(userId) {
+    await ensureReady();
+    const { rows } = await pool.query('SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30', [userId]);
+    return rows.map(normalizeNotif);
+  },
+
+  async markNotifsRead(userId) {
+    await ensureReady();
+    await pool.query('UPDATE notifications SET read = TRUE WHERE user_id = $1', [userId]);
+  },
+
+  async countUnreadNotifs(userId) {
+    await ensureReady();
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS total FROM notifications WHERE user_id = $1 AND read = FALSE', [userId]);
+    return Number(rows[0]?.total || 0);
+  },
+
+  async markNotifReadForOrder(orderId, userId) {
+    await ensureReady();
+    await pool.query('UPDATE notifications SET read = TRUE WHERE order_id = $1 AND user_id = $2', [orderId, userId]);
+  },
+
+  async incrementLivreurTotals(livreurId, deliveredCount, earningAmount) {
+    await ensureReady();
+    await pool.query(
+      `UPDATE users
+       SET total_deliveries = COALESCE(total_deliveries, 0) + $2,
+           total_earnings = COALESCE(total_earnings, 0) + $3
+       WHERE id = $1`,
+      [livreurId, Number(deliveredCount || 0), Number(earningAmount || 0)]
+    );
+  },
+  async getStats() {
+    const allOrders = await this.getAllOrders();
+    const livreurs = await this.getLivreurs();
+    const clients = await this.getClients();
+    const today = startOfToday();
+    const week = startOfWeek();
+    const month = startOfMonth();
+    const deliveredOrders = allOrders.filter((order) => order.status === 'delivered');
+    const todayDone = deliveredOrders.filter((order) => order.delivered_at && new Date(order.delivered_at) >= today);
+    const createdToday = allOrders.filter((order) => order.created_at && new Date(order.created_at) >= today);
+    const createdWeek = allOrders.filter((order) => order.created_at && new Date(order.created_at) >= week);
+    const createdMonth = allOrders.filter((order) => order.created_at && new Date(order.created_at) >= month);
+    const accepted = allOrders.filter((order) => order.status === 'accepted').length;
+    const pickedUp = allOrders.filter((order) => order.status === 'picked_up').length;
+    const delivering = allOrders.filter((order) => order.status === 'delivering').length;
+    const cancelled = allOrders.filter((order) => order.status === 'cancelled').length;
+    const deliveryGainsTotal = deliveredOrders.reduce((sum, order) => sum + getOrderGain(order), 0);
+    const revenueTotal = deliveredOrders.reduce((sum, order) => sum + getOrderCollected(order), 0);
+    const deliveryGainsToday = todayDone.reduce((sum, order) => sum + getOrderGain(order), 0);
+    const revenueToday = todayDone.reduce((sum, order) => sum + getOrderCollected(order), 0);
+    const foodOrders = allOrders.filter((order) => order.type === 'food').length;
+    const packageOrders = allOrders.filter((order) => order.type !== 'food').length;
+    const activeLivreurs = livreurs.filter((livreur) => livreur.available).length;
+
+    return {
+      total_orders: allOrders.length,
+      orders_today: createdToday.length,
+      orders_week: createdWeek.length,
+      orders_month: createdMonth.length,
+      pending: allOrders.filter((order) => order.status === 'pending').length,
+      accepted,
+      picked_up: pickedUp,
+      delivering,
+      active_deliveries: accepted + pickedUp + delivering,
+      delivered_today: todayDone.length,
+      delivered_total: deliveredOrders.length,
+      cancelled,
+      delivery_gains_today: deliveryGainsToday,
+      delivery_gains_total: deliveryGainsTotal,
+      revenue_today: revenueToday,
+      revenue_total: revenueTotal,
+      average_delivery_gain: deliveredOrders.length ? Math.round(deliveryGainsTotal / deliveredOrders.length) : 0,
+      average_ticket: deliveredOrders.length ? Math.round(revenueTotal / deliveredOrders.length) : 0,
+      food_orders: foodOrders,
+      package_orders: packageOrders,
+      active_livreurs: activeLivreurs,
+      offline_livreurs: Math.max(livreurs.length - activeLivreurs, 0),
+      total_livreurs: livreurs.length,
+      total_clients: clients.length,
+    };
+  },
+
+  async getLivreurPerformance(livreurId) {
+    const list = await this.getOrdersByLivreur(livreurId);
+    const delivered = list.filter((order) => order.status === 'delivered');
+    const active = list.filter((order) => ['accepted', 'picked_up', 'delivering'].includes(order.status));
+    return {
+      active_count: active.length,
+      active_collected: active.reduce((sum, order) => sum + getOrderCollected(order), 0),
+      period_stats: buildLivreurPeriodStats(delivered),
+    };
+  },
+
+  async getLivreursWithPerformance() {
+    const livreurs = await this.getLivreurs();
+    const deliveredOrders = (await this.getAllOrders()).filter((order) => order.status === 'delivered');
+    return livreurs.map((livreur) => ({
+      ...livreur,
+      period_stats: buildLivreurPeriodStats(deliveredOrders.filter((order) => order.livreur_id === livreur._id)),
+    }));
+  },
+
+  async upsertUser(data) {
+    await ensureReady();
+    try {
+      const existing = await pool.query('SELECT id FROM users WHERE id = $1 OR phone = $2 LIMIT 1', [data._id || data.id || '', data.phone]);
+      if (existing.rowCount) {
+        const existingId = existing.rows[0].id;
+        const { rows } = await pool.query(
+          `UPDATE users
+             SET name = $1,
+                 phone = $2,
+                 password = $3,
+                 role = $4,
+                 vehicle = $5,
+                 available = $6,
+                 total_deliveries = $7,
+                 total_earnings = $8,
+                 rating = $9,
+                 created_at = $10
+           WHERE id = $11
+           RETURNING *`,
+          [
+            data.name,
+            data.phone,
+            data.password,
+            data.role,
+            data.vehicle || null,
+            Boolean(data.available),
+            Number(data.total_deliveries || 0),
+            Number(data.total_earnings || 0),
+            Number(data.rating ?? 5),
+            data.created_at || new Date().toISOString(),
+            existingId,
+          ]
+        );
+        return normalizeUser(rows[0]);
+      }
+
+      const { rows } = await pool.query(
+        `INSERT INTO users (id, name, phone, password, role, vehicle, available, total_deliveries, total_earnings, rating, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         RETURNING *`,
+        [data._id || data.id || uid(), data.name, data.phone, data.password, data.role, data.vehicle || null, Boolean(data.available), Number(data.total_deliveries || 0), Number(data.total_earnings || 0), Number(data.rating ?? 5), data.created_at || new Date().toISOString()]
+      );
+      return normalizeUser(rows[0]);
+    } catch (error) {
+      throw uniqueError(error);
+    }
+  },
+
+  async upsertOrder(data) {
+    await ensureReady();
+    const { rows } = await pool.query(
+      `INSERT INTO orders (
+        id, client_id, livreur_id, type, resto_id, resto_name, from_address, from_quarter, from_lat, from_lng,
+        to_address, to_quarter, to_lat, to_lng, description, items_json, notes, size, price, subtotal,
+        delivery_fee, status, payment_status, accepted_at, delivered_at, cancelled_at, cancelled_by, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15, $16::jsonb, $17, $18, $19, $20,
+        $21, $22, $23, $24, $25, $26, $27, $28, $29
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        client_id = EXCLUDED.client_id,
+        livreur_id = EXCLUDED.livreur_id,
+        type = EXCLUDED.type,
+        resto_id = EXCLUDED.resto_id,
+        resto_name = EXCLUDED.resto_name,
+        from_address = EXCLUDED.from_address,
+        from_quarter = EXCLUDED.from_quarter,
+        from_lat = EXCLUDED.from_lat,
+        from_lng = EXCLUDED.from_lng,
+        to_address = EXCLUDED.to_address,
+        to_quarter = EXCLUDED.to_quarter,
+        to_lat = EXCLUDED.to_lat,
+        to_lng = EXCLUDED.to_lng,
+        description = EXCLUDED.description,
+        items_json = EXCLUDED.items_json,
+        notes = EXCLUDED.notes,
+        size = EXCLUDED.size,
+        price = EXCLUDED.price,
+        subtotal = EXCLUDED.subtotal,
+        delivery_fee = EXCLUDED.delivery_fee,
+        status = EXCLUDED.status,
+        payment_status = EXCLUDED.payment_status,
+        accepted_at = EXCLUDED.accepted_at,
+        delivered_at = EXCLUDED.delivered_at,
+        cancelled_at = EXCLUDED.cancelled_at,
+        cancelled_by = EXCLUDED.cancelled_by,
+        created_at = EXCLUDED.created_at,
+        updated_at = EXCLUDED.updated_at
+      RETURNING *`,
+      [
+        data._id || data.id || uid(), data.client_id, data.livreur_id || null, data.type || null, data.resto_id || null, data.resto_name || null,
+        data.from_address, data.from_quarter || '', data.from_lat == null ? null : Number(data.from_lat), data.from_lng == null ? null : Number(data.from_lng),
+        data.to_address, data.to_quarter || '', data.to_lat == null ? null : Number(data.to_lat), data.to_lng == null ? null : Number(data.to_lng),
+        data.description || '', JSON.stringify(data.items || []), data.notes || '', data.size || null, Number(data.price || 0), data.subtotal == null ? null : Number(data.subtotal),
+        data.delivery_fee == null ? null : Number(data.delivery_fee), data.status || 'pending', data.payment_status || 'pending', data.accepted_at || null, data.delivered_at || null,
+        data.cancelled_at || null, data.cancelled_by || null, data.created_at || new Date().toISOString(), data.updated_at || data.created_at || new Date().toISOString(),
+      ]
+    );
+    return normalizeOrder(rows[0]);
+  },
+
+  async upsertNotif(data) {
+    await ensureReady();
+    const { rows } = await pool.query(
+      `INSERT INTO notifications (id, user_id, type, title, message, order_id, read, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (id) DO UPDATE SET
+         user_id = EXCLUDED.user_id,
+         type = EXCLUDED.type,
+         title = EXCLUDED.title,
+         message = EXCLUDED.message,
+         order_id = EXCLUDED.order_id,
+         read = EXCLUDED.read,
+         created_at = EXCLUDED.created_at
+       RETURNING *`,
+      [data._id || data.id || uid(), data.user_id, data.type || null, data.title || '', data.message || '', data.order_id || null, Boolean(data.read), data.created_at || new Date().toISOString()]
+    );
+    return normalizeNotif(rows[0]);
+  },
+};
+
+module.exports = db;
+
+
+

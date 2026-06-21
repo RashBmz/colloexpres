@@ -1,0 +1,399 @@
+<%
+function hasCoords(lat, lng) { return Number.isFinite(Number(lat)) && Number.isFinite(Number(lng)); }
+function mapsQuery(lat, lng, address) {
+  return hasCoords(lat, lng) ? Number(lat) + ',' + Number(lng) : String(address || '');
+}
+function formatDeliveryDuration(startAt, endAt) {
+  if (!startAt || !endAt) return null;
+  const start = new Date(startAt);
+  const end = new Date(endAt);
+  const diffMs = end - start;
+  if (!Number.isFinite(diffMs) || diffMs <= 0) return null;
+  const totalMinutes = Math.round(diffMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0) return hours + ' h ' + String(minutes).padStart(2, '0') + ' min';
+  return totalMinutes + ' min';
+}
+const pickupQuery = mapsQuery(order.from_lat, order.from_lng, order.from_address);
+const deliveryQuery = mapsQuery(order.to_lat, order.to_lng, order.to_address);
+const googlePickupUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(pickupQuery);
+const googleDeliveryUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(deliveryQuery);
+const googleRouteUrl = 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(pickupQuery) + '&destination=' + encodeURIComponent(deliveryQuery) + '&travelmode=driving';
+const orderSubtotal = Number(order.subtotal != null ? order.subtotal : (order.delivery_fee != null ? Math.max(Number(order.price || 0) - Number(order.delivery_fee || 0), 0) : Number(order.price || 0)));
+const orderDeliveryFee = Number(order.delivery_fee != null ? order.delivery_fee : (order.subtotal != null ? Math.max(Number(order.price || 0) - Number(order.subtotal || 0), 0) : (order.type === 'food' ? 0 : Number(order.price || 0))));
+const orderTotal = Number(order.price || (orderSubtotal + orderDeliveryFee));
+const isCoursesOrder = order.type === 'courses';
+const orderInvoiceLabel = order.type === 'food' ? 'Facture fast food' : 'Colis / courses';
+const deliveryTimerStart = order.accepted_at || order.created_at;
+const deliveryDuration = formatDeliveryDuration(deliveryTimerStart, order.delivered_at);
+%>
+<%- include('../partials/head', { title: 'Livraison #' + String((order.id || order._id)).padStart(4,'0'), bodyClass: 'page-app' }) %>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+.livreur-order-map {
+  height: 220px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.livreur-map-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.map-action-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.map-action-btn {
+  width: 100%;
+}
+.livreur-map-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.invoice-panel {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,179,71,0.12), rgba(17,17,24,0.96));
+  border: 1px solid rgba(255,179,71,0.18);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.24);
+}
+.invoice-kicker {
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 10px;
+}
+.invoice-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.invoice-row:last-of-type { border-bottom: none; }
+.invoice-row span:last-child {
+  font-family: var(--font-m);
+  font-weight: 700;
+}
+.invoice-row-muted { color: var(--text2); }
+.invoice-total {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.invoice-total-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.invoice-total-label strong { font-size: 15px; }
+.invoice-total-label span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+.invoice-total-amount {
+  font-family: var(--font-m);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+}
+</style>
+<%- include('../partials/flash') %>
+
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/livreur/dashboard" class="back-btn">← Tableau de bord</a>
+    <h1 class="page-title">#<%= String((order.id || order._id)).padStart(4,'0') %></h1>
+  </header>
+
+  <div class="tracker-card">
+    <span class="status-badge status-<%= order.status %> status-lg" id="current-status">
+      <%= {accepted:'✅ Accepté',picked_up: isCoursesOrder ? '🛍️ Achats effectués' : '📦 Colis récupéré',delivering:'🛵 En livraison',delivered:'🎉 Livré !',cancelled:'❌ Annulé'}[order.status] %>
+    </span>
+  </div>
+
+  <% if (['accepted','picked_up','delivering'].includes(order.status)) { %>
+  <div class="action-card" id="livreur-action-card">
+    <h3 class="form-card-title">Mettre à jour le statut</h3>
+    <div class="action-steps">
+      <% if (order.status === 'accepted') { %>
+      <button class="action-btn action-pickup" onclick="updateStatus(event, 'picked_up')">
+        <%= isCoursesOrder ? '🛍️ J\'ai récupéré les achats' : '📦 J\'ai récupéré le colis' %>
+      </button>
+      <% } %>
+      <% if (order.status === 'picked_up') { %>
+      <button class="action-btn action-enroute" onclick="updateStatus(event, 'delivering')">
+        🛵 En route vers le client
+      </button>
+      <% } %>
+      <% if (order.status === 'delivering') { %>
+      <button class="action-btn action-delivered" onclick="updateStatus(event, 'delivered')">
+        🎉 Livraison effectuée — <%= orderTotal.toLocaleString('fr-FR') %> DA encaissé
+      </button>
+      <% } %>
+    </div>
+    <form action="/livreur/commandes/<%= (order.id || order._id) %>/annuler" method="POST" style="margin-top:12px">
+      <button type="submit" class="btn-outline btn-full" style="border-color:rgba(255,92,26,0.35);color:var(--accent)" onclick="return confirm('Annuler cette livraison ?')">Annuler la livraison</button>
+    </form>
+    <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px">
+      Le client est notifié automatiquement à chaque changement
+    </p>
+  </div>
+  <% } %>
+
+  <div class="detail-card">
+    <h3 class="detail-card-title">👤 Client</h3>
+    <div class="livreur-info-row">
+      <div class="livreur-avatar-lg" style="background:linear-gradient(135deg,#4fc3f7,#0277bd)"><%= order.client_name[0] %></div>
+      <div>
+        <div class="livreur-name-big"><%= order.client_name %></div>
+        <a href="tel:<%= order.client_phone %>" class="livreur-phone">📞 Appeler <%= order.client_phone %></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-card">
+    <h3 class="detail-card-title">📍 Itinéraire</h3>
+    <div class="route-detail">
+      <% if (!isCoursesOrder) { %>
+      <div class="route-point">
+        <div class="route-dot from"></div>
+        <div>
+          <div class="route-point-label">Ramassage</div>
+          <div class="route-point-addr"><%= order.from_address %></div>
+          <% if (order.from_quarter) { %><div class="route-point-quarter"><%= order.from_quarter %></div><% } %>
+        </div>
+      </div>
+      <div class="route-connector"></div>
+      <% } %>
+      <div class="route-point">
+        <div class="route-dot to"></div>
+        <div>
+          <div class="route-point-label"><%= isCoursesOrder ? 'Adresse du client' : 'Livraison' %></div>
+          <div class="route-point-addr"><%= order.to_address %></div>
+          <% if (order.to_quarter) { %><div class="route-point-quarter"><%= order.to_quarter %></div><% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-card">
+    <h3 class="detail-card-title">🗺️ Carte & navigation</h3>
+    <div id="livreur-order-map" class="livreur-order-map"></div>
+    <p class="livreur-map-hint" id="livreur-map-hint">La carte se charge avec les points de ramassage et de livraison.</p>
+    <div class="map-action-grid">
+      <a href="<%= googleRouteUrl %>" target="_blank" rel="noopener" class="btn-primary map-action-btn">🧭 Ouvrir l'itinéraire Google Maps</a>
+      <a href="<%= googleDeliveryUrl %>" target="_blank" rel="noopener" class="btn-outline map-action-btn">📍 Ouvrir le point de livraison</a>
+      <a href="<%= googlePickupUrl %>" target="_blank" rel="noopener" class="btn-ghost map-action-btn">🏪 Ouvrir le point de ramassage</a>
+    </div>
+  </div>
+
+  <% if (order.status === 'delivered') { %>
+  <div class="detail-card">
+    <h3 class="detail-card-title">⏱️ Compte rendu de livraison</h3>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Prise en charge</span>
+        <span class="meta-value"><%= new Date(deliveryTimerStart).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) %></span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Livrée le</span>
+        <span class="meta-value"><%= order.delivered_at ? new Date(order.delivered_at).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '-' %></span>
+      </div>
+      <div class="meta-item" style="grid-column:1/-1">
+        <span class="meta-label">Temps de livraison</span>
+        <span class="meta-value" style="color:var(--accent);font-weight:800"><%= deliveryDuration || 'Indisponible' %></span>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="detail-card">
+    <h3 class="detail-card-title">💵 Paiement — À encaisser en cash</h3>
+    <div class="cash-amount-box">
+      <span class="cash-amount"><%= orderTotal.toLocaleString('fr-FR') %> DA</span>
+      <span class="cash-label">Total à encaisser</span>
+    </div>
+    <div class="invoice-panel">
+      <div class="invoice-kicker">Resume facture</div>
+      <div class="invoice-row invoice-row-muted">
+        <span><%= orderInvoiceLabel %></span>
+        <span><%= orderSubtotal.toLocaleString('fr-FR') %> DA</span>
+      </div>
+      <div class="invoice-row invoice-row-muted">
+        <span>Frais de livraison</span>
+        <span><%= orderDeliveryFee.toLocaleString('fr-FR') %> DA</span>
+      </div>
+      <div class="invoice-total">
+        <div class="invoice-total-label">
+          <strong>Total cash</strong>
+          <span>Montant a encaisser</span>
+        </div>
+        <div class="invoice-total-amount"><%= orderTotal.toLocaleString('fr-FR') %> DA</div>
+      </div>
+    </div>
+    <% if (order.description) { %>
+    <div style="margin-top:12px;padding:12px;background:var(--surface);border-radius:10px;font-size:14px;color:var(--muted)">
+      📝 <%= order.description %>
+    </div>
+    <% } %>
+  </div>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/livreur/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/livreur/livraisons', icon: '🛵', label: 'Livraisons', active: false },
+    { href: '/livreur/commandes', icon: '🔍', label: 'Disponibles', active: false },
+    { href: '/livreur/stats', icon: '📊', label: 'Stats', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const ORDER_MAP = {
+  from: {
+    lat: <%- JSON.stringify(order.from_lat ?? null) %>,
+    lng: <%- JSON.stringify(order.from_lng ?? null) %>,
+    label: 'Ramassage',
+    address: <%- JSON.stringify((order.type === 'courses' ? '' : (order.from_address || '')) || '') %>
+  },
+  to: {
+    lat: <%- JSON.stringify(order.to_lat ?? null) %>,
+    lng: <%- JSON.stringify(order.to_lng ?? null) %>,
+    label: 'Livraison',
+    address: <%- JSON.stringify(order.to_address || '') %>
+  }
+};
+
+function hasPointCoords(point) {
+  return Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng));
+}
+
+function buildMapMarker(color, emoji) {
+  return L.divIcon({
+    className: '',
+    html: '<div style="width:32px;height:32px;border-radius:50%;background:' + color + ';border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,0.28);font-size:14px">' + emoji + '</div>',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+}
+
+function initOrderMap() {
+  if (typeof L === 'undefined') return;
+
+  const mapEl = document.getElementById('livreur-order-map');
+  const hintEl = document.getElementById('livreur-map-hint');
+  const hasFrom = hasPointCoords(ORDER_MAP.from);
+  const hasTo = hasPointCoords(ORDER_MAP.to);
+
+  if (!hasFrom && !hasTo) {
+    mapEl.innerHTML = '<div class="livreur-map-empty">Les coordonnées GPS ne sont pas disponibles pour cette livraison. Utilisez les boutons Google Maps pour ouvrir les adresses.</div>';
+    if (hintEl) hintEl.textContent = 'Les adresses restent accessibles via Google Maps même sans point GPS précis.';
+    return;
+  }
+
+  const center = hasTo
+    ? [Number(ORDER_MAP.to.lat), Number(ORDER_MAP.to.lng)]
+    : [Number(ORDER_MAP.from.lat), Number(ORDER_MAP.from.lng)];
+
+  const map = L.map('livreur-order-map', { zoomControl: false }).setView(center, hasFrom && hasTo ? 14 : 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+  const bounds = [];
+  if (hasFrom) {
+    const fromPoint = [Number(ORDER_MAP.from.lat), Number(ORDER_MAP.from.lng)];
+    L.marker(fromPoint, { icon: buildMapMarker('#ff5c1a', '🏪') }).addTo(map).bindPopup('<strong>Ramassage</strong><br>' + ORDER_MAP.from.address);
+    bounds.push(fromPoint);
+  }
+  if (hasTo) {
+    const toPoint = [Number(ORDER_MAP.to.lat), Number(ORDER_MAP.to.lng)];
+    L.marker(toPoint, { icon: buildMapMarker('#00e676', '📍') }).addTo(map).bindPopup('<strong>Livraison</strong><br>' + ORDER_MAP.to.address);
+    bounds.push(toPoint);
+  }
+
+  if (bounds.length > 1) {
+    L.polyline(bounds, { color: '#ffb347', weight: 4, opacity: 0.8, dashArray: '10 8' }).addTo(map);
+    map.fitBounds(bounds, { padding: [28, 28] });
+    if (hintEl) hintEl.textContent = 'La carte affiche le trajet du point de ramassage vers le point de livraison.';
+  } else if (bounds.length === 1) {
+    map.setView(bounds[0], 15);
+    if (hintEl) hintEl.textContent = 'La carte affiche le point GPS disponible pour cette livraison.';
+  }
+
+  setTimeout(function() {
+    map.invalidateSize();
+  }, 200);
+}
+
+initOrderMap();
+
+async function updateStatus(event, status) {
+  const btn = event.currentTarget;
+  const previousText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Mise à jour...';
+
+  try {
+    const res = await fetch('/livreur/commandes/<%= (order.id || order._id) %>/statut', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'status=' + encodeURIComponent(status)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showToast('✅ Statut mis à jour !', 'success');
+      setTimeout(() => location.reload(), 1200);
+      return;
+    }
+  } catch (error) {
+  }
+
+  btn.disabled = false;
+  btn.textContent = previousText;
+  showToast('❌ Erreur de mise à jour', 'error');
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000);
+}
+</script>
+</body>
+</html>
+
+
+
+

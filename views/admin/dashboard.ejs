@@ -1,0 +1,273 @@
+<%- include('../partials/head', { title: 'Admin Dashboard', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+<div class="app-layout">
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <p class="greeting-sub">Administration ⚙️</p>
+      <p class="greeting-name">ColloExpress</p>
+    </div>
+    <a href="/auth/logout" class="top-icon-btn">↩</a>
+  </header>
+
+  <% const adminDeliveryGainsToday = Number(stats.delivery_gains_today ?? 0); %>
+  <% const adminDeliveryGainsTotal = Number(stats.delivery_gains_total ?? stats.revenue_total ?? 0); %>
+  <% const adminRevenueToday = Number(stats.revenue_today ?? adminDeliveryGainsToday); %>
+  <% const adminRevenueTotal = Number(stats.revenue_total ?? adminDeliveryGainsTotal); %>
+  <% const adminOrdersToday = Number(stats.orders_today ?? 0); %>
+  <% const adminOrdersWeek = Number(stats.orders_week ?? 0); %>
+  <% const adminOrdersMonth = Number(stats.orders_month ?? 0); %>
+  <% const adminActiveDeliveries = Number(stats.active_deliveries ?? stats.delivering ?? 0); %>
+  <% const adminDeliveredTotal = Number(stats.delivered_total ?? 0); %>
+  <% const adminCancelled = Number(stats.cancelled ?? 0); %>
+  <% const adminFoodOrders = Number(stats.food_orders ?? 0); %>
+  <% const adminPackageOrders = Number(stats.package_orders ?? 0); %>
+  <% const adminClients = Number(stats.total_clients ?? 0); %>
+  <% const adminOfflineLivreurs = Number(stats.offline_livreurs ?? 0); %>
+  <% const adminAverageTicket = Number(stats.average_ticket ?? 0); %>
+  <% const adminAverageGain = Number(stats.average_delivery_gain ?? 0); %>
+
+  <div class="admin-stats-grid">
+    <div class="admin-stat-card">
+      <div class="asc-icon">📦</div>
+      <div class="asc-num"><%= stats.total_orders %></div>
+      <div class="asc-label">Total commandes</div>
+    </div>
+    <div class="admin-stat-card" style="border-color:rgba(255,179,71,0.3)">
+      <div class="asc-icon">⏳</div>
+      <div class="asc-num" style="color:var(--accent2)"><%= stats.pending %></div>
+      <div class="asc-label">En attente</div>
+    </div>
+    <div class="admin-stat-card" style="border-color:rgba(0,230,118,0.3)">
+      <div class="asc-icon">✅</div>
+      <div class="asc-num" style="color:var(--green)"><%= stats.delivered_today %></div>
+      <div class="asc-label">Livrées aujourd'hui</div>
+    </div>
+    <div class="admin-stat-card" style="border-color:rgba(79,195,247,0.3)">
+      <div class="asc-icon">🛵</div>
+      <div class="asc-num" style="color:var(--blue)"><%= stats.active_livreurs %>/<%= stats.total_livreurs %></div>
+      <div class="asc-label">Livreurs actifs</div>
+    </div>
+    <div class="admin-stat-card" style="grid-column:1/-1;border-color:rgba(255,92,26,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
+        <div>
+          <div class="asc-icon">💵</div>
+          <div class="asc-num" style="color:var(--accent)"><%= adminDeliveryGainsToday.toLocaleString('fr-FR') %> DA</div>
+          <div class="asc-label">Gains livraison aujourd'hui</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Total encaisse: <%= adminRevenueToday.toLocaleString('fr-FR') %> DA</div>
+        </div>
+        <div style="text-align:right">
+          <div class="asc-num" style="font-size:22px"><%= adminDeliveryGainsTotal.toLocaleString('fr-FR') %> DA</div>
+          <div class="asc-label">Gains livraison total</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Total encaisse: <%= adminRevenueTotal.toLocaleString('fr-FR') %> DA</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="padding:0 16px">
+    <div class="quick-actions">
+      <a href="/admin/commandes?status=pending" class="quick-btn">⏳ En attente</a>
+      <a href="/admin/commandes" class="quick-btn">📦 Toutes</a>
+      <a href="/admin/livreurs" class="quick-btn">🛵 Livreurs</a>
+      <a href="/admin/clients" class="quick-btn">👥 Clients</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h3>Vue détaillée</h3>
+    </div>
+    <div style="padding:0 16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Commandes aujourd'hui</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--accent);margin-top:6px"><%= adminOrdersToday %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Cette semaine</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--blue);margin-top:6px"><%= adminOrdersWeek %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Ce mois</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--green);margin-top:6px"><%= adminOrdersMonth %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Livraisons actives</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--accent2);margin-top:6px"><%= adminActiveDeliveries %></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Acceptées: <%= Number(stats.accepted ?? 0) %> • Récupérées: <%= Number(stats.picked_up ?? 0) %> • En route: <%= Number(stats.delivering ?? 0) %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Livrées total</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--green);margin-top:6px"><%= adminDeliveredTotal %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Annulées</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--accent);margin-top:6px"><%= adminCancelled %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Commandes resto</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--accent);margin-top:6px"><%= adminFoodOrders %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Commandes colis</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--blue);margin-top:6px"><%= adminPackageOrders %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Clients total</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--text);margin-top:6px"><%= adminClients %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Livreurs hors ligne</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--text);margin-top:6px"><%= adminOfflineLivreurs %></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Ticket moyen</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--accent2);margin-top:6px"><%= adminAverageTicket.toLocaleString('fr-FR') %> DA</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Livraison + colis/repas</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Gain moyen</div>
+          <div style="font-family:var(--font-d);font-size:30px;color:var(--green);margin-top:6px"><%= adminAverageGain.toLocaleString('fr-FR') %> DA</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Frais livraison / course</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin:16px">
+    <h3 class="form-card-title">+ Créer une livraison</h3>
+    <form action="/admin/commandes" method="POST">
+      <div class="field" style="margin-bottom:10px">
+        <input class="field-input" type="text" name="client_name" placeholder="Nom du client" required>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <input class="field-input" type="tel" name="client_phone" placeholder="Téléphone client" required>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <input class="field-input" type="text" name="from_address" placeholder="📍 Adresse ramassage" required>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <input class="field-input" type="text" name="to_address" placeholder="📍 Adresse livraison" required>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <input class="field-input" type="number" min="1" step="1" name="delivery_price" placeholder="💵 Prix livraison personnalisé (optionnel)">
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <textarea class="field-input" name="description" rows="2" placeholder="📝 Description ou instructions"></textarea>
+      </div>
+      <div class="size-grid" style="margin-bottom:14px">
+        <label class="size-option active" id="admin-size-petit">
+          <input type="radio" name="size" value="petit" checked>
+          <div class="size-name">Petit 150 DA</div>
+        </label>
+        <label class="size-option" id="admin-size-moyen">
+          <input type="radio" name="size" value="moyen">
+          <div class="size-name">Moyen 250 DA</div>
+        </label>
+        <label class="size-option" id="admin-size-grand">
+          <input type="radio" name="size" value="grand">
+          <div class="size-name">Grand 400 DA</div>
+        </label>
+      </div>
+      <button type="submit" class="btn-primary btn-full">🔔 Envoyer aux livreurs</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h3>Commandes récentes</h3>
+      <a href="/admin/commandes" class="see-all">Tout voir →</a>
+    </div>
+    <div class="orders-list" style="padding:0 16px">
+      <% recentOrders.forEach(order => { %>
+      <div class="order-card">
+        <div class="order-card-top">
+          <span class="order-id">#<%= String(order.id).padStart(4,'0') %></span>
+          <span class="status-badge status-<%= order.status %>">
+            <%= {pending:'En attente',accepted:'Accepté',picked_up:'Récupéré',delivering:'En livraison',delivered:'Livré ✓',cancelled:'Annulé'}[order.status] %>
+          </span>
+        </div>
+        <div class="order-route">
+          <span>📍 <%= order.from_address %></span>
+          <span class="route-arrow">→</span>
+          <span><%= order.to_address %></span>
+        </div>
+        <div class="order-meta">
+          <span>👤 <%= order.client_name %></span>
+          <% if (order.livreur_name) { %><span>🛵 <%= order.livreur_name %></span><% } %>
+          <span>💵 <%= order.price %> DA</span>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h3>Top livreurs</h3>
+      <a href="/admin/livreurs" class="see-all">Gérer →</a>
+    </div>
+    <div style="padding:0 16px 100px">
+      <% if (livreurs.length === 0) { %>
+      <div class="empty-state">
+        <div class="empty-icon">🛵</div>
+        <p>Aucun livreur pour le moment</p>
+      </div>
+      <% } else { %>
+      <% livreurs.forEach(l => { %>
+      <% const safePeriodStats = l.period_stats || { all: { collected: 0 } }; %>
+      <div class="livreur-row" style="margin-bottom:10px;padding:14px;border:1px solid var(--border);border-radius:16px;background:var(--surface)">
+        <div class="livreur-av"><%= l.name[0] %></div>
+        <div class="livreur-row-info">
+          <div class="livreur-row-name"><%= l.name %></div>
+          <div class="livreur-row-stats"><%= l.total_deliveries %> livraisons • Gains: <%= Number(l.total_earnings || 0).toLocaleString('fr-FR') %> DA</div>
+          <div class="livreur-row-stats">Encaisse: <%= Number(safePeriodStats.all.collected || 0).toLocaleString('fr-FR') %> DA • Note: <%= Number(l.rating || 0).toFixed(1) %>⭐</div>
+        </div>
+        <div class="livreur-status-indicator">
+          <div class="status-dot <%= l.available ? 'online' : 'offline' %>"></div>
+          <span><%= l.available ? 'En ligne' : 'Hors ligne' %></span>
+        </div>
+      </div>
+      <% }) %>
+      <% } %>
+    </div>
+  </div>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: true },
+    { href: '/admin/commandes', icon: '📦', label: 'Commandes', active: false },
+    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+socket.emit('admin:register');
+socket.on('new_order', ({ order }) => {
+  showToast('📦 Nouvelle commande #' + String(order.id).padStart(4, '0') + ' — ' + order.from_address + ' → ' + order.to_address, 'success');
+});
+socket.on('order:status_changed', () => {});
+socket.on('livreur:online', ({ livreurId }) => {
+  showToast('🟢 Livreur #' + livreurId + ' est en ligne', 'success');
+});
+socket.on('livreur:offline', ({ livreurId }) => {
+  showToast('🔴 Livreur #' + livreurId + ' est hors ligne', '');
+});
+document.querySelectorAll('.size-option input').forEach(radio => {
+  radio.addEventListener('change', function() {
+    document.querySelectorAll('.size-option').forEach(el => el.classList.remove('active'));
+    this.closest('.size-option').classList.add('active');
+  });
+});
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type ? 'toast-' + type : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 5000);
+}
+</script>
+</body></html>

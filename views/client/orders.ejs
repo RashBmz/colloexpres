@@ -1,0 +1,69 @@
+<%- include('../partials/head', { title: 'Mes commandes', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/client/dashboard" class="back-btn">← Accueil</a>
+    <h1 class="page-title">Mes commandes</h1>
+  </header>
+
+  <% if (orders.length === 0) { %>
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <p>Aucune commande pour l'instant</p>
+    <a href="/client/nouvelle-commande" class="btn-primary">Commander maintenant</a>
+  </div>
+  <% } else { %>
+  <div class="orders-list" style="padding:16px 16px 100px">
+    <% orders.forEach(order => { %>
+    <a href="/client/commandes/<%= order.id %>" class="order-card">
+      <div class="order-card-top">
+        <span class="order-id">#<%= String(order.id).padStart(4,'0') %></span>
+        <span class="status-badge status-<%= order.status %>">
+          <%= {pending:'En attente',accepted:'Accepté',picked_up:'Récupéré',delivering:'En livraison',delivered:'Livré ✓',cancelled:'Annulé'}[order.status] %>
+        </span>
+      </div>
+      <% if (order.type === 'food' && order.resto_name) { %>
+      <div class="order-route">
+        <span>🍔 <%= order.resto_name %></span>
+        <span class="route-arrow">→</span>
+        <span><%= order.to_address %></span>
+      </div>
+      <% } else if (order.type === 'courses') { %>
+      <div class="order-route">
+        <span>🛍️ Courses / achats</span>
+        <span class="route-arrow">→</span>
+        <span><%= order.to_address %></span>
+      </div>
+      <% } else { %>
+      <div class="order-route">
+        <span>📍 <%= order.from_address %></span>
+        <span class="route-arrow">→</span>
+        <span><%= order.to_address %></span>
+      </div>
+      <% } %>
+      <div class="order-meta">
+        <span>💵 <%= order.price %> DA</span>
+        <% if (order.livreur_name) { %><span>🛵 <%= order.livreur_name %></span><% } %>
+        <span>🕒 <%= new Date(order.created_at).toLocaleDateString('fr-FR') %></span>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <div class="fab-container" style="right:auto;left:max(20px, calc((100vw - 480px) / 2 + 20px));">
+    <a href="/client/nouvelle-commande" class="fab">+</a>
+  </div>
+
+  <%- include('../partials/client-cart-fab') %>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/client/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/client/nouvelle-commande', icon: '📦', label: 'Commander', active: false },
+    { href: '/client/commandes', icon: '📋', label: 'Commandes', active: true },
+    { href: '/auth/logout', icon: '👤', label: 'Déco', active: false },
+  ]}) %>
+</div>
+</body>
+</html>

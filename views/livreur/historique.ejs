@@ -1,0 +1,53 @@
+<%- include('../partials/head', { title: 'Historique', bodyClass: 'page-app' }) %>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/livreur/dashboard" class="back-btn">← Retour</a>
+    <h1 class="page-title">Historique</h1>
+  </header>
+  <div class="earnings-card" style="margin:16px">
+    <div class="earnings-inner">
+      <div>
+        <% const deliveredOrders = orders.filter(order => order.status === 'delivered'); %>
+        <% const historyDeliveryEarnings = deliveredOrders.reduce((sum, order) => sum + Number(order.delivery_fee ?? ((order.subtotal != null && order.price != null) ? (order.price - order.subtotal) : order.price ?? 0)), 0); %>
+        <% const historyCollected = deliveredOrders.reduce((sum, order) => sum + Number(order.price ?? 0), 0); %>
+        <div class="earnings-label">Gains livraison</div>
+        <div class="earnings-num"><%= historyDeliveryEarnings.toLocaleString('fr-FR') %> <span class="earnings-currency">DA</span></div>
+        <div class="earnings-sub">Encaissement total: <%= historyCollected.toLocaleString('fr-FR') %> DA</div>
+      </div>
+      <span style="font-size:36px">📊</span>
+    </div>
+  </div>
+  <div class="orders-list" style="padding:0 16px 100px">
+    <% if (orders.length === 0) { %>
+    <div class="empty-state"><div class="empty-icon">📋</div><p>Aucune livraison</p></div>
+    <% } else { orders.forEach(order => { %>
+    <div class="order-card">
+      <div class="order-card-top">
+        <span class="order-id">#<%= String((order.id || order._id)).padStart(4,'0') %></span>
+        <span class="status-badge status-<%= order.status %>">
+          <%= {accepted:'Accepté',picked_up:'Récupéré',delivering:'En livraison',delivered:'Livré ✓',cancelled:'Annulé',pending:'En attente'}[order.status] %>
+        </span>
+      </div>
+      <div class="order-route">
+        <span>📍 <%= order.from_address %></span><span class="route-arrow">→</span><span><%= order.to_address %></span>
+      </div>
+      <div class="order-meta">
+        <span style="<%= order.status==='delivered'?'color:var(--green);font-weight:600':'' %>">
+          <%= order.status==='delivered' ? '+' : '' %><%= order.status==='delivered' ? Number(order.delivery_fee ?? ((order.subtotal != null && order.price != null) ? (order.price - order.subtotal) : order.price ?? 0)) : order.price %> DA
+        </span>
+        <span><%= order.status==='delivered' ? ('Encaissement: ' + order.price + ' DA') : ('👤 ' + order.client_name) %></span>
+        <% if (order.status === 'delivered') { %><span>👤 <%= order.client_name %></span><% } %>
+        <span><%= new Date(order.created_at).toLocaleDateString('fr-FR') %></span>
+      </div>
+    </div>
+    <% }) } %>
+  </div>
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/livreur/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/livreur/livraisons', icon: '🛵', label: 'Livraisons', active: false },
+    { href: '/livreur/commandes', icon: '🔍', label: 'Disponibles', active: false },
+    { href: '/livreur/stats', icon: '📊', label: 'Stats', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+</body></html>

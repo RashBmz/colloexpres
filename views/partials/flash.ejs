@@ -1,0 +1,15 @@
+<% if (success && success.length > 0) { %>
+  <div class="flash flash-success" id="flash-msg">
+    <span>✓</span> <%= success[0] %>
+    <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+  </div>
+<% } %>
+<% if (error && error.length > 0) { %>
+  <div class="flash flash-error" id="flash-msg">
+    <span>⚠</span> <%= error[0] %>
+    <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+  </div>
+<% } %>
+<script>
+  setTimeout(() => { const f = document.getElementById('flash-msg'); if(f) f.style.opacity = '0'; }, 4000);
+</script>

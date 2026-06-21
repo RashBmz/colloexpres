@@ -1,0 +1,1105 @@
+<%
+function restoImage(id) {
+  const map = {
+    'la-voute': 'https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg',
+    'collo-burger': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+    'pizza-collo': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
+    'snack-el-bahar': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fish_sandwich.jpg',
+    'shawarma-palace': 'https://commons.wikimedia.org/wiki/Special:FilePath/Spicy_Shawarma.jpg',
+    'chicken-house': 'https://commons.wikimedia.org/wiki/Special:FilePath/Boneless_Fried_Chicken.jpg',
+    'le-gourmet': 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
+    'snack-central': 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
+    'pizza-express': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
+    'fast-delice': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+  };
+  return map[id] || 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG';
+}
+
+function categoryImage(key) {
+  const map = {
+    tacos: 'https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg',
+    burgers: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+    pizzas: 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
+    sides: 'https://commons.wikimedia.org/wiki/Special:FilePath/French_Fries.jpg',
+    sandwichs: 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
+    shawarma: 'https://commons.wikimedia.org/wiki/Special:FilePath/Spicy_Shawarma.jpg',
+    poulet: 'https://commons.wikimedia.org/wiki/Special:FilePath/Boneless_Fried_Chicken.jpg',
+    plats: 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
+    paninis: 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
+    mix: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+  };
+  return map[key] || 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG';
+}
+
+function cleanLabel(label) {
+  return String(label || '').replace(/^[^A-Za-z0-9À-ÿ]+/, '').trim();
+}
+const heroImage = restoImage(resto.id);
+%>
+<%- include('../partials/head', { title: resto.name, bodyClass: 'page-app' }) %>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+.resto-hero {
+  background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+  padding: 24px 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.resto-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.12), transparent 42%);
+  pointer-events: none;
+}
+.resto-hero-layout {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+.resto-hero-art {
+  width: 92px;
+  height: 92px;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+}
+.resto-hero-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.resto-hero-content {
+  min-width: 0;
+}
+.resto-hero-name { font-family: var(--font-d); font-size: 32px; color: white; }
+.resto-hero-desc { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+.resto-hero-meta { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.hero-chip { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; padding: 4px 12px; font-size: 12px; color: rgba(255,255,255,0.78); }
+.cat-tabs { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; position: sticky; top: 57px; z-index: 30; background: var(--bg); border-bottom: 1px solid var(--border); }
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  padding: 8px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: var(--font-b);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.cat-tab img { width: 20px; height: 20px; border-radius: 999px; object-fit: cover; }
+.cat-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+.menu-section { padding: 0 16px; margin-bottom: 24px; }
+.menu-section-title { font-size: 18px; font-weight: 700; padding: 16px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.menu-section-title img { width: 28px; height: 28px; border-radius: 10px; object-fit: cover; }
+.menu-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+.menu-item:hover { border-color: rgba(255,92,26,0.3); }
+.menu-item-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.menu-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.menu-item-info { flex: 1; min-width: 0; }
+.menu-item-name { font-size: 15px; font-weight: 600; }
+.menu-item-desc { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.menu-item-price { font-family: var(--font-m); font-size: 16px; color: var(--accent); margin-top: 6px; font-weight: 700; }
+.menu-item-add {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.menu-item-add:hover { transform: scale(1.1); }
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  display: flex; align-items: flex-end; padding: 0;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal-sheet {
+  background: var(--card2); width: 100%; max-width: 480px; margin: 0 auto;
+  border-radius: 20px 20px 0 0; padding: 24px 20px;
+  max-height: 85vh; overflow-y: auto;
+  transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.modal-overlay.show .modal-sheet { transform: translateY(0); }
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 100px; margin: 0 auto 16px; }
+.modal-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.modal-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.modal-price { font-family: var(--font-m); font-size: 24px; color: var(--accent); margin-bottom: 20px; }
+.opt-group { margin-bottom: 20px; }
+.opt-group-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+.opt-required { background: rgba(255,92,26,0.15); color: var(--accent); border-radius: 100px; padding: 2px 8px; font-size: 10px; }
+.opt-choices { display: flex; flex-direction: column; gap: 8px; }
+.opt-choice {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r-sm); padding: 12px 14px;
+  cursor: pointer; transition: all 0.2s;
+}
+.opt-choice.selected { border-color: var(--accent); background: rgba(255,92,26,0.08); }
+.opt-choice-label { font-size: 14px; }
+.opt-choice-price { font-family: var(--font-m); font-size: 13px; color: var(--muted); }
+.opt-choice.selected .opt-choice-price { color: var(--accent); }
+.opt-checkbox {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r-sm); padding: 12px 14px;
+  cursor: pointer; transition: all 0.2s;
+}
+.opt-checkbox.checked { border-color: var(--green); background: rgba(0,230,118,0.06); }
+.qty-selector { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.qty-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.qty-btn:hover { border-color: var(--accent); color: var(--accent); }
+.qty-num { font-family: var(--font-d); font-size: 28px; min-width: 30px; text-align: center; }
+.cart-fab {
+  position: fixed;
+  right: max(16px, calc((100vw - 480px) / 2 + 16px));
+  bottom: 94px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #ff8c42);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 12px 30px rgba(255,92,26,0.35);
+  cursor: pointer;
+  z-index: 220;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.cart-fab:hover { transform: translateY(-2px) scale(1.02); }
+.cart-fab.is-empty {
+  background: rgba(255,255,255,0.08);
+  color: var(--text2);
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+.cart-fab[hidden] { display: none; }
+.cart-fab-icon { font-size: 24px; line-height: 1; }
+.cart-fab-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: white;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255,92,26,0.18);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+.cart-fab.is-empty .cart-fab-count {
+  background: rgba(255,255,255,0.12);
+  color: var(--text2);
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: none;
+}
+.cart-sheet { background: var(--card2); }
+.cart-item-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.cart-item-info .ci-name { font-weight: 600; font-size: 14px; }
+.cart-item-info .ci-opts { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.cart-item-actions { display: flex; align-items: center; gap: 8px; }
+.ci-qty-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
+.ci-qty { font-family: var(--font-m); font-size: 14px; min-width: 20px; text-align: center; }
+.ci-price { font-family: var(--font-m); font-size: 14px; color: var(--accent); margin-left: 8px; white-space: nowrap; }
+.delivery-section { margin-top: 20px; }
+.delivery-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+#map-delivery { height: 180px; border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--border); }
+.order-summary { background: var(--surface); border-radius: var(--r-sm); padding: 14px; margin-top: 16px; }
+.sum-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+.sum-row.total { font-weight: 700; font-size: 16px; color: var(--accent); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 6px; }
+.choice-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.choice-modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.choice-modal-card {
+  width: 100%;
+  max-width: 360px;
+  background: linear-gradient(180deg, rgba(30,30,42,0.98), rgba(17,17,24,0.98));
+  border: 1px solid rgba(255,92,26,0.22);
+  border-radius: 22px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.42);
+  padding: 22px 20px 18px;
+  transform: translateY(16px) scale(0.98);
+  transition: transform 0.25s ease;
+}
+.choice-modal-overlay.show .choice-modal-card {
+  transform: translateY(0) scale(1);
+}
+.choice-modal-kicker {
+  font-size: 12px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 10px;
+}
+.choice-modal-title {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.choice-modal-text {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+.choice-modal-actions {
+  display: grid;
+  gap: 10px;
+}
+.choice-modal-secondary {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 12px;
+}
+@media (max-width: 560px) {
+  .resto-hero-layout { align-items: flex-start; }
+  .resto-hero-art { width: 82px; height: 82px; }
+  .resto-hero-name { font-size: 28px; }
+}
+</style>
+<%- include('../partials/flash') %>
+<div class="app-layout" style="padding-bottom:150px">
+  <header class="top-bar">
+    <a href="/client/restaurants" class="back-btn">← Restaurants</a>
+    <h1 class="page-title" style="font-size:16px"><%= resto.name %></h1>
+  </header>
+  <div class="resto-hero">
+    <div class="resto-hero-layout">
+      <div class="resto-hero-art">
+        <img src="<%= heroImage %>" alt="<%= resto.name %>" loading="lazy">
+      </div>
+      <div class="resto-hero-content">
+        <div class="resto-hero-name"><%= resto.name %></div>
+        <div class="resto-hero-desc"><%= resto.description %></div>
+        <div class="resto-hero-meta">
+          <span class="hero-chip">⭐ <%= resto.rating %></span>
+          <span class="hero-chip">🕒 <%= resto.deliveryTime %></span>
+          <span class="hero-chip">🛵 <%= resto.deliveryFee %> DA livraison</span>
+          <span class="hero-chip">💵 Min. <%= resto.minOrder %> DA</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cat-tabs" id="cat-tabs">
+    <% Object.entries(resto.menu).forEach(([key, cat], i) => { const catImage = categoryImage(key); %>
+    <button class="cat-tab <%= i===0?'active':'' %>" onclick="scrollToSection('<%= key %>', this)">
+      <img src="<%= catImage %>" alt="<%= cleanLabel(cat.label) %>" loading="lazy">
+      <span><%= cleanLabel(cat.label) %></span>
+    </button>
+    <% }) %>
+  </div>
+  <% Object.entries(resto.menu).forEach(([key, cat]) => { const catImage = categoryImage(key); const catLabel = cleanLabel(cat.label); %>
+  <div class="menu-section" id="section-<%= key %>">
+    <div class="menu-section-title">
+      <img src="<%= catImage %>" alt="<%= catLabel %>" loading="lazy">
+      <span><%= catLabel %></span>
+    </div>
+    <% cat.items.forEach(item => { %>
+    <div class="menu-item" onclick="openItem('<%= JSON.stringify(item).replace(/'/g, "\\'").replace(/"/g, '&quot;') %>')">
+      <div class="menu-item-thumb">
+        <img src="<%= catImage %>" alt="<%= item.name %>" loading="lazy">
+      </div>
+      <div class="menu-item-info">
+        <div class="menu-item-name"><%= item.name %></div>
+        <% if (item.description) { %><div class="menu-item-desc"><%= item.description %></div><% } %>
+        <div class="menu-item-price"><%= item.basePrice %> DA</div>
+      </div>
+      <button class="menu-item-add" type="button">+</button>
+    </div>
+    <% }) %>
+  </div>
+  <% }) %>
+</div>
+<button class="cart-fab is-empty" id="cart-fab" type="button" onclick="handleCartFabClick()">
+  <span class="cart-fab-icon">🛒</span>
+  <span class="cart-fab-count" id="cart-fab-count">0</span>
+</button>
+<div class="modal-overlay" id="item-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-item-name"></div>
+    <div class="modal-desc" id="modal-item-desc"></div>
+    <div class="modal-price" id="modal-item-price"></div>
+    <div id="modal-options"></div>
+    <div class="opt-group">
+      <div class="opt-group-title">Quantité</div>
+      <div class="qty-selector">
+        <button class="qty-btn" type="button" onclick="changeQty(-1)">−</button>
+        <span class="qty-num" id="modal-qty">1</span>
+        <button class="qty-btn" type="button" onclick="changeQty(1)">+</button>
+      </div>
+    </div>
+    <button class="btn-primary btn-full" onclick="addToCart()" id="add-to-cart-btn">Ajouter au panier - <span id="add-btn-price">0 DA</span></button>
+    <button class="btn-ghost btn-full" style="margin-top:8px" onclick="closeItemModal()">Annuler</button>
+  </div>
+</div>
+<div class="modal-overlay" id="cart-modal">
+  <div class="modal-sheet cart-sheet" style="max-height:90vh">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:20px;font-weight:700;margin-bottom:16px">🛒 Mon panier - <%= resto.name %></h3>
+    <div id="cart-items-list"></div>
+    <div class="delivery-section">
+      <h4>📍 Adresse de livraison</h4>
+      <input class="field-input" type="text" id="delivery-address-input" placeholder="Votre adresse..." autocomplete="street-address" autocapitalize="words" maxlength="180" style="margin-bottom:10px">
+      <input class="field-input" type="text" id="delivery-quarter-input" placeholder="Quartier..." autocomplete="address-level3" autocapitalize="words" maxlength="80" style="margin-bottom:10px">
+      <button type="button" class="btn-ghost btn-full" id="delivery-current-location-btn" style="margin-bottom:10px" onclick="locateCurrentDeliveryPosition()">📍 Utiliser ma position actuelle</button>
+      <div id="map-delivery"></div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px">🖱️ Appuyez sur la carte pour placer votre adresse</p>
+      <textarea class="field-input" id="delivery-notes" rows="2" placeholder="Notes pour le livreur (ex: sonnette 2eme etage...)" maxlength="500" style="margin-top:10px"></textarea>
+    </div>
+    <div class="order-summary">
+      <div class="sum-row"><span>Sous-total</span><span id="sum-subtotal">0 DA</span></div>
+      <div class="sum-row"><span>Frais de livraison</span><span><%= resto.deliveryFee %> DA</span></div>
+      <div class="sum-row total"><span>Total</span><span id="sum-total">0 DA</span></div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);text-align:center;margin:12px 0">💵 Paiement cash à la livraison</p>
+    <form action="/client/commandes/food" method="POST" id="food-order-form">
+      <input type="hidden" name="resto_id" value="<%= resto.id %>">
+      <input type="hidden" name="items_json" id="items-json-input">
+      <input type="hidden" name="to_address" id="fo-to-address">
+      <input type="hidden" name="to_quarter" id="fo-to-quarter">
+      <input type="hidden" name="to_lat" id="fo-to-lat">
+      <input type="hidden" name="to_lng" id="fo-to-lng">
+      <input type="hidden" name="notes" id="fo-notes">
+      <button type="button" class="btn-primary btn-full btn-lg" onclick="placeOrder()">🚀 Commander - <span id="order-total-btn">0 DA</span></button>
+    </form>
+    <button class="btn-ghost btn-full" style="margin-top:8px" onclick="closeCart()">Continuer les achats</button>
+  </div>
+</div>
+<div class="choice-modal-overlay" id="replace-cart-modal">
+  <div class="choice-modal-card">
+    <div class="choice-modal-kicker">Panier existant</div>
+    <div class="choice-modal-title">Remplacer le panier ?</div>
+    <p class="choice-modal-text" id="replace-cart-text">Vous avez deja un panier dans un autre restaurant.</p>
+    <div class="choice-modal-actions">
+      <button type="button" class="btn-primary btn-full" id="replace-cart-confirm-btn">Oui, remplacer</button>
+      <button type="button" class="btn-ghost btn-full" id="replace-cart-cancel-btn">Non, garder l'ancien</button>
+    </div>
+    <div class="choice-modal-secondary">Vous pourrez revenir au panier actuel a tout moment via le bouton panier.</div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let cart = [];
+let currentItem = null;
+let currentOptions = {};
+let currentQty = 1;
+let deliveryMap = null;
+let deliveryMarker = null;
+const USER_ID = <%- JSON.stringify(currentUser.id) %>;
+const CURRENT_RESTO = {
+  id: <%- JSON.stringify(resto.id) %>,
+  name: <%- JSON.stringify(resto.name) %>,
+  deliveryFee: Number(<%= resto.deliveryFee %>),
+  minOrder: Number(<%= resto.minOrder %>)
+};
+const DELIVERY_FEE = CURRENT_RESTO.deliveryFee;
+const MIN_ORDER = CURRENT_RESTO.minOrder;
+const CART_STORAGE_KEY = 'colloexpress_food_cart_' + USER_ID;
+const PENDING_CART_CLEAR_KEY = CART_STORAGE_KEY + '_pending_submit';
+
+function emptyCartState(resto) {
+  return {
+    restoId: resto.id,
+    restoName: resto.name,
+    deliveryFee: Number(resto.deliveryFee || 0),
+    minOrder: Number(resto.minOrder || 0),
+    items: [],
+    deliveryAddress: '',
+    deliveryQuarter: '',
+    deliveryNotes: '',
+    deliveryLat: '',
+    deliveryLng: ''
+  };
+}
+
+function normalizeSelectedOptions(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(function(entry) {
+    return {
+      group: String(entry && entry.group ? entry.group : ''),
+      optionId: String(entry && (entry.optionId || entry.id) ? (entry.optionId || entry.id) : '')
+    };
+  }).filter(function(entry) {
+    return entry.group && entry.optionId;
+  });
+}
+
+function serializeSelectedOptions(selectedOptions) {
+  return normalizeSelectedOptions(selectedOptions).map(function(entry) {
+    return entry.group + ':' + entry.optionId;
+  }).sort().join('|');
+}
+
+function normalizeCartItem(item) {
+  return {
+    id: String(item.id || ''),
+    name: String(item.name || ''),
+    unitPrice: Number(item.unitPrice || 0),
+    qty: Number(item.qty || 0),
+    total: Number(item.total || 0),
+    options: String(item.options || ''),
+    selectedOptions: normalizeSelectedOptions(item.selectedOptions)
+  };
+}
+
+function normalizeCartState(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  return {
+    restoId: String(raw.restoId || ''),
+    restoName: String(raw.restoName || ''),
+    deliveryFee: Number(raw.deliveryFee || 0),
+    minOrder: Number(raw.minOrder || 0),
+    items: Array.isArray(raw.items) ? raw.items.map(normalizeCartItem).filter(function(item) { return item.id && item.qty > 0; }) : [],
+    deliveryAddress: String(raw.deliveryAddress || ''),
+    deliveryQuarter: String(raw.deliveryQuarter || ''),
+    deliveryNotes: String(raw.deliveryNotes || ''),
+    deliveryLat: raw.deliveryLat == null ? '' : String(raw.deliveryLat),
+    deliveryLng: raw.deliveryLng == null ? '' : String(raw.deliveryLng)
+  };
+}
+
+function loadStoredCartState() {
+  try {
+    return normalizeCartState(JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || 'null'));
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveStoredCartState(state) {
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state));
+}
+
+function removeStoredCartState() {
+  localStorage.removeItem(CART_STORAGE_KEY);
+}
+
+function clearPendingCartSubmit() {
+  sessionStorage.removeItem(PENDING_CART_CLEAR_KEY);
+}
+
+function getStoredCartQty(state) {
+  if (!state || !Array.isArray(state.items)) return 0;
+  return state.items.reduce(function(sum, item) { return sum + Number(item.qty || 0); }, 0);
+}
+
+function isCurrentRestoCart(state) {
+  return !!state && state.restoId === CURRENT_RESTO.id;
+}
+
+function getTextInputValue(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function setFieldValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value || '';
+}
+
+function buildCurrentCartState() {
+  return {
+    restoId: CURRENT_RESTO.id,
+    restoName: CURRENT_RESTO.name,
+    deliveryFee: DELIVERY_FEE,
+    minOrder: MIN_ORDER,
+    items: cart.map(function(item) { return { id: item.id, name: item.name, unitPrice: item.unitPrice, qty: item.qty, total: item.total, options: item.options || '', selectedOptions: normalizeSelectedOptions(item.selectedOptions) }; }),
+    deliveryAddress: getTextInputValue('delivery-address-input'),
+    deliveryQuarter: getTextInputValue('delivery-quarter-input'),
+    deliveryNotes: getTextInputValue('delivery-notes'),
+    deliveryLat: document.getElementById('fo-to-lat').value || '',
+    deliveryLng: document.getElementById('fo-to-lng').value || ''
+  };
+}
+
+function clearDraftFields() {
+  setFieldValue('delivery-address-input', '');
+  setFieldValue('delivery-quarter-input', '');
+  setFieldValue('delivery-notes', '');
+  setFieldValue('fo-to-lat', '');
+  setFieldValue('fo-to-lng', '');
+  if (deliveryMarker && deliveryMap) {
+    deliveryMap.removeLayer(deliveryMarker);
+    deliveryMarker = null;
+  }
+}
+
+function restoreCurrentCartDraft() {
+  const stored = loadStoredCartState();
+  if (!isCurrentRestoCart(stored)) {
+    cart = [];
+    clearDraftFields();
+    return;
+  }
+  cart = stored.items.slice();
+  setFieldValue('delivery-address-input', stored.deliveryAddress);
+  setFieldValue('delivery-quarter-input', stored.deliveryQuarter);
+  setFieldValue('delivery-notes', stored.deliveryNotes);
+  setFieldValue('fo-to-lat', stored.deliveryLat);
+  setFieldValue('fo-to-lng', stored.deliveryLng);
+}
+
+function persistCurrentCart() {
+  if (!cart.length) {
+    removeStoredCartState();
+    updateCartFab();
+    return;
+  }
+  saveStoredCartState(buildCurrentCartState());
+  updateCartFab();
+}
+
+function updateCartFab() {
+  const button = document.getElementById('cart-fab');
+  const count = document.getElementById('cart-fab-count');
+  const activeCart = loadStoredCartState();
+  const qty = getStoredCartQty(activeCart);
+
+  count.textContent = qty > 99 ? '99+' : String(qty || 0);
+  button.classList.toggle('is-empty', qty === 0);
+  button.title = qty > 0
+    ? (isCurrentRestoCart(activeCart) ? 'Ouvrir votre panier' : 'Revenir au panier de ' + activeCart.restoName)
+    : 'Panier vide';
+}
+
+function handleCartFabClick() {
+  const activeCart = loadStoredCartState();
+  if (!activeCart || !getStoredCartQty(activeCart)) {
+    showToast('Votre panier est vide', 'error');
+    return;
+  }
+
+  if (!isCurrentRestoCart(activeCart)) {
+    window.location.href = '/client/restaurants/' + encodeURIComponent(activeCart.restoId) + '?openCart=1';
+    return;
+  }
+
+  openCart();
+}
+
+let replaceCartResolver = null;
+
+function closeReplaceCartModal(decision) {
+  const modal = document.getElementById('replace-cart-modal');
+  modal.classList.remove('show');
+  if (replaceCartResolver) {
+    const resolver = replaceCartResolver;
+    replaceCartResolver = null;
+    resolver(decision);
+  }
+}
+
+function showReplaceCartModal(activeCart) {
+  const modal = document.getElementById('replace-cart-modal');
+  const text = document.getElementById('replace-cart-text');
+  text.textContent = 'Vous avez deja un panier chez ' + activeCart.restoName + '. Voulez-vous le remplacer pour commander chez ' + CURRENT_RESTO.name + ' ?';
+  modal.classList.add('show');
+  return new Promise(function(resolve) {
+    replaceCartResolver = resolve;
+  });
+}
+
+async function ensureCartForCurrentRestaurant() {
+  const activeCart = loadStoredCartState();
+  if (!activeCart || !getStoredCartQty(activeCart) || isCurrentRestoCart(activeCart)) {
+    return true;
+  }
+
+  const confirmed = await showReplaceCartModal(activeCart);
+  if (!confirmed) {
+    updateCartFab();
+    return false;
+  }
+
+  cart = [];
+  removeStoredCartState();
+  clearPendingCartSubmit();
+  clearDraftFields();
+  updateCartFab();
+  return true;
+}
+
+function openItem(itemJson) {
+  currentItem = JSON.parse(itemJson.replace(/&quot;/g, '"'));
+  currentOptions = {};
+  currentQty = 1;
+  document.getElementById('modal-item-name').textContent = currentItem.name;
+  document.getElementById('modal-item-desc').textContent = currentItem.description || '';
+  document.getElementById('modal-item-price').textContent = currentItem.basePrice + ' DA';
+  document.getElementById('modal-qty').textContent = '1';
+  const optContainer = document.getElementById('modal-options');
+  optContainer.innerHTML = '';
+
+  if (currentItem.options && Object.keys(currentItem.options).length > 0) {
+    Object.entries(currentItem.options).forEach(function(entry) {
+      const key = entry[0];
+      const opt = entry[1];
+      const group = document.createElement('div');
+      group.className = 'opt-group';
+      group.innerHTML = '<div class="opt-group-title">' + opt.label + (opt.required ? '<span class="opt-required">Requis</span>' : '') + '</div><div class="opt-choices" id="opts-' + key + '"></div>';
+      optContainer.appendChild(group);
+
+      if (opt.type === 'checkbox') {
+        const el = document.createElement('div');
+        el.className = 'opt-checkbox';
+        el.id = 'check-' + key;
+        el.innerHTML = '<span class="opt-choice-label">✓ ' + opt.label + '</span><span class="opt-choice-price">+' + opt.price + ' DA</span>';
+        el.onclick = function() {
+          el.classList.toggle('checked');
+          currentOptions[key] = el.classList.contains('checked') ? { group: key, id: key, label: opt.label, price: opt.price } : null;
+          updateModalPrice();
+        };
+        document.getElementById('opts-' + key).appendChild(el);
+      } else if (opt.choices) {
+        opt.choices.forEach(function(choice, index) {
+          const el = document.createElement('div');
+          el.className = 'opt-choice' + (index === 0 && opt.required ? ' selected' : '');
+          const priceLabel = choice.price > 0 ? '+' + choice.price : choice.price < 0 ? String(choice.price) : '—';
+          el.innerHTML = '<span class="opt-choice-label">' + choice.label + '</span><span class="opt-choice-price">' + priceLabel + ' DA</span>';
+          el.onclick = function() {
+            document.querySelectorAll('#opts-' + key + ' .opt-choice').forEach(function(choiceEl) {
+              choiceEl.classList.remove('selected');
+            });
+            el.classList.add('selected');
+            currentOptions[key] = { group: key, id: choice.id, label: choice.label, price: choice.price };
+            updateModalPrice();
+          };
+          document.getElementById('opts-' + key).appendChild(el);
+          if (index === 0 && opt.required) currentOptions[key] = { group: key, id: choice.id, label: choice.label, price: choice.price };
+        });
+      }
+    });
+  }
+
+  updateModalPrice();
+  document.getElementById('item-modal').classList.add('show');
+}
+
+function closeItemModal() {
+  document.getElementById('item-modal').classList.remove('show');
+}
+
+function updateModalPrice() {
+  let total = currentItem.basePrice;
+  Object.values(currentOptions).forEach(function(value) {
+    if (value && value.price) total += value.price;
+  });
+  total *= currentQty;
+  document.getElementById('modal-item-price').textContent = currentItem.basePrice + ' DA';
+  document.getElementById('add-btn-price').textContent = total + ' DA';
+}
+
+function changeQty(delta) {
+  currentQty = Math.max(1, currentQty + delta);
+  document.getElementById('modal-qty').textContent = String(currentQty);
+  updateModalPrice();
+}
+
+async function addToCart() {
+  if (!currentItem || !(await ensureCartForCurrentRestaurant())) return;
+
+  let price = currentItem.basePrice;
+  const optLabels = [];
+  const selectedOptions = [];
+  const reqKeys = Object.entries(currentItem.options || {}).filter(function(entry) { return entry[1].required; }).map(function(entry) { return entry[0]; });
+  for (const key of reqKeys) {
+    if (!currentOptions[key]) {
+      alert('Veuillez choisir : ' + currentItem.options[key].label);
+      return;
+    }
+  }
+
+  Object.values(currentOptions).forEach(function(value) {
+    if (!value) return;
+    if (value.price) {
+      price += value.price;
+    }
+    optLabels.push(value.label);
+    selectedOptions.push({ group: value.group, optionId: value.id });
+  });
+
+  const optString = optLabels.join(', ');
+  const selectedOptionsKey = serializeSelectedOptions(selectedOptions);
+  const existing = cart.find(function(entry) {
+    return entry.id === currentItem.id && serializeSelectedOptions(entry.selectedOptions) === selectedOptionsKey;
+  });
+
+  if (existing) {
+    existing.qty += currentQty;
+    existing.total = existing.unitPrice * existing.qty;
+  } else {
+    cart.push({
+      id: currentItem.id,
+      name: currentItem.name,
+      unitPrice: price,
+      qty: currentQty,
+      total: price * currentQty,
+      options: optString,
+      selectedOptions: normalizeSelectedOptions(selectedOptions)
+    });
+  }
+
+  persistCurrentCart();
+  closeItemModal();
+  showToast('✓ ' + currentItem.name + ' ajouté au panier', 'success');
+}
+
+function getDraftCoords() {
+  const lat = parseFloat(document.getElementById('fo-to-lat').value);
+  const lng = parseFloat(document.getElementById('fo-to-lng').value);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return [lat, lng];
+  return null;
+}
+
+function ensureDeliveryMarker(lat, lng) {
+  if (deliveryMarker) {
+    deliveryMarker.setLatLng([lat, lng]);
+    return;
+  }
+
+  deliveryMarker = L.marker([lat, lng], {
+    icon: L.divIcon({
+      className: '',
+      html: '<div style="width:22px;height:22px;background:#00e676;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    }),
+    draggable: true
+  }).addTo(deliveryMap);
+
+  deliveryMarker.on('dragend', function(event) {
+    const point = event.target.getLatLng();
+    updateDeliveryPoint(point.lat, point.lng, true);
+  });
+}
+
+function updateDeliveryPoint(lat, lng, reverseLookup) {
+  ensureDeliveryMarker(lat, lng);
+  document.getElementById('fo-to-lat').value = String(lat);
+  document.getElementById('fo-to-lng').value = String(lng);
+  if (deliveryMap) deliveryMap.setView([lat, lng], Math.max(deliveryMap.getZoom(), 15));
+
+  if (!reverseLookup) {
+    persistCurrentCart();
+    return;
+  }
+
+  fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json')
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      const address = data.address || {};
+      const parts = [address.road, address.neighbourhood, address.suburb, address.city || address.town || address.village].filter(Boolean);
+      if (parts.length) document.getElementById('delivery-address-input').value = parts.join(', ');
+      persistCurrentCart();
+    })
+    .catch(function() {
+      persistCurrentCart();
+    });
+}
+
+function locateCurrentDeliveryPosition() {
+  if (!navigator.geolocation) {
+    showToast('La geolocalisation n est pas supportee sur cet appareil', 'error');
+    return;
+  }
+
+  const button = document.getElementById('delivery-current-location-btn');
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = '⏳ Localisation...';
+
+  navigator.geolocation.getCurrentPosition(function(position) {
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    ensureDeliveryMap();
+    updateDeliveryPoint(lat, lng, true);
+    if (deliveryMap) deliveryMap.setView([lat, lng], 16);
+    showToast('📍 Position actuelle ajoutee', 'success');
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }, function() {
+    showToast('Impossible d obtenir votre position actuelle', 'error');
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }, {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 60000
+  });
+}
+
+function ensureDeliveryMap() {
+  const initialCoords = getDraftCoords() || [37.0014, 6.5620];
+  if (!deliveryMap) {
+    deliveryMap = L.map('map-delivery', { zoomControl: false }).setView(initialCoords, getDraftCoords() ? 15 : 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(deliveryMap);
+    deliveryMap.on('click', function(event) {
+      updateDeliveryPoint(event.latlng.lat, event.latlng.lng, true);
+    });
+  }
+
+  const coords = getDraftCoords();
+  if (coords) {
+    ensureDeliveryMarker(coords[0], coords[1]);
+    deliveryMap.setView(coords, 15);
+  }
+
+  setTimeout(function() {
+    deliveryMap.invalidateSize();
+  }, 150);
+}
+
+function openCart() {
+  const activeCart = loadStoredCartState();
+  if (activeCart && !isCurrentRestoCart(activeCart) && getStoredCartQty(activeCart)) {
+    window.location.href = '/client/restaurants/' + encodeURIComponent(activeCart.restoId) + '?openCart=1';
+    return;
+  }
+
+  restoreCurrentCartDraft();
+  if (cart.length === 0) {
+    showToast('Ajoutez un article pour ouvrir le panier', 'error');
+    return;
+  }
+
+  renderCartSheet();
+  document.getElementById('cart-modal').classList.add('show');
+  setTimeout(function() {
+    ensureDeliveryMap();
+  }, 250);
+}
+
+function closeCart() {
+  document.getElementById('cart-modal').classList.remove('show');
+}
+
+function renderCartSheet() {
+  const list = document.getElementById('cart-items-list');
+  const subtotal = cart.reduce(function(sum, item) { return sum + item.total; }, 0);
+  const total = subtotal + DELIVERY_FEE;
+
+  if (!cart.length) {
+    list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">Panier vide</p>';
+  } else {
+    list.innerHTML = cart.map(function(item, idx) {
+      return '<div class="cart-item-row">'
+        + '<div class="cart-item-info">'
+        + '<div class="ci-name">' + item.name + '</div>'
+        + (item.options ? '<div class="ci-opts">' + item.options + '</div>' : '')
+        + '</div>'
+        + '<div class="cart-item-actions">'
+        + '<button class="ci-qty-btn" type="button" onclick="changeCartQty(' + idx + ', -1)">−</button>'
+        + '<span class="ci-qty">' + item.qty + '</span>'
+        + '<button class="ci-qty-btn" type="button" onclick="changeCartQty(' + idx + ', 1)">+</button>'
+        + '<span class="ci-price">' + item.total + ' DA</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  document.getElementById('sum-subtotal').textContent = subtotal + ' DA';
+  document.getElementById('sum-total').textContent = total + ' DA';
+  document.getElementById('order-total-btn').textContent = total + ' DA';
+}
+
+function changeCartQty(idx, delta) {
+  if (!cart[idx]) return;
+  cart[idx].qty = Math.max(0, cart[idx].qty + delta);
+  if (cart[idx].qty === 0) {
+    cart.splice(idx, 1);
+  } else {
+    cart[idx].total = cart[idx].unitPrice * cart[idx].qty;
+  }
+
+  persistCurrentCart();
+
+  if (!cart.length) {
+    closeCart();
+    showToast('Panier vidé', 'success');
+    return;
+  }
+
+  renderCartSheet();
+}
+
+function markPendingCartSubmit() {
+  sessionStorage.setItem(PENDING_CART_CLEAR_KEY, JSON.stringify({ restoId: CURRENT_RESTO.id, submittedAt: Date.now() }));
+}
+
+function placeOrder() {
+  if (cart.length === 0) {
+    showToast('Votre panier est vide', 'error');
+    return;
+  }
+
+  const addr = getTextInputValue('delivery-address-input');
+  if (!addr) {
+    showToast('❌ Entrez votre adresse de livraison', 'error');
+    return;
+  }
+
+  const subtotal = cart.reduce(function(sum, item) { return sum + item.total; }, 0);
+  if (subtotal < MIN_ORDER) {
+    showToast('❌ Commande minimum : ' + MIN_ORDER + ' DA', 'error');
+    return;
+  }
+
+  document.getElementById('fo-to-address').value = addr;
+  document.getElementById('fo-to-quarter').value = getTextInputValue('delivery-quarter-input');
+  document.getElementById('fo-notes').value = getTextInputValue('delivery-notes');
+  document.getElementById('items-json-input').value = JSON.stringify(cart);
+  persistCurrentCart();
+  markPendingCartSubmit();
+
+  const btn = document.querySelector('#food-order-form button');
+  btn.disabled = true;
+  btn.textContent = '⏳ Envoi...';
+  document.getElementById('food-order-form').submit();
+}
+
+function scrollToSection(key, btn) {
+  document.querySelectorAll('.cat-tab').forEach(function(entry) {
+    entry.classList.remove('active');
+  });
+  btn.classList.add('active');
+  const el = document.getElementById('section-' + key);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.classList.add('show'); }, 10);
+  setTimeout(function() {
+    toast.classList.remove('show');
+    setTimeout(function() { toast.remove(); }, 400);
+  }, 3000);
+}
+
+['delivery-address-input', 'delivery-quarter-input', 'delivery-notes'].forEach(function(id) {
+  const el = document.getElementById(id);
+  el.addEventListener('input', function() {
+    if (cart.length) persistCurrentCart();
+  });
+});
+
+document.getElementById('item-modal').addEventListener('click', function onOverlayClick(event) {
+  if (event.target === this) closeItemModal();
+});
+
+document.getElementById('cart-modal').addEventListener('click', function onOverlayClick(event) {
+  if (event.target === this) closeCart();
+});
+
+document.getElementById('replace-cart-modal').addEventListener('click', function onReplaceModalClick(event) {
+  if (event.target === this) closeReplaceCartModal(false);
+});
+document.getElementById('replace-cart-confirm-btn').addEventListener('click', function() {
+  closeReplaceCartModal(true);
+});
+document.getElementById('replace-cart-cancel-btn').addEventListener('click', function() {
+  closeReplaceCartModal(false);
+});
+
+restoreCurrentCartDraft();
+updateCartFab();
+
+const openCartOnLoad = new URLSearchParams(window.location.search).get('openCart') === '1';
+if (openCartOnLoad && cart.length > 0) {
+  history.replaceState({}, '', window.location.pathname);
+  setTimeout(function() {
+    openCart();
+  }, 180);
+}
+</script>
+<%- include('../partials/bottom-nav', { navItems: [
+  { href: '/client/dashboard', icon: '🏠', label: 'Accueil', active: false },
+  { href: '/client/restaurants', icon: '🍔', label: 'Restaurants', active: true },
+  { href: '/client/commandes', icon: '📋', label: 'Commandes', active: false },
+  { href: '/auth/logout', icon: '👤', label: 'Déco', active: false },
+]}) %>
+</body>
+</html>
+
+
+
+
+
+

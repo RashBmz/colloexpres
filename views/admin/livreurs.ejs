@@ -1,0 +1,121 @@
+<%- include('../partials/head', { title: 'Livreurs', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/admin/dashboard" class="back-btn">← Admin</a>
+    <h1 class="page-title">Livreurs (<%= livreurs.length %>)</h1>
+  </header>
+
+  <!-- ADD FORM -->
+  <div class="form-card" style="margin:16px">
+    <h3 class="form-card-title">+ Ajouter un livreur</h3>
+    <form action="/admin/livreurs" method="POST">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <input class="field-input" type="text" name="name" placeholder="Nom complet" required>
+        <input class="field-input" type="tel" name="phone" placeholder="Identifiant (ex: livreur07)" required>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <input class="field-input" type="password" name="password" placeholder="Mot de passe" required>
+        <select class="field-input" name="vehicle">
+          <option value="moto">🏍 Moto</option>
+          <option value="voiture">🚗 Voiture</option>
+          <option value="vélo">🚲 Vélo</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary btn-full">Ajouter le livreur</button>
+    </form>
+  </div>
+
+  <!-- LIST -->
+  <div style="padding:0 16px 100px">
+    <% livreurs.forEach(l => { %>
+    <% const safePeriodStats = l.period_stats || { all: { collected: 0 }, day: { count: 0, gains: 0, collected: 0 }, week: { count: 0, gains: 0, collected: 0 }, month: { count: 0, gains: 0, collected: 0 }, year: { count: 0, gains: 0, collected: 0 } }; %>
+    <% const livreurId = l.id || l._id; %>
+    <div class="livreur-full-card">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+        <div class="livreur-av" style="width:48px;height:48px;font-size:20px"><%= l.name[0] %></div>
+        <div style="flex:1">
+          <div class="livreur-row-name"><%= l.name %></div>
+          <div class="livreur-row-stats">ID: <strong><%= l.phone %></strong> · <%= l.vehicle %></div>
+        </div>
+        <div class="livreur-status-indicator">
+          <div class="status-dot <%= l.available ? 'online' : 'offline' %>"></div>
+          <span><%= l.available ? 'En ligne' : 'Hors ligne' %></span>
+        </div>
+      </div>
+      <div class="livreur-stats-row">
+        <div class="lsr-item">
+          <div class="lsr-num"><%= l.total_deliveries %></div>
+          <div class="lsr-label">Livraisons</div>
+        </div>
+        <div class="lsr-item">
+          <div class="lsr-num"><%= l.total_earnings.toLocaleString('fr-FR') %></div>
+          <div class="lsr-label">Gains livraison</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Total encaisse: <%= Number(safePeriodStats.all.collected || 0).toLocaleString('fr-FR') %> DA</div>
+        </div>
+        <div class="lsr-item">
+          <div class="lsr-num"><%= l.rating %>⭐</div>
+          <div class="lsr-label">Note</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <% const periods = [
+          { key: 'day', label: 'Jour' },
+          { key: 'week', label: 'Semaine' },
+          { key: 'month', label: 'Mois' },
+          { key: 'year', label: 'Année' },
+        ]; %>
+        <% periods.forEach(period => { const stat = safePeriodStats[period.key] || { count: 0, gains: 0, collected: 0 }; %>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px"><%= period.label %></div>
+          <div style="font-family:var(--font-d);font-size:28px;line-height:1;color:var(--accent);margin-top:6px"><%= stat.count %></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">livraison(s)</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:10px">Gain: <strong style="color:var(--green)"><%= stat.gains.toLocaleString('fr-FR') %> DA</strong></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Encaisse: <%= stat.collected.toLocaleString('fr-FR') %> DA</div>
+        </div>
+        <% }) %>
+      </div>
+      <details style="margin-top:12px">
+        <summary class="btn-outline" style="list-style:none;width:100%;justify-content:center">Modifier le profil</summary>
+        <div class="form-card" style="margin-top:10px;padding:14px">
+          <form action="/admin/livreurs/<%= livreurId %>/modifier" method="POST">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <input class="field-input" type="text" name="name" value="<%= l.name %>" placeholder="Nom complet" required>
+              <input class="field-input" type="text" name="phone" value="<%= l.phone %>" placeholder="Identifiant" required>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <select class="field-input" name="vehicle">
+                <option value="moto" <%= l.vehicle === 'moto' ? 'selected' : '' %>>Moto</option>
+                <option value="voiture" <%= l.vehicle === 'voiture' ? 'selected' : '' %>>Voiture</option>
+                <option value="vélo" <%= l.vehicle === 'vélo' ? 'selected' : '' %>>Vélo</option>
+              </select>
+              <select class="field-input" name="available">
+                <option value="true" <%= l.available ? 'selected' : '' %>>En ligne</option>
+                <option value="false" <%= !l.available ? 'selected' : '' %>>Hors ligne</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <input class="field-input" type="number" min="0" max="5" step="0.1" name="rating" value="<%= l.rating %>" placeholder="Note">
+              <input class="field-input" type="password" name="password" placeholder="Nouveau mot de passe (optionnel)">
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+              <button type="submit" class="btn-primary">Enregistrer</button>
+            </div>
+          </form>
+          <form action="/admin/livreurs/<%= livreurId %>/supprimer" method="POST" style="margin-top:10px">
+            <button type="submit" class="btn-danger-sm" onclick="return confirm('Supprimer <%= l.name %> ?')">Supprimer</button>
+          </form>
+        </div>
+      </details>
+    </div>
+    <% }) %>
+  </div>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
+    { href: '/admin/commandes', icon: '📦', label: 'Commandes', active: false },
+    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: true },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+</body></html>

@@ -1,0 +1,114 @@
+<style>
+.client-cart-fab {
+  position: fixed;
+  right: max(16px, calc((100vw - 480px) / 2 + 16px));
+  bottom: 94px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #ff8c42);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 12px 30px rgba(255,92,26,0.35);
+  cursor: pointer;
+  z-index: 220;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.client-cart-fab:hover { transform: translateY(-2px) scale(1.02); }
+.client-cart-fab.is-empty {
+  background: rgba(255,255,255,0.08);
+  color: var(--text2);
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+.client-cart-fab-icon { font-size: 24px; line-height: 1; }
+.client-cart-fab-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: white;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255,92,26,0.18);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+.client-cart-fab.is-empty .client-cart-fab-count {
+  background: rgba(255,255,255,0.12);
+  color: var(--text2);
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: none;
+}
+</style>
+<button class="client-cart-fab is-empty" id="global-client-cart-fab" type="button" onclick="handleGlobalClientCartFabClick()" aria-label="Ouvrir le panier">
+  <span class="client-cart-fab-icon">🛒</span>
+  <span class="client-cart-fab-count" id="global-client-cart-count">0</span>
+</button>
+<script>
+(function() {
+  const CART_STORAGE_KEY = 'colloexpress_food_cart_' + <%- JSON.stringify(currentUser.id) %>;
+
+  function readStoredCart() {
+    try {
+      return JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || 'null');
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function getStoredCartQty(cart) {
+    if (!cart || !Array.isArray(cart.items)) return 0;
+    return cart.items.reduce(function(sum, item) { return sum + Number(item.qty || 0); }, 0);
+  }
+
+  function showClientCartToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + (type ? 'toast-' + type : '');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.classList.add('show'); }, 10);
+    setTimeout(function() {
+      toast.classList.remove('show');
+      setTimeout(function() { toast.remove(); }, 400);
+    }, 2800);
+  }
+
+  window.updateGlobalClientCartFab = function updateGlobalClientCartFab() {
+    const fab = document.getElementById('global-client-cart-fab');
+    const count = document.getElementById('global-client-cart-count');
+    if (!fab || !count) return;
+
+    const storedCart = readStoredCart();
+    const qty = getStoredCartQty(storedCart);
+    count.textContent = qty > 99 ? '99+' : String(qty || 0);
+    fab.classList.toggle('is-empty', qty === 0);
+    fab.title = qty > 0 && storedCart && storedCart.restoName
+      ? 'Revenir au panier de ' + storedCart.restoName
+      : 'Panier vide';
+  };
+
+  window.handleGlobalClientCartFabClick = function handleGlobalClientCartFabClick() {
+    const storedCart = readStoredCart();
+    const qty = getStoredCartQty(storedCart);
+    if (!qty || !storedCart || !storedCart.restoId) {
+      showClientCartToast('Votre panier est vide', 'error');
+      return;
+    }
+    window.location.href = '/client/restaurants/' + encodeURIComponent(storedCart.restoId) + '?openCart=1';
+  };
+
+  window.updateGlobalClientCartFab();
+  window.addEventListener('focus', window.updateGlobalClientCartFab);
+  window.addEventListener('storage', window.updateGlobalClientCartFab);
+})();
+</script>

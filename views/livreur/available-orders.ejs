@@ -1,0 +1,62 @@
+<%- include('../partials/head', { title: 'Commandes disponibles', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/livreur/dashboard" class="back-btn">← Retour</a>
+    <h1 class="page-title">Disponibles (<%= pendingOrders.length %>)</h1>
+  </header>
+  <% if (pendingOrders.length === 0) { %>
+  <div class="empty-state">
+    <div class="empty-icon">🔔</div>
+    <p>Aucune commande en attente</p>
+    <a href="/livreur/dashboard" class="btn-outline">Retour au tableau de bord</a>
+  </div>
+  <% } else { %>
+  <div class="orders-list" style="padding:16px 16px 100px">
+    <% pendingOrders.forEach(order => { %>
+    <div class="order-card">
+      <div class="order-card-top">
+        <span class="order-id">#<%= String((order.id || order._id)).padStart(4,'0') %></span>
+        <span class="status-badge status-pending">⏳ En attente</span>
+      </div>
+      <% if (order.type === 'courses') { %>
+      <div class="order-route">
+        <span>🛍️ Courses / achats</span>
+        <span class="route-arrow">→</span>
+        <span><%= order.to_address %></span>
+      </div>
+      <% } else { %>
+      <div class="order-route">
+        <span>📍 <%= order.from_address %></span>
+        <span class="route-arrow">→</span>
+        <span><%= order.to_address %></span>
+      </div>
+      <% } %>
+      <div class="order-meta">
+        <span>📦 <%= order.size %></span>
+        <span style="color:var(--accent);font-weight:600">💵 <%= order.price %> DA</span>
+        <span>👤 <%= order.client_name %></span>
+      </div>
+      <form action="/livreur/commandes/<%= (order.id || order._id) %>/accepter" method="POST" style="margin-top:12px">
+        <button type="submit" class="btn-primary btn-full" style="padding:12px">✓ Accepter cette livraison</button>
+      </form>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/livreur/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/livreur/livraisons', icon: '🛵', label: 'Livraisons', active: false },
+    { href: '/livreur/commandes', icon: '🔍', label: 'Disponibles', active: true },
+    { href: '/livreur/stats', icon: '📊', label: 'Stats', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+socket.emit('livreur:register', <%- JSON.stringify(currentUser.id) %>);
+socket.on('new_order', () => location.reload());
+socket.on('order:taken', () => location.reload());
+</script>
+</body></html>

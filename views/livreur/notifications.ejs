@@ -1,0 +1,29 @@
+<%- include('../partials/head', { title: 'Notifications', bodyClass: 'page-app' }) %>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/livreur/dashboard" class="back-btn">← Retour</a>
+    <h1 class="page-title">Notifications</h1>
+  </header>
+  <div style="padding:16px 16px 100px">
+    <% if (notifications.length === 0) { %>
+    <div class="empty-state"><div class="empty-icon">🔔</div><p>Aucune notification</p></div>
+    <% } else { notifications.forEach(n => { %>
+    <div class="notif-item <%= n.read ? '' : 'unread' %>">
+      <div class="notif-item-icon"><%= n.type === 'new_order' ? '📦' : '📋' %></div>
+      <div>
+        <div class="notif-item-title"><%= n.title %></div>
+        <div class="notif-item-msg"><%= n.message %></div>
+        <div class="notif-item-time"><%= new Date(n.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) %></div>
+      </div>
+    </div>
+    <% }) } %>
+  </div>
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/livreur/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/livreur/livraisons', icon: '🛵', label: 'Livraisons', active: false },
+    { href: '/livreur/commandes', icon: '🔍', label: 'Disponibles', active: false },
+    { href: '/livreur/stats', icon: '📊', label: 'Stats', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+</body></html>

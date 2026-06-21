@@ -1,0 +1,67 @@
+<%- include('../partials/head', { title: 'Livraisons en cours', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/livreur/dashboard" class="back-btn">← Retour</a>
+    <h1 class="page-title">Livraisons</h1>
+  </header>
+
+  <div class="earnings-card" style="margin:16px">
+    <div class="earnings-inner">
+      <div>
+        <div class="earnings-label">Livraisons en cours</div>
+        <div class="earnings-num"><%= activeOrders.length %> <span class="earnings-currency">actives</span></div>
+        <div class="earnings-sub">Encaissement en cours: <%= activeCollected.toLocaleString('fr-FR') %> DA</div>
+      </div>
+      <span style="font-size:36px">🛵</span>
+    </div>
+  </div>
+
+  <div class="orders-list" style="padding:0 16px 100px">
+    <% if (activeOrders.length === 0) { %>
+    <div class="empty-state">
+      <div class="empty-icon">🛵</div>
+      <p>Aucune livraison en cours</p>
+      <a href="/livreur/commandes" class="btn-outline">Voir les commandes disponibles</a>
+    </div>
+    <% } else { %>
+      <% activeOrders.forEach(order => { %>
+      <a href="/livreur/commandes/<%= (order.id || order._id) %>" class="order-card order-card-active">
+        <div class="order-card-top">
+          <span class="order-id">#<%= String((order.id || order._id)).padStart(4,'0') %></span>
+          <span class="status-badge status-<%= order.status %>">
+            <%= {accepted:'✅ Accepté',picked_up: order.type === 'courses' ? '🛍️ Achats effectués' : '📦 Récupéré',delivering:'🛵 En livraison'}[order.status] %>
+          </span>
+        </div>
+        <% if (order.type === 'courses') { %>
+        <div class="order-route">
+          <span>🛍️ Courses / achats</span>
+          <span class="route-arrow">→</span>
+          <span><%= order.to_address %></span>
+        </div>
+        <% } else { %>
+        <div class="order-route">
+          <span>📍 <%= order.from_address %></span>
+          <span class="route-arrow">→</span>
+          <span><%= order.to_address %></span>
+        </div>
+        <% } %>
+        <div class="order-meta">
+          <span>👤 <%= order.client_name %></span>
+          <span>📞 <%= order.client_phone %></span>
+          <span style="color:var(--accent);font-weight:600">💵 <%= order.price %> DA cash</span>
+        </div>
+      </a>
+      <% }) %>
+    <% } %>
+  </div>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/livreur/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/livreur/livraisons', icon: '🛵', label: 'Livraisons', active: true },
+    { href: '/livreur/commandes', icon: '🔍', label: 'Disponibles', active: false },
+    { href: '/livreur/stats', icon: '📊', label: 'Stats', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+</body></html>

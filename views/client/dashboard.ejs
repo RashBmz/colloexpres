@@ -1,0 +1,200 @@
+<%- include('../partials/head', { title: 'Tableau de bord', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+
+<div class="app-layout">
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <p class="greeting-sub">Bonjour 👋</p>
+      <p class="greeting-name"><%= currentUser.name %></p>
+    </div>
+    <div class="top-bar-right">
+      <a href="/client/commandes" class="top-icon-btn">
+        📋
+        <% if (stats.pending > 0) { %><span class="icon-badge"><%= stats.pending %></span><% } %>
+      </a>
+    </div>
+  </header>
+
+  <div class="hero-banner">
+    <div class="hero-banner-content">
+      <h2>Livraison rapide<br>à Collo 🏃</h2>
+      <p>Paiement à la livraison — Pas de surprise</p>
+    </div>
+    <div class="hero-banner-moto">🛵</div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 16px">
+    <a href="/client/restaurants" class="quick-action-card" style="background:linear-gradient(135deg,#1a0d00,#2a1500);border-color:rgba(255,92,26,0.3)">
+      <span style="font-size:32px">🍔</span>
+      <div>
+        <div style="font-weight:700;font-size:15px">Commander</div>
+        <div style="font-size:11px;color:var(--muted)">10 restaurants</div>
+      </div>
+    </a>
+    <a href="/client/nouvelle-commande" class="quick-action-card" style="background:linear-gradient(135deg,#001a0d,#002515);border-color:rgba(0,230,118,0.2)">
+      <span style="font-size:32px">📦</span>
+      <div>
+        <div style="font-weight:700;font-size:15px">Colis & courses</div>
+        <div style="font-size:11px;color:var(--muted)">Envoyer, recevoir ou demander des achats</div>
+      </div>
+    </a>
+  </div>
+
+  <style>
+  .quick-action-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 14px;
+    display: flex; align-items: center; gap: 10px;
+    transition: all 0.2s; color: var(--text);
+  }
+  .quick-action-card:hover { transform: translateY(-2px); }
+  </style>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="strip-stat">
+      <span class="strip-num"><%= stats.total %></span>
+      <span class="strip-lbl">Commandes</span>
+    </div>
+    <div class="strip-div"></div>
+    <div class="strip-stat">
+      <span class="strip-num"><%= stats.delivered %></span>
+      <span class="strip-lbl">Livrées</span>
+    </div>
+    <div class="strip-div"></div>
+    <div class="strip-stat">
+      <span class="strip-num" style="color:var(--accent2)"><%= stats.pending %></span>
+      <span class="strip-lbl">En cours</span>
+    </div>
+  </div>
+
+  <!-- RESTAURANT HIGHLIGHTS -->
+  <div class="section">
+    <div class="section-header">
+      <h3>🔥 Populaire</h3>
+      <a href="/client/restaurants" class="see-all">Voir tous →</a>
+    </div>
+    <div class="popular-restos-grid">
+      <a href="/client/restaurants/la-voute" class="resto-mini-card">
+        <div class="rmc-cover">🏛️</div>
+        <div class="rmc-name">La Voûte</div>
+        <div class="rmc-cat">Tacos • Burgers • Pizza</div>
+        <div class="rmc-badge">⭐ 4.8</div>
+      </a>
+      <a href="/client/restaurants/shawarma-palace" class="resto-mini-card">
+        <div class="rmc-cover">🌮</div>
+        <div class="rmc-name">Shawarma Palace</div>
+        <div class="rmc-cat">Shawarma • Tacos</div>
+        <div class="rmc-badge">⭐ 4.7</div>
+      </a>
+      <a href="/client/restaurants/pizza-collo" class="resto-mini-card">
+        <div class="rmc-cover">🍕</div>
+        <div class="rmc-name">Pizza Collo</div>
+        <div class="rmc-cat">Pizzas au feu</div>
+        <div class="rmc-badge">⭐ 4.6</div>
+      </a>
+      <a href="/client/restaurants/chicken-house" class="resto-mini-card">
+        <div class="rmc-cover">🍗</div>
+        <div class="rmc-name">Chicken House</div>
+        <div class="rmc-cat">Poulet Crispy</div>
+        <div class="rmc-badge">⭐ 4.4</div>
+      </a>
+    </div>
+  </div>
+
+  <style>
+  .popular-restos-grid {
+    padding: 0 16px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .resto-mini-card {
+    min-width: 0;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); overflow: hidden;
+    transition: all 0.2s; color: var(--text); display: block;
+  }
+  .resto-mini-card:hover { border-color: rgba(255,92,26,0.3); transform: translateY(-2px); }
+  .rmc-cover { height: 82px; background: linear-gradient(135deg,#1a1a26,#252535); display:flex;align-items:center;justify-content:center;font-size:36px; }
+  .rmc-name { font-size: 13px; font-weight: 700; padding: 8px 10px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rmc-cat { font-size: 10px; color: var(--muted); padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rmc-badge { font-size: 11px; color: var(--accent2); padding: 6px 10px; }
+  </style>
+
+  <!-- RECENT ORDERS -->
+  <div class="section" style="margin-top:8px">
+    <div class="section-header">
+      <h3>Commandes récentes</h3>
+      <a href="/client/commandes" class="see-all">Tout voir →</a>
+    </div>
+
+    <% if (orders.length === 0) { %>
+    <div class="empty-state">
+      <div class="empty-icon">📦</div>
+      <p>Aucune commande pour l'instant</p>
+      <a href="/client/restaurants" class="btn-primary">Commander maintenant</a>
+    </div>
+    <% } else { %>
+    <div class="orders-list" style="padding:0 16px">
+      <% orders.slice(0, 3).forEach(order => { %>
+      <a href="/client/commandes/<%= order._id %>" class="order-card">
+        <div class="order-card-top">
+          <span class="order-id">#<%= String(order._id).slice(-6).toUpperCase() %></span>
+          <span class="status-badge status-<%= order.status %>">
+            <%= {pending:'En attente',accepted:'Accepté',picked_up:'Récupéré',delivering:'En livraison',delivered:'Livré ✓',cancelled:'Annulé'}[order.status] %>
+          </span>
+        </div>
+        <% if (order.type === 'food' && order.resto_name) { %>
+        <div class="order-route">
+          <span>🍔 <%= order.resto_name %></span>
+          <span class="route-arrow">→</span>
+          <span><%= order.to_address %></span>
+        </div>
+        <% } else { %>
+        <div class="order-route">
+          <span>📍 <%= order.from_address %></span>
+          <span class="route-arrow">→</span>
+          <span><%= order.to_address %></span>
+        </div>
+        <% } %>
+        <div class="order-meta">
+          <span>💵 <%= order.price %> DA</span>
+          <% if (order.livreur_name) { %><span>🛵 <%= order.livreur_name %></span><% } %>
+          <span>🕒 <%= new Date(order.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) %></span>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+
+  <%- include('../partials/client-cart-fab') %>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/client/dashboard', icon: '🏠', label: 'Accueil', active: true },
+    { href: '/client/restaurants', icon: '🍔', label: 'Restaurants', active: false },
+    { href: '/client/commandes', icon: '📋', label: 'Commandes', active: false, badge: stats.pending > 0 ? stats.pending : null },
+    { href: '/auth/logout', icon: '👤', label: 'Déco', active: false },
+  ]}) %>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+socket.on('order:accepted', ({ livreurName }) => showToast('🛵 Commande acceptée par ' + (livreurName||'un livreur') + ' !', 'success'));
+socket.on('order:status_update', ({ status }) => {
+  const labels = { picked_up:'📦 Colis récupéré !', delivering:'🛵 En route !', delivered:'🎉 Livré !' };
+  if (labels[status]) { showToast(labels[status], 'success'); setTimeout(() => location.reload(), 2000); }
+});
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4000);
+}
+</script>
+</body>
+</html>

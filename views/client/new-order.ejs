@@ -1,0 +1,293 @@
+<%- include('../partials/head', { title: 'Nouvelle commande', bodyClass: 'page-app' }) %>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+.map-container { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin-top: 10px; position: relative; }
+#map-from, #map-to { height: 200px; z-index: 1; }
+.map-hint { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 5px; }
+.map-coords { font-family: var(--font-m); font-size: 11px; color: var(--accent); margin-top: 4px; display: none; }
+.map-overlay-btn {
+  position: absolute; bottom: 10px; right: 10px; z-index: 10;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px; font-size: 12px;
+  color: var(--text2); cursor: pointer; backdrop-filter: blur(4px);
+}
+.request-kind-selector { display:flex; gap:0; margin:12px 16px 0; border-radius:var(--r-sm); overflow:hidden; border:1px solid var(--border); }
+.request-kind-btn { flex:1; padding:13px 12px; text-align:center; font-size:14px; font-weight:600; cursor:pointer; background:var(--surface); color:var(--muted); border:none; font-family:var(--font-b); transition:all 0.2s; }
+.request-kind-btn.active { background:var(--accent); color:#fff; }
+</style>
+<%- include('../partials/flash') %>
+
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/client/dashboard" class="back-btn">← Retour</a>
+    <h1 class="page-title">Colis & courses</h1>
+  </header>
+
+  <div class="request-kind-selector">
+    <button type="button" class="request-kind-btn active" id="kind-colis-btn" onclick="setRequestKind('colis')">📦 Envoyer / recevoir un colis</button>
+    <button type="button" class="request-kind-btn" id="kind-courses-btn" onclick="setRequestKind('courses')">🛍️ Demander des courses</button>
+  </div>
+
+  <form action="/client/commandes" method="POST" class="order-form" id="order-form">
+    <input type="hidden" name="request_kind" id="request_kind" value="colis">
+    <input type="hidden" name="from_lat" id="from_lat">
+    <input type="hidden" name="from_lng" id="from_lng">
+    <input type="hidden" name="to_lat" id="to_lat">
+    <input type="hidden" name="to_lng" id="to_lng">
+
+    <div class="form-card" style="padding-bottom:12px" id="request-kind-copy">
+      <h3 class="form-card-title">📦 Envoi ou reception de colis</h3>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55">Choisissez ce mode pour envoyer ou recevoir un colis avec un vrai point de ramassage et un point de livraison.</p>
+    </div>
+
+    <div class="form-card" id="pickup-card">
+      <h3 class="form-card-title">📍 Point de ramassage</h3>
+      <div class="address-point from">
+        <div class="point-fields" style="flex:1">
+          <input class="field-input" type="text" name="from_address" id="from_address_input" placeholder="Rue, Quartier, Batiment..." autocomplete="street-address" autocapitalize="words" maxlength="180" required>
+          <input class="field-input" type="text" name="from_quarter" id="from_quarter_input" placeholder="Quartier (ex: Centre-ville)" autocomplete="address-level3" autocapitalize="words" maxlength="80" style="margin-top:8px">
+        </div>
+      </div>
+      <div class="map-container">
+        <div id="map-from"></div>
+        <button type="button" class="map-overlay-btn" onclick="locateMe('from')">📍 Ma position</button>
+      </div>
+      <div class="map-hint">🖱️ Appuyez sur la carte pour placer le point de ramassage</div>
+      <div class="map-coords" id="from-coords"></div>
+    </div>
+
+    <div class="form-card">
+      <h3 class="form-card-title">📍 Point de livraison</h3>
+      <div class="address-point to">
+        <div class="point-fields" style="flex:1">
+          <input class="field-input" type="text" name="to_address" id="to_address_input" placeholder="Rue, Quartier, Batiment..." autocomplete="street-address" autocapitalize="words" maxlength="180" required>
+          <input class="field-input" type="text" name="to_quarter" placeholder="Quartier (ex: Cite Ennasr)" autocomplete="address-level3" autocapitalize="words" maxlength="80" style="margin-top:8px">
+        </div>
+      </div>
+      <div class="map-container">
+        <div id="map-to"></div>
+        <button type="button" class="map-overlay-btn" onclick="locateMe('to')">📍 Ma position</button>
+      </div>
+      <div class="map-hint">🖱️ Appuyez sur la carte pour placer le point de livraison</div>
+      <div class="map-coords" id="to-coords"></div>
+    </div>
+
+    <div class="form-card">
+      <h3 class="form-card-title">📦 Taille / volume</h3>
+      <div class="size-grid">
+        <label class="size-option active" id="size-petit">
+          <input type="radio" name="size" value="petit" checked onchange="updatePrice(150,'petit')">
+          <div class="size-icon">📦</div>
+          <div class="size-name">Petit</div>
+          <div class="size-desc" id="size-desc-petit">Documents, medicaments, petits achats</div>
+          <div class="size-price">150 DA</div>
+        </label>
+        <label class="size-option" id="size-moyen">
+          <input type="radio" name="size" value="moyen" onchange="updatePrice(250,'moyen')">
+          <div class="size-icon">📫</div>
+          <div class="size-name">Moyen</div>
+          <div class="size-desc" id="size-desc-moyen">Vêtements, sacs, courses moyennes</div>
+          <div class="size-price">250 DA</div>
+        </label>
+        <label class="size-option" id="size-grand">
+          <input type="radio" name="size" value="grand" onchange="updatePrice(400,'grand')">
+          <div class="size-icon">🗃️</div>
+          <div class="size-name">Grand</div>
+          <div class="size-desc" id="size-desc-grand">Gros colis, packs ou courses volumineuses</div>
+          <div class="size-price">400 DA</div>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3 class="form-card-title">📝 Description <span id="description-optional">(optionnel)</span></h3>
+      <textarea class="field-input" name="description" id="description_input" rows="3" placeholder="Ex: colis fragile, instructions speciales..." maxlength="500"></textarea>
+    </div>
+
+    <div class="form-card price-card">
+      <div class="price-info">
+        <div class="price-label">
+          <span>💵 Paiement à la livraison</span>
+          <span style="font-size:12px;color:var(--muted)">Aucun paiement en ligne</span>
+        </div>
+        <div class="price-amount" id="price-display">150 DA</div>
+      </div>
+      <button type="submit" class="btn-primary btn-full btn-lg" id="submit-btn">🚀 Envoyer la demande</button>
+    </div>
+  </form>
+
+  <%- include('../partials/client-cart-fab') %>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/client/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/client/restaurants', icon: '🍔', label: 'Restaurants', active: false },
+    { href: '/client/commandes', icon: '📋', label: 'Commandes', active: false },
+    { href: '/auth/logout', icon: '👤', label: 'Déco', active: false },
+  ]}) %>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const COLLO = [37.0014, 6.5620];
+const ZOOM = 14;
+let requestKind = 'colis';
+
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:24px;height:24px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>`,
+    iconSize: [24, 24], iconAnchor: [12, 12],
+  });
+}
+
+const mapFrom = L.map('map-from', { zoomControl: false }).setView(COLLO, ZOOM);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(mapFrom);
+L.control.zoom({ position: 'topright' }).addTo(mapFrom);
+
+let markerFrom = null;
+mapFrom.on('click', e => {
+  const { lat, lng } = e.latlng;
+  if (markerFrom) markerFrom.setLatLng([lat, lng]);
+  else markerFrom = L.marker([lat, lng], { icon: makeIcon('#ff5c1a'), draggable: true }).addTo(mapFrom);
+  markerFrom.on('dragend', ev => setFromCoords(ev.target.getLatLng().lat, ev.target.getLatLng().lng));
+  setFromCoords(lat, lng);
+});
+
+function setFromCoords(lat, lng) {
+  document.getElementById('from_lat').value = lat;
+  document.getElementById('from_lng').value = lng;
+  const c = document.getElementById('from-coords');
+  c.style.display = 'block';
+  c.textContent = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  reverseGeocode(lat, lng, 'from_address_input');
+}
+
+const mapTo = L.map('map-to', { zoomControl: false }).setView(COLLO, ZOOM);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(mapTo);
+L.control.zoom({ position: 'topright' }).addTo(mapTo);
+
+let markerTo = null;
+mapTo.on('click', e => {
+  const { lat, lng } = e.latlng;
+  if (markerTo) markerTo.setLatLng([lat, lng]);
+  else markerTo = L.marker([lat, lng], { icon: makeIcon('#00e676'), draggable: true }).addTo(mapTo);
+  markerTo.on('dragend', ev => setToCoords(ev.target.getLatLng().lat, ev.target.getLatLng().lng));
+  setToCoords(lat, lng);
+});
+
+function setToCoords(lat, lng) {
+  document.getElementById('to_lat').value = lat;
+  document.getElementById('to_lng').value = lng;
+  const c = document.getElementById('to-coords');
+  c.style.display = 'block';
+  c.textContent = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  reverseGeocode(lat, lng, 'to_address_input');
+}
+
+async function reverseGeocode(lat, lng, inputId) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+    const d = await r.json();
+    const addr = d.address;
+    const parts = [addr.road, addr.neighbourhood, addr.suburb, addr.city || addr.town || addr.village].filter(Boolean);
+    if (parts.length) document.getElementById(inputId).value = parts.join(', ');
+  } catch(e) {}
+}
+
+function locateMe(which) {
+  if (!navigator.geolocation) return alert('Geolocalisation non supportee');
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    if (which === 'from') {
+      mapFrom.setView([lat, lng], 16);
+      mapFrom.fireEvent('click', { latlng: { lat, lng } });
+    } else {
+      mapTo.setView([lat, lng], 16);
+      mapTo.fireEvent('click', { latlng: { lat, lng } });
+    }
+  }, () => alert('Impossible d obtenir votre position'));
+}
+
+function clearPickupData() {
+  document.getElementById('from_address_input').value = '';
+  document.getElementById('from_quarter_input').value = '';
+  document.getElementById('from_lat').value = '';
+  document.getElementById('from_lng').value = '';
+  document.getElementById('from-coords').style.display = 'none';
+  document.getElementById('from-coords').textContent = '';
+  if (markerFrom) {
+    mapFrom.removeLayer(markerFrom);
+    markerFrom = null;
+  }
+}
+
+function setPickupInputsEnabled(enabled) {
+  document.getElementById('from_address_input').disabled = !enabled;
+  document.getElementById('from_quarter_input').disabled = !enabled;
+  document.getElementById('from_lat').disabled = !enabled;
+  document.getElementById('from_lng').disabled = !enabled;
+  const pickupLocateBtn = document.querySelector('#pickup-card .map-overlay-btn');
+  if (pickupLocateBtn) pickupLocateBtn.disabled = !enabled;
+}
+
+function setRequestKind(kind) {
+  requestKind = kind === 'courses' ? 'courses' : 'colis';
+  document.getElementById('request_kind').value = requestKind;
+  document.getElementById('kind-colis-btn').classList.toggle('active', requestKind === 'colis');
+  document.getElementById('kind-courses-btn').classList.toggle('active', requestKind === 'courses');
+
+  const pickupCard = document.getElementById('pickup-card');
+  const pickupAddress = document.getElementById('from_address_input');
+  const copy = document.getElementById('request-kind-copy');
+  const description = document.getElementById('description_input');
+  const descriptionOptional = document.getElementById('description-optional');
+
+  if (requestKind === 'courses') {
+    pickupCard.style.display = 'none';
+    pickupAddress.required = false;
+    clearPickupData();
+    setPickupInputsEnabled(false);
+    copy.innerHTML = '<h3 class="form-card-title">🛍️ Courses et achats du quotidien</h3><p style="font-size:12px;color:var(--muted);line-height:1.55">Utilisez ce mode pour demander une pharmacie, une quincaillerie, une superette ou tout autre achat. Le point de ramassage n est pas necessaire.</p>';
+    description.placeholder = 'Ex: acheter des medicaments a la pharmacie de garde, des articles de superette, une quincaillerie, marque / quantite / details utiles...';
+    description.required = true;
+    descriptionOptional.textContent = '(obligatoire)';
+  } else {
+    pickupCard.style.display = 'block';
+    pickupAddress.required = true;
+    setPickupInputsEnabled(true);
+    copy.innerHTML = '<h3 class="form-card-title">📦 Envoi ou reception de colis</h3><p style="font-size:12px;color:var(--muted);line-height:1.55">Choisissez ce mode pour envoyer ou recevoir un colis avec un vrai point de ramassage et un point de livraison.</p>';
+    description.placeholder = 'Ex: colis fragile, instructions speciales...';
+    description.required = false;
+    descriptionOptional.textContent = '(optionnel)';
+  }
+
+  setTimeout(() => { mapFrom.invalidateSize(); mapTo.invalidateSize(); }, 180);
+}
+
+function updatePrice(price, size) {
+  document.getElementById('price-display').textContent = price + ' DA';
+  document.querySelectorAll('.size-option').forEach(el => el.classList.remove('active'));
+  document.getElementById('size-' + size).classList.add('active');
+}
+
+document.getElementById('order-form').addEventListener('submit', function() {
+  if (requestKind === 'courses') {
+    clearPickupData();
+    setPickupInputsEnabled(false);
+    document.getElementById('request_kind').value = 'courses';
+    document.getElementById('from_address_input').required = false;
+  } else {
+    setPickupInputsEnabled(true);
+    document.getElementById('request_kind').value = 'colis';
+    document.getElementById('from_address_input').required = true;
+  }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Envoi en cours...';
+});
+
+setRequestKind('colis');
+setTimeout(() => { mapFrom.invalidateSize(); mapTo.invalidateSize(); }, 300);
+</script>
+</body>
+</html>

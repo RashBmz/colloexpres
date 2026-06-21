@@ -1,0 +1,9 @@
+<nav class="bottom-nav">
+  <% navItems.forEach(item => { %>
+  <a href="<%= item.href %>" class="nav-item <%= item.active ? 'active' : '' %>">
+    <span class="nav-icon"><%= item.icon %></span>
+    <span class="nav-label"><%= item.label %></span>
+    <% if (item.badge) { %><span class="nav-badge"><%= item.badge %></span><% } %>
+  </a>
+  <% }); %>
+</nav>

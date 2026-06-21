@@ -1,0 +1,94 @@
+<%- include('../partials/head', { title: 'Connexion', bodyClass: 'page-auth' }) %>
+
+<div class="auth-wrapper">
+  <%- include('../partials/flash') %>
+
+  <div class="auth-card">
+    <div class="auth-card-header">
+      <a href="/" class="back-link"><- Retour</a>
+      <div class="auth-logo">🛵</div>
+      <h1 class="auth-title">
+        <% if (role === 'livreur') { %>Espace Livreur
+        <% } else if (role === 'admin') { %>Administration
+        <% } else { %>Connexion Client
+        <% } %>
+      </h1>
+      <p class="auth-sub">
+        <% if (role === 'livreur') { %>Connectez-vous avec votre identifiant livreur
+        <% } else if (role === 'admin') { %>Acces reserve aux administrateurs
+        <% } else { %>Bienvenue sur ColloExpress
+        <% } %>
+      </p>
+    </div>
+
+    <form action="/auth/login" method="POST" class="auth-form" novalidate>
+      <input type="hidden" name="role" value="<%= role %>">
+
+      <div class="field">
+        <label class="field-label">
+          <% if (role === 'livreur') { %>Identifiant (ex: livreur01)
+          <% } else if (role === 'admin') { %>Identifiant admin
+          <% } else { %>Numero de telephone
+          <% } %>
+        </label>
+        <input
+          class="field-input"
+          type="text"
+          name="phone"
+          placeholder="<%= role === 'client' ? '05 XX XX XX XX' : role === 'livreur' ? 'livreur01' : 'admin' %>"
+          autocomplete="username"
+          autocapitalize="off"
+          spellcheck="false"
+          inputmode="<%= role === 'client' ? 'tel' : 'text' %>"
+          maxlength="40"
+          required
+        >
+      </div>
+
+      <div class="field">
+        <label class="field-label">Mot de passe</label>
+        <div class="field-password">
+          <input class="field-input" type="password" name="password" placeholder="••••••••" autocomplete="current-password" minlength="4" maxlength="128" required id="pw-input">
+          <button type="button" class="pw-toggle" onclick="togglePw()" aria-label="Afficher ou masquer le mot de passe">👁</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary btn-full btn-lg">
+        Se connecter ->
+      </button>
+    </form>
+
+    <% if (role === 'client') { %>
+    <p class="auth-footer">Pas encore de compte ? <a href="/auth/register">Creer un compte gratuit</a></p>
+    <% } %>
+
+    <% if (role === 'livreur') { %>
+    <div class="demo-box">
+      <p>🔑 Comptes demo :</p>
+      <p>livreur01 / livreur02 ... livreur06 - mot de passe : <strong>1234</strong></p>
+    </div>
+    <% } %>
+
+    <% if (role === 'admin') { %>
+    <div class="demo-box">
+      <p>🔑 Demo : <strong>admin</strong> / <strong>admin123</strong></p>
+    </div>
+    <% } %>
+
+    <% if (role === 'client') { %>
+    <div class="demo-box">
+      <p>🔑 Demo client : <strong>0555000001</strong> / <strong>1234</strong></p>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+function togglePw() {
+  const input = document.getElementById('pw-input');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+</script>
+</body>
+</html>
+

@@ -1,0 +1,375 @@
+<%- include('../partials/head', { title: 'Tableau de bord Livreur', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+
+<div class="app-layout">
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <p class="greeting-sub">Livreur 🛵</p>
+      <p class="greeting-name"><%= currentUser.name %></p>
+    </div>
+    <div class="top-bar-right" style="display:flex;gap:8px;align-items:center">
+      <a href="/livreur/notifications" class="top-icon-btn">
+        🔔
+        <% if (unreadNotifs > 0) { %><span class="icon-badge"><%= unreadNotifs %></span><% } %>
+      </a>
+    </div>
+  </header>
+
+  <!-- AVAILABILITY TOGGLE -->
+  <div class="avail-card" id="avail-card" role="button" tabindex="0" aria-pressed="<%= livreur.available ? 'true' : 'false' %>" onclick="toggleAvail()" onkeydown="handleAvailKeydown(event)">
+    <div>
+      <div class="avail-title" id="avail-title">
+        <span id="avail-dot" class="avail-dot <%= livreur.available ? 'online' : 'offline' %>"></span>
+        <span id="avail-text"><%= livreur.available ? 'Vous êtes en ligne' : 'Vous êtes hors ligne' %></span>
+      </div>
+      <div class="avail-sub">Activez pour recevoir des livraisons</div>
+    </div>
+    <div class="toggle-wrap">
+      <div class="toggle-switch <%= livreur.available ? 'on' : '' %>" id="toggle-sw">
+        <div class="toggle-knob"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EARNINGS TODAY -->
+  <div class="earnings-card">
+    <div class="earnings-inner">
+      <div>
+        <% const dashboardDeliveryEarnings = todayOrders.reduce((sum, order) => sum + Number(order.delivery_fee ?? ((order.subtotal != null && order.price != null) ? (order.price - order.subtotal) : order.price ?? 0)), 0); %>
+        <% const dashboardCollected = todayOrders.reduce((sum, order) => sum + Number(order.price ?? 0), 0); %>
+        <div class="earnings-label">Gains livraison aujourd'hui</div>
+        <div class="earnings-num"><%= dashboardDeliveryEarnings.toLocaleString('fr-FR') %> <span class="earnings-currency">DA</span></div>
+        <div class="earnings-sub">Encaissement total: <%= dashboardCollected.toLocaleString('fr-FR') %> DA</div>
+      </div>
+      <span style="font-size:40px">💰</span>
+    </div>
+    <div class="earnings-stats">
+      <div class="e-stat">
+        <div class="e-num"><%= todayOrders.length %></div>
+        <div class="e-lbl">Aujourd'hui</div>
+      </div>
+      <div class="e-stat">
+        <div class="e-num"><%= livreur.total_deliveries %></div>
+        <div class="e-lbl">Total livraisons</div>
+      </div>
+      <div class="e-stat">
+        <div class="e-num"><%= livreur.rating %>⭐</div>
+        <div class="e-lbl">Note</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 6px">
+    <a href="/livreur/livraisons" class="quick-action-card" style="background:linear-gradient(135deg,#00151f,#08273a);border-color:rgba(79,195,247,0.22)">
+      <span style="font-size:28px">🛵</span>
+      <div>
+        <div style="font-weight:700;font-size:15px">Livraisons</div>
+        <div style="font-size:11px;color:var(--muted)"><%= performance.active_count %> en cours</div>
+      </div>
+    </a>
+    <a href="/livreur/stats" class="quick-action-card" style="background:linear-gradient(135deg,#1a1200,#2c1b00);border-color:rgba(255,179,71,0.22)">
+      <span style="font-size:28px">📊</span>
+      <div>
+        <div style="font-weight:700;font-size:15px">Mes stats</div>
+        <div style="font-size:11px;color:var(--muted)"><%= performance.period_stats.week.count %> cette semaine</div>
+      </div>
+    </a>
+  </div>
+
+  <style>
+  .quick-action-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 14px;
+    display: flex; align-items: center; gap: 10px;
+    transition: all 0.2s; color: var(--text);
+  }
+  .quick-action-card:hover { transform: translateY(-2px); }
+  </style>
+
+  <!-- ACTIVE ORDERS -->
+  <% if (activeOrders.length > 0) { %>
+  <div class="section">
+    <div class="section-header">
+      <h3>En cours (<%= activeOrders.length %>)</h3>
+    </div>
+    <div class="orders-list">
+      <% activeOrders.forEach(order => { %>
+      <a href="/livreur/commandes/<%= (order.id || order._id) %>" class="order-card order-card-active">
+        <div class="order-card-top">
+          <span class="order-id">#<%= String((order.id || order._id)).padStart(4,'0') %></span>
+          <span class="status-badge status-<%= order.status %>">
+            <%= {accepted:'✅ Accepté',picked_up:'📦 Récupéré',delivering:'🛵 En livraison'}[order.status] %>
+          </span>
+        </div>
+        <div class="order-route">
+          <span>📍 <%= order.from_address %></span>
+          <span class="route-arrow">→</span>
+          <span><%= order.to_address %></span>
+        </div>
+        <div class="order-meta">
+          <span>👤 <%= order.client_name %></span>
+          <span>📞 <%= order.client_phone %></span>
+          <span style="color:var(--accent);font-weight:600">💵 <%= order.price %> DA cash</span>
+        </div>
+        <div style="margin-top:10px">
+          <span class="btn-sm-inline">Voir détails →</span>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+  <% } else { %>
+  <div class="section">
+    <div class="waiting-state">
+      <div class="waiting-icon">🔔</div>
+      <p class="waiting-title">En attente de livraisons</p>
+      <p class="waiting-sub">Vous recevrez une notification dès qu'une nouvelle commande est disponible</p>
+      <a href="/livreur/commandes" class="btn-outline">Voir commandes disponibles</a>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- TODAY HISTORY -->
+  <% if (todayOrders.length > 0) { %>
+  <div class="section">
+    <div class="section-header">
+      <h3>Historique du jour</h3>
+      <a href="/livreur/historique" class="see-all">Tout →</a>
+    </div>
+    <div class="orders-list">
+      <% todayOrders.forEach(o => { %>
+      <div class="order-card">
+        <div class="order-card-top">
+          <span class="order-id">#<%= String(o.id).padStart(4,'0') %></span>
+          <span class="status-badge status-delivered">✓ Livré</span>
+        </div>
+        <div class="order-route">
+          <span>📍 <%= o.from_address %></span>
+          <span class="route-arrow">→</span>
+          <span><%= o.to_address %></span>
+        </div>
+        <div class="order-meta">
+          <span style="color:var(--green);font-weight:600">+<%= Number(o.delivery_fee ?? ((o.subtotal != null && o.price != null) ? (o.price - o.subtotal) : o.price ?? 0)) %> DA gain</span>
+          <span>Encaissement: <%= o.price %> DA</span>
+          <span>👤 <%= o.client_name %></span>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/livreur/dashboard', icon: '🏠', label: 'Accueil', active: true },
+    { href: '/livreur/livraisons', icon: '🛵', label: 'Livraisons', active: false },
+    { href: '/livreur/commandes', icon: '🔍', label: 'Disponibles', active: false },
+    { href: '/livreur/stats', icon: '📊', label: 'Stats', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     NOTIFICATION POPUP — NOUVELLE LIVRAISON
+════════════════════════════════════════════ -->
+<div class="notif-overlay" id="notif-overlay">
+  <div class="notif-card" id="notif-card">
+    <div class="notif-header">
+      <div class="notif-pulse-ring"></div>
+      <span class="notif-title">📦 Nouvelle livraison !</span>
+      <button class="notif-x" onclick="closeNotif()">✕</button>
+    </div>
+
+    <!-- Timer bar -->
+    <div class="timer-bar">
+      <div class="timer-fill" id="timer-fill"></div>
+    </div>
+
+    <div class="notif-order-ref" id="notif-ref">#0001</div>
+
+    <div class="notif-route-box">
+      <div class="notif-pt">
+        <div class="notif-dot from"></div>
+        <span id="notif-from">...</span>
+      </div>
+      <div class="notif-pt-line"></div>
+      <div class="notif-pt">
+        <div class="notif-dot to"></div>
+        <span id="notif-to">...</span>
+      </div>
+    </div>
+
+    <div class="notif-chips">
+      <div class="notif-chip">
+        <div class="chip-label">Taille</div>
+        <div class="chip-val" id="notif-size">Moyen</div>
+      </div>
+      <div class="notif-chip">
+        <div class="chip-label">Montant</div>
+        <div class="chip-val" id="notif-price" style="color:var(--accent)">250 DA</div>
+      </div>
+      <div class="notif-chip">
+        <div class="chip-label">Client</div>
+        <div class="chip-val" id="notif-client">-</div>
+      </div>
+    </div>
+
+    <div class="notif-actions">
+      <form method="POST" id="notif-form" action="">
+        <button type="submit" class="btn-accept" id="accept-btn">✓ Accepter la livraison</button>
+      </form>
+      <button class="btn-decline" onclick="closeNotif()">Ignorer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sound indicator -->
+<div id="sound-hint" style="display:none" class="sound-hint">🔔 Nouvelle commande!</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const livreurId = <%- JSON.stringify(currentUser.id) %>;
+const isAvailable = <%= livreur.available ? 'true' : 'false' %>;
+let notifTimeout = null;
+let currentAvail = isAvailable;
+let availRequestInFlight = false;
+
+// Register as livreur
+socket.emit('livreur:register', livreurId);
+
+// Listen for new orders
+socket.on('new_order', ({ order }) => {
+  if (!currentAvail) return;
+  showNotification(order);
+});
+
+// Order was taken by someone else
+socket.on('order:taken', ({ orderId, livreurId: takenBy }) => {
+  if (takenBy !== livreurId) {
+    closeNotif();
+    showToast('❌ Cette livraison a été prise par un autre livreur', 'error');
+  }
+});
+
+// Assigned directly by admin
+socket.on('order:assigned', ({ order }) => {
+  const orderId = (order.id || order._id) || order._id;
+  showToast('✅ Une commande vous a été assignée par l\'admin ! #' + String(orderId).padStart(4,'0'), 'success');
+  setTimeout(() => location.reload(), 2000);
+});
+
+function showNotification(order) {
+  const orderId = (order.id || order._id) || order._id;
+  if (!orderId) return;
+  document.getElementById('notif-ref').textContent = '#' + String(orderId).padStart(4,'0');
+  document.getElementById('notif-from').textContent = order.from_address;
+  document.getElementById('notif-to').textContent = order.to_address;
+  document.getElementById('notif-size').textContent = order.size.charAt(0).toUpperCase() + order.size.slice(1);
+  document.getElementById('notif-price').textContent = order.price + ' DA';
+  document.getElementById('notif-client').textContent = order.client_name || '-';
+  document.getElementById('notif-form').action = '/livreur/commandes/' + orderId + '/accepter';
+
+  // Reset & restart timer animation
+  const fill = document.getElementById('timer-fill');
+  fill.style.animation = 'none';
+  void fill.offsetWidth;
+  fill.style.animation = 'timerDrain 30s linear forwards';
+
+  document.getElementById('notif-overlay').classList.add('show');
+
+  // Vibrate if supported
+  if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+
+  // Play sound hint
+  const hint = document.getElementById('sound-hint');
+  hint.style.display = 'block';
+  setTimeout(() => hint.style.display = 'none', 3000);
+
+  // Auto-close after 31s
+  clearTimeout(notifTimeout);
+  notifTimeout = setTimeout(() => closeNotif(), 31000);
+}
+
+function closeNotif() {
+  document.getElementById('notif-overlay').classList.remove('show');
+  clearTimeout(notifTimeout);
+}
+
+function renderAvailState() {
+  const toggle = document.getElementById('toggle-sw');
+  const text = document.getElementById('avail-text');
+  const dot = document.getElementById('avail-dot');
+  const card = document.getElementById('avail-card');
+
+  toggle.classList.toggle('on', currentAvail);
+  dot.className = 'avail-dot ' + (currentAvail ? 'online' : 'offline');
+  text.textContent = currentAvail ? 'Vous êtes en ligne' : 'Vous êtes hors ligne';
+  card.setAttribute('aria-pressed', currentAvail ? 'true' : 'false');
+}
+
+function handleAvailKeydown(event) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    toggleAvail();
+  }
+}
+
+// Availability toggle
+async function toggleAvail() {
+  if (availRequestInFlight) return;
+
+  const previousAvail = currentAvail;
+  currentAvail = !currentAvail;
+  renderAvailState();
+  availRequestInFlight = true;
+
+  try {
+    socket.emit('livreur:availability', { livreurId, available: currentAvail });
+
+    const res = await fetch('/livreur/disponibilite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'available=' + (currentAvail ? '1' : '0')
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Erreur de mise a jour');
+    }
+
+    currentAvail = !!data.available;
+    renderAvailState();
+    showToast(currentAvail ? '🟢 Vous êtes maintenant en ligne' : '🔴 Vous êtes hors ligne', currentAvail ? 'success' : '');
+  } catch (error) {
+    currentAvail = previousAvail;
+    renderAvailState();
+    showToast('❌ Impossible de changer la disponibilité', 'error');
+  } finally {
+    availRequestInFlight = false;
+  }
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type ? 'toast-' + type : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 5000);
+}
+
+renderAvailState();
+
+// Prevent double-submit on accept
+document.getElementById('notif-form').addEventListener('submit', function() {
+  const btn = document.getElementById('accept-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Acceptation...';
+  clearTimeout(notifTimeout);
+});
+</script>
+</body>
+</html>
+
+

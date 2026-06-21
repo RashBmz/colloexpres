@@ -1,0 +1,88 @@
+<%- include('../partials/head', { title: 'Mes stats', bodyClass: 'page-app' }) %>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/livreur/dashboard" class="back-btn">← Retour</a>
+    <h1 class="page-title">Mes stats</h1>
+  </header>
+
+  <div class="earnings-card" style="margin:16px">
+    <div class="earnings-inner">
+      <div>
+        <div class="earnings-label">Gains livraison total</div>
+        <div class="earnings-num"><%= (performance.period_stats.all.gains || 0).toLocaleString('fr-FR') %> <span class="earnings-currency">DA</span></div>
+        <div class="earnings-sub">Encaissement total: <%= (performance.period_stats.all.collected || 0).toLocaleString('fr-FR') %> DA</div>
+      </div>
+      <span style="font-size:36px">📊</span>
+    </div>
+    <div class="earnings-stats">
+      <div class="e-stat">
+        <div class="e-num"><%= livreur.total_deliveries %></div>
+        <div class="e-lbl">Livraisons</div>
+      </div>
+      <div class="e-stat">
+        <div class="e-num"><%= performance.active_count %></div>
+        <div class="e-lbl">En cours</div>
+      </div>
+      <div class="e-stat">
+        <div class="e-num"><%= livreur.rating %>⭐</div>
+        <div class="e-lbl">Note</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:0 16px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <% const periods = [
+      { key: 'day', label: 'Jour' },
+      { key: 'week', label: 'Semaine' },
+      { key: 'month', label: 'Mois' },
+      { key: 'year', label: 'Année' },
+    ]; %>
+    <% periods.forEach(period => { const stat = performance.period_stats[period.key]; %>
+      <div class="form-card" style="padding:16px">
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px"><%= period.label %></div>
+        <div style="font-family:var(--font-d);font-size:34px;line-height:1;color:var(--accent)"><%= stat.count %></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">livraison(s)</div>
+        <div style="margin-top:12px;font-size:13px;color:var(--text2)">Gain: <strong style="color:var(--green)"><%= stat.gains.toLocaleString('fr-FR') %> DA</strong></div>
+        <div style="margin-top:4px;font-size:12px;color:var(--muted)">Encaissement: <%= stat.collected.toLocaleString('fr-FR') %> DA</div>
+      </div>
+    <% }) %>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h3>Dernières livraisons</h3>
+      <a href="/livreur/historique" class="see-all">Historique →</a>
+    </div>
+    <div class="orders-list" style="padding:0 16px 100px">
+      <% if (deliveredOrders.length === 0) { %>
+      <div class="empty-state"><div class="empty-icon">📊</div><p>Aucune livraison livrée pour le moment</p></div>
+      <% } else { deliveredOrders.forEach(order => { %>
+      <div class="order-card">
+        <div class="order-card-top">
+          <span class="order-id">#<%= String((order.id || order._id)).padStart(4,'0') %></span>
+          <span class="status-badge status-delivered">✓ Livré</span>
+        </div>
+        <div class="order-route">
+          <span>📍 <%= order.from_address %></span>
+          <span class="route-arrow">→</span>
+          <span><%= order.to_address %></span>
+        </div>
+        <div class="order-meta">
+          <span style="color:var(--green);font-weight:600">+<%= Number(order.delivery_fee ?? ((order.subtotal != null && order.price != null) ? (order.price - order.subtotal) : order.price ?? 0)) %> DA</span>
+          <span>Encaissement: <%= order.price %> DA</span>
+          <span><%= new Date(order.delivered_at || order.created_at).toLocaleDateString('fr-FR') %></span>
+        </div>
+      </div>
+      <% }) } %>
+    </div>
+  </div>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/livreur/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/livreur/livraisons', icon: '🛵', label: 'Livraisons', active: false },
+    { href: '/livreur/commandes', icon: '🔍', label: 'Disponibles', active: false },
+    { href: '/livreur/stats', icon: '📊', label: 'Stats', active: true },
+    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+  ]}) %>
+</div>
+</body></html>

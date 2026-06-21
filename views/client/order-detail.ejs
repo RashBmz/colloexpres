@@ -1,0 +1,333 @@
+<%
+function formatDeliveryDuration(startAt, endAt) {
+  if (!startAt || !endAt) return null;
+  const start = new Date(startAt);
+  const end = new Date(endAt);
+  const diffMs = end - start;
+  if (!Number.isFinite(diffMs) || diffMs <= 0) return null;
+  const totalMinutes = Math.round(diffMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0) return hours + ' h ' + String(minutes).padStart(2, '0') + ' min';
+  return totalMinutes + ' min';
+}
+const isFoodOrder = order.type === 'food' && order.resto_name;
+const isCoursesOrder = order.type === 'courses';
+const orderSubtotal = Number(order.subtotal != null ? order.subtotal : (order.delivery_fee != null ? Math.max(Number(order.price || 0) - Number(order.delivery_fee || 0), 0) : Number(order.price || 0)));
+const orderDeliveryFee = Number(order.delivery_fee != null ? order.delivery_fee : (order.subtotal != null ? Math.max(Number(order.price || 0) - Number(order.subtotal || 0), 0) : (order.type === 'food' ? 0 : Number(order.price || 0))));
+const orderTotal = Number(order.price || (orderSubtotal + orderDeliveryFee));
+const orderInvoiceLabel = order.type === 'food' ? 'Commande fast food' : 'Colis / courses';
+const deliveryTimerStart = order.accepted_at || order.created_at;
+const deliveryDuration = formatDeliveryDuration(deliveryTimerStart, order.delivered_at);
+%>
+<%- include('../partials/head', { title: 'Commande #' + String(order.id).padStart(4,'0'), bodyClass: 'page-app' }) %>
+<style>
+.invoice-panel {
+  margin-top: 2px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,92,26,0.10), rgba(17,17,24,0.96));
+  border: 1px solid rgba(255,92,26,0.18);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.24);
+}
+.invoice-kicker {
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 10px;
+}
+.invoice-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.invoice-row:last-of-type { border-bottom: none; }
+.invoice-row span:last-child {
+  font-family: var(--font-m);
+  font-weight: 700;
+}
+.invoice-row-muted { color: var(--text2); }
+.invoice-total {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.invoice-total-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.invoice-total-label strong { font-size: 15px; }
+.invoice-total-label span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+.invoice-total-amount {
+  font-family: var(--font-m);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+}
+</style>
+<%- include('../partials/flash') %>
+
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/client/commandes" class="back-btn">← Mes commandes</a>
+    <h1 class="page-title">#<%= String(order.id).padStart(4,'0') %></h1>
+  </header>
+
+  <div class="tracker-card">
+    <div class="tracker-header">
+      <span class="status-badge status-<%= order.status %> status-lg">
+        <%= {pending:'⏳ En attente de livreur',accepted:'✅ Livreur assigné',picked_up: isCoursesOrder ? '🛍️ Achats effectués' : '📦 Colis récupéré',delivering:'🛵 En route vers vous',delivered:'🎉 Livré !',cancelled:'❌ Annulé'}[order.status] %>
+      </span>
+    </div>
+
+    <div class="progress-steps" id="progress-steps">
+      <% const steps = ['pending','accepted','picked_up','delivering','delivered'];
+         const stepLabels = ['Commande passée','Livreur assigné', isCoursesOrder ? 'Achats effectués' : 'Colis récupéré','En livraison','Livré'];
+         const stepIcons = ['📋','✅', isCoursesOrder ? '🛍️' : '📦','🛵','🎉'];
+         const currentIdx = steps.indexOf(order.status);
+      %>
+      <% steps.forEach((step, i) => { %>
+      <div class="prog-step <%= i <= currentIdx ? 'done' : '' %> <%= i === currentIdx ? 'current' : '' %>">
+        <div class="prog-dot"><span><%= stepIcons[i] %></span></div>
+        <div class="prog-label"><%= stepLabels[i] %></div>
+        <% if (i < steps.length - 1) { %><div class="prog-line <%= i < currentIdx ? 'done' : '' %>"></div><% } %>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <% if (order.status === 'pending') { %>
+  <div class="detail-card" id="client-cancel-card">
+    <h3 class="detail-card-title">⚠️ Annulation</h3>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">
+      Vous pouvez annuler cette commande tant qu'aucun livreur ne l'a prise en charge.
+    </p>
+    <form action="/client/commandes/<%= order.id %>/annuler" method="POST">
+      <button type="submit" class="btn-outline btn-full" style="border-color:rgba(255,92,26,0.35);color:var(--accent)" onclick="return confirm('Annuler cette commande ?')">Annuler la commande</button>
+    </form>
+  </div>
+  <% } %>
+
+  <div class="detail-card">
+    <h3 class="detail-card-title">📍 Itinéraire</h3>
+    <div class="route-detail">
+      <% if (isFoodOrder) { %>
+      <div class="route-point">
+        <div class="route-dot from"></div>
+        <div>
+          <div class="route-point-label">Restaurant</div>
+          <div class="route-point-addr"><%= order.resto_name %></div>
+          <div class="route-point-quarter"><%= order.from_address %></div>
+        </div>
+      </div>
+      <div class="route-connector"></div>
+      <% } else if (!isCoursesOrder) { %>
+      <div class="route-point">
+        <div class="route-dot from"></div>
+        <div>
+          <div class="route-point-label">Ramassage</div>
+          <div class="route-point-addr"><%= order.from_address %></div>
+          <% if (order.from_quarter) { %><div class="route-point-quarter"><%= order.from_quarter %></div><% } %>
+        </div>
+      </div>
+      <div class="route-connector"></div>
+      <% } %>
+      <div class="route-point">
+        <div class="route-dot to"></div>
+        <div>
+          <div class="route-point-label"><%= isCoursesOrder ? 'Adresse du client' : 'Livraison' %></div>
+          <div class="route-point-addr"><%= order.to_address %></div>
+          <% if (order.to_quarter) { %><div class="route-point-quarter"><%= order.to_quarter %></div><% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if (order.livreur_name) { %>
+  <div class="detail-card">
+    <h3 class="detail-card-title">🛵 Votre livreur</h3>
+    <div class="livreur-info-row">
+      <div class="livreur-avatar-lg"><%= order.livreur_name[0] %></div>
+      <div>
+        <div class="livreur-name-big"><%= order.livreur_name %></div>
+        <div class="livreur-phone"><a href="tel:<%= order.livreur_phone %>">📞 <%= order.livreur_phone %></a></div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="detail-card">
+    <h3 class="detail-card-title">💵 Facture</h3>
+    <div class="invoice-panel">
+      <div class="invoice-kicker">Paiement a la livraison</div>
+      <div class="invoice-row invoice-row-muted">
+        <span><%= orderInvoiceLabel %></span>
+        <span><%= orderSubtotal.toLocaleString('fr-FR') %> DA</span>
+      </div>
+      <div class="invoice-row invoice-row-muted">
+        <span>Frais de livraison</span>
+        <span><%= orderDeliveryFee.toLocaleString('fr-FR') %> DA</span>
+      </div>
+      <div class="invoice-total">
+        <div class="invoice-total-label">
+          <strong>Total cash</strong>
+          <span>Montant a regler</span>
+        </div>
+        <div class="invoice-total-amount"><%= orderTotal.toLocaleString('fr-FR') %> DA</div>
+      </div>
+    </div>
+  </div>
+
+  <% if (order.status === 'delivered') { %>
+  <div class="detail-card">
+    <h3 class="detail-card-title">⏱️ Compte rendu de livraison</h3>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Prise en charge</span>
+        <span class="meta-value"><%= new Date(deliveryTimerStart).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) %></span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Livrée le</span>
+        <span class="meta-value"><%= order.delivered_at ? new Date(order.delivered_at).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '-' %></span>
+      </div>
+      <div class="meta-item" style="grid-column:1/-1">
+        <span class="meta-label">Temps de livraison</span>
+        <span class="meta-value" style="color:var(--accent);font-weight:800"><%= deliveryDuration || 'Indisponible' %></span>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="detail-card">
+    <h3 class="detail-card-title">📋 Détails</h3>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Référence</span>
+        <span class="meta-value">#<%= String(order.id).padStart(4,'0') %></span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Taille</span>
+        <span class="meta-value"><%= order.size.charAt(0).toUpperCase() + order.size.slice(1) %></span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Total</span>
+        <span class="meta-value" style="color:var(--accent)"><%= orderTotal.toLocaleString('fr-FR') %> DA</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Paiement</span>
+        <span class="meta-value">
+          <%= order.payment_status === 'collected' ? '✅ Collecté' : '💵 À la livraison' %>
+        </span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Commandé le</span>
+        <span class="meta-value"><%= new Date(order.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) %></span>
+      </div>
+      <% if (order.description) { %>
+      <div class="meta-item" style="grid-column:1/-1">
+        <span class="meta-label">Description</span>
+        <span class="meta-value"><%= order.description %></span>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <%- include('../partials/client-cart-fab') %>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/client/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/client/nouvelle-commande', icon: '📦', label: 'Commander', active: false },
+    { href: '/client/commandes', icon: '📋', label: 'Commandes', active: true },
+    { href: '/auth/logout', icon: '👤', label: 'Déco', active: false },
+  ]}) %>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const clientTrackOrderId = <%- JSON.stringify(order.id) %>;
+const foodCartStorageKey = 'colloexpress_food_cart_' + <%- JSON.stringify(currentUser.id) %>;
+const pendingCartClearKey = foodCartStorageKey + '_pending_submit';
+const isCoursesOrder = <%- JSON.stringify(order.type === 'courses') %>;
+
+socket.emit('client:track', clientTrackOrderId);
+
+try {
+  if (<%- JSON.stringify(order.type || '') %> === 'food') {
+    const pending = JSON.parse(sessionStorage.getItem(pendingCartClearKey) || 'null');
+    const isRecent = pending && (Date.now() - Number(pending.submittedAt || 0) < 60 * 60 * 1000);
+    if (isRecent && pending.restoId === <%- JSON.stringify(order.resto_id || '') %>) {
+      localStorage.removeItem(foodCartStorageKey);
+      sessionStorage.removeItem(pendingCartClearKey);
+    }
+  }
+} catch (error) {
+  sessionStorage.removeItem(pendingCartClearKey);
+}
+
+socket.on('order:status_update', ({ status }) => {
+  const labels = {
+    pending:'⏳ En attente de livreur',
+    accepted:'✅ Livreur assigné',
+    picked_up: isCoursesOrder ? '🛍️ Achats effectués' : '📦 Colis récupéré',
+    delivering:'🛵 En route vers vous',
+    delivered:'🎉 Livré !',
+    cancelled:'❌ Annulé'
+  };
+  const badge = document.querySelector('.status-badge');
+  if (badge) {
+    badge.textContent = labels[status] || status;
+    badge.className = 'status-badge status-' + status + ' status-lg';
+  }
+
+  const steps = ['pending','accepted','picked_up','delivering','delivered'];
+  const idx = steps.indexOf(status);
+  document.querySelectorAll('.prog-step').forEach((el, i) => {
+    el.classList.toggle('done', idx >= 0 && i <= idx);
+    el.classList.toggle('current', i === idx);
+  });
+  document.querySelectorAll('.prog-line').forEach((el, i) => {
+    el.classList.toggle('done', idx >= 0 && i < idx);
+  });
+
+  const cancelCard = document.getElementById('client-cancel-card');
+  if (cancelCard && status !== 'pending') {
+    cancelCard.remove();
+  }
+});
+
+socket.on('order:accepted', ({ livreurName }) => {
+  showToast('🛵 ' + (livreurName || 'Un livreur') + ' a accepté votre commande !', 'success');
+  setTimeout(() => location.reload(), 1200);
+});
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 5000);
+}
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,44 @@
+<%- include('../partials/head', { title: 'Creer un compte', bodyClass: 'page-auth' }) %>
+
+<div class="auth-wrapper">
+  <%- include('../partials/flash') %>
+
+  <div class="auth-card">
+    <div class="auth-card-header">
+      <a href="/auth/login?role=client" class="back-link"><- Retour</a>
+      <div class="auth-logo">📦</div>
+      <h1 class="auth-title">Nouveau compte</h1>
+      <p class="auth-sub">Creez votre compte client gratuitement</p>
+    </div>
+
+    <form action="/auth/register" method="POST" class="auth-form" novalidate>
+      <div class="field">
+        <label class="field-label">Nom complet</label>
+        <input class="field-input" type="text" name="name" placeholder="Votre nom et prenom" autocomplete="name" autocapitalize="words" maxlength="80" required>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Numero de telephone</label>
+        <input class="field-input" type="tel" name="phone" placeholder="05 XX XX XX XX" autocomplete="tel" inputmode="tel" maxlength="40" required>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Mot de passe</label>
+        <input class="field-input" type="password" name="password" placeholder="Minimum 6 caracteres" autocomplete="new-password" minlength="6" maxlength="128" required>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Confirmer le mot de passe</label>
+        <input class="field-input" type="password" name="confirm_password" placeholder="Repetez le mot de passe" autocomplete="new-password" minlength="6" maxlength="128" required>
+      </div>
+
+      <button type="submit" class="btn-primary btn-full btn-lg">
+        Creer mon compte ->
+      </button>
+    </form>
+
+    <p class="auth-footer">Deja un compte ? <a href="/auth/login?role=client">Se connecter</a></p>
+  </div>
+</div>
+</body>
+</html>

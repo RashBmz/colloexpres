@@ -1,0 +1,92 @@
+<%- include('partials/head', { title: 'Livraison rapide à Collo', bodyClass: 'page-landing' }) %>
+
+<div class="landing-bg"></div>
+<div class="grid-pattern"></div>
+
+<main class="landing-main">
+  <%- include('partials/flash') %>
+
+  <div class="landing-hero">
+    <div class="logo-badge anim-fade-up" style="animation-delay:0s">
+      <div class="logo-dot"></div>
+      <span>Collo · Skikda 🇩🇿</span>
+    </div>
+
+    <h1 class="hero-title anim-fade-up" style="animation-delay:0.1s">
+      COLLO<br><span class="gradient-text">EXPRESS</span>
+    </h1>
+
+    <p class="hero-sub anim-fade-up" style="animation-delay:0.2s">
+      Livraison rapide à <strong>Collo</strong> et ses environs.<br>
+      Paiement cash à la livraison. Simple & fiable.
+    </p>
+
+    <div class="cta-group anim-fade-up" style="animation-delay:0.3s">
+      <a href="/auth/login?role=client" class="btn-primary btn-lg">
+        <span>📦</span> Connexion / Inscription client
+      </a>
+      <a href="/auth/login?role=livreur" class="btn-ghost btn-lg">
+        <span>🛵</span> Espace Livreur
+      </a>
+    </div>
+
+    <p class="anim-fade-up" style="animation-delay:0.35s;font-size:12px;color:var(--muted);margin-top:14px;text-align:center">
+      Un seul accès pour commander, suivre vos livraisons et gérer votre compte client.
+    </p>
+
+    <div class="stats-row anim-fade-up" style="animation-delay:0.4s">
+      <div class="stat-item">
+        <div class="stat-num">6</div>
+        <div class="stat-lbl">Livreurs</div>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat-item">
+        <div class="stat-num">&lt; 1H</div>
+        <div class="stat-lbl">Délai moyen</div>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat-item">
+        <div class="stat-num">Cash</div>
+        <div class="stat-lbl">Paiement</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <section class="landing-features">
+    <div class="feat-tag">Pourquoi nous choisir</div>
+    <h2 class="feat-title">Livraison simple &amp;<br>100% locale</h2>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <h3>Réponse instantanée</h3>
+        <p>Le premier livreur disponible prend votre commande en temps réel.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💵</div>
+        <h3>Paiement à la livraison</h3>
+        <p>Aucun paiement en ligne. Vous réglez directement à la réception.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📍</div>
+        <h3>Suivi en direct</h3>
+        <p>Suivez votre colis étape par étape depuis votre téléphone.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🛵</div>
+        <h3>Équipe locale</h3>
+        <p>Des livreurs de Collo qui connaissent chaque rue de la ville.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Admin link -->
+  <div style="text-align:center;padding:20px 0 60px">
+    <a href="/auth/login?role=admin" style="color:var(--muted);font-size:12px;text-decoration:none;">⚙️ Administration</a>
+  </div>
+</main>
+
+<script src="/js/landing.js"></script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<%
+function restoImage(id) {
+  const map = {
+    'la-voute': 'https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg',
+    'collo-burger': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+    'pizza-collo': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
+    'snack-el-bahar': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fish_sandwich.jpg',
+    'shawarma-palace': 'https://commons.wikimedia.org/wiki/Special:FilePath/Spicy_Shawarma.jpg',
+    'chicken-house': 'https://commons.wikimedia.org/wiki/Special:FilePath/Boneless_Fried_Chicken.jpg',
+    'le-gourmet': 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
+    'snack-central': 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
+    'pizza-express': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
+    'fast-delice': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+  };
+  return map[id] || 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG';
+}
+%>
+<%- include('../partials/head', { title: 'Restaurants', bodyClass: 'page-app' }) %>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+#resto-map { height: 220px; border-radius: var(--r); overflow: hidden; border: 1px solid var(--border); margin: 0 16px 4px; }
+.resto-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden; margin-bottom: 12px;
+  transition: all 0.2s; display: block; color: var(--text);
+}
+.resto-card:hover { border-color: rgba(255,92,26,0.3); transform: translateY(-1px); }
+.resto-card.closed { opacity: 0.6; }
+.resto-cover {
+  height: 116px;
+  background: linear-gradient(135deg, #191a28, #202438 55%, #11263a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.resto-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.15), transparent 34%);
+  pointer-events: none;
+}
+.resto-cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.resto-open-badge {
+  position: absolute; top: 10px; right: 10px;
+  padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600;
+  z-index: 1;
+}
+.open-yes { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+.open-no  { background: rgba(255,68,68,0.15); color: #ff6b6b; border: 1px solid rgba(255,68,68,0.3); }
+.resto-body { padding: 14px 16px; }
+.resto-name { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+.resto-cat { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.resto-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+.resto-meta span { font-size: 12px; color: var(--text2); }
+.resto-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.resto-tag {
+  padding: 3px 9px; border-radius: 100px; font-size: 11px;
+  background: rgba(255,92,26,0.1); color: var(--accent);
+  border: 1px solid rgba(255,92,26,0.2);
+}
+.resto-tag.popular { background: rgba(255,179,71,0.1); color: var(--accent2); border-color: rgba(255,179,71,0.2); }
+.section-tab { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; }
+.section-tab::-webkit-scrollbar { display: none; }
+.stab {
+  padding: 7px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  transition: all 0.2s;
+  cursor: pointer;
+  font-family: var(--font-b);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.stab img { width: 18px; height: 18px; border-radius: 999px; object-fit: cover; }
+.stab.active { background: var(--accent); border-color: var(--accent); color: white; }
+.map-marker {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  background: #1b2330;
+}
+.map-marker img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cart-fab {
+  position: fixed;
+  right: max(16px, calc((100vw - 480px) / 2 + 16px));
+  bottom: 94px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #ff8c42);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 12px 30px rgba(255,92,26,0.35);
+  cursor: pointer;
+  z-index: 220;
+  transition: transform 0.2s ease;
+}
+.cart-fab:hover { transform: translateY(-2px) scale(1.02); }
+.cart-fab.is-empty {
+  background: rgba(255,255,255,0.08);
+  color: var(--text2);
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+.cart-fab[hidden] { display: none; }
+.cart-fab-icon { font-size: 24px; line-height: 1; }
+.cart-fab-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: white;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255,92,26,0.18);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+.cart-fab.is-empty .cart-fab-count {
+  background: rgba(255,255,255,0.12);
+  color: var(--text2);
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: none;
+}
+</style>
+<%- include('../partials/flash') %>
+
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/client/dashboard" class="back-btn">← Accueil</a>
+    <h1 class="page-title">Restaurants</h1>
+  </header>
+
+  <div id="resto-map"></div>
+  <p style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px">📍 Restaurants à Collo - appuyez pour voir</p>
+
+  <div class="section-tab">
+    <button class="stab active" onclick="filterRestos('all', this)">Tous (<%= restaurants.length %>)</button>
+    <button class="stab" onclick="filterRestos('open', this)">Ouverts</button>
+    <button class="stab" onclick="filterRestos('burger', this)"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg" alt="Burgers" loading="lazy"><span>Burgers</span></button>
+    <button class="stab" onclick="filterRestos('pizza', this)"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg" alt="Pizzas" loading="lazy"><span>Pizzas</span></button>
+    <button class="stab" onclick="filterRestos('tacos', this)"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg" alt="Tacos" loading="lazy"><span>Tacos</span></button>
+  </div>
+
+  <div style="padding:4px 16px 100px" id="restos-list">
+    <% restaurants.forEach(r => { const imageSrc = restoImage(r.id); %>
+    <a href="/client/restaurants/<%= r.id %>" class="resto-card <%= r.open ? '' : 'closed' %>" data-cat="<%= r.category.toLowerCase() %>" data-open="<%= r.open %>">
+      <div class="resto-cover">
+        <img class="resto-cover-image" src="<%= imageSrc %>" alt="<%= r.name %>" loading="lazy">
+        <span class="resto-open-badge <%= r.open ? 'open-yes' : 'open-no' %>">
+          <%= r.open ? 'Ouvert' : 'Fermé' %>
+        </span>
+      </div>
+      <div class="resto-body">
+        <div class="resto-name"><%= r.name %></div>
+        <div class="resto-cat"><%= r.category %></div>
+        <div class="resto-meta">
+          <span>⭐ <%= r.rating %></span>
+          <span>🕒 <%= r.deliveryTime %></span>
+          <span>🛵 <%= r.deliveryFee %> DA livraison</span>
+          <span>💵 Min. <%= r.minOrder %> DA</span>
+        </div>
+        <% if (r.tags && r.tags.length) { %>
+        <div class="resto-tags">
+          <% r.tags.forEach(t => { %><span class="resto-tag <%= t==='Populaire'?'popular':'' %>"><%= t %></span><% }) %>
+        </div>
+        <% } %>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+
+  <button class="cart-fab is-empty" id="restaurants-cart-fab" type="button" onclick="openStoredCart()">
+    <span class="cart-fab-icon">🛒</span>
+    <span class="cart-fab-count" id="restaurants-cart-count">0</span>
+  </button>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/client/dashboard', icon: '🏠', label: 'Accueil', active: false },
+    { href: '/client/restaurants', icon: '🍔', label: 'Restaurants', active: true },
+    { href: '/client/commandes', icon: '📋', label: 'Commandes', active: false },
+    { href: '/auth/logout', icon: '👤', label: 'Déco', active: false },
+  ]}) %>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const RESTOS = <%- JSON.stringify(restaurants.map((r) => ({ id: r.id, name: r.name, lat: r.lat, lng: r.lng, image: restoImage(r.id), open: r.open }))) %>;
+const COLLO = [37.0014, 6.5620];
+
+const map = L.map('resto-map', { zoomControl: false, scrollWheelZoom: false }).setView(COLLO, 14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+RESTOS.forEach((r) => {
+  const icon = L.divIcon({
+    className: '',
+    html: `<div class="map-marker" style="outline:${r.open ? '2px solid #ff5c1a' : '2px solid #666'}"><img src="${r.image}" alt="${r.name}"></div>`,
+    iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
+  });
+  L.marker([r.lat, r.lng], { icon })
+    .addTo(map)
+    .bindPopup(`<b>${r.name}</b><br><a href="/client/restaurants/${r.id}" style="color:#ff5c1a">Voir le menu →</a>`)
+    .openPopup;
+});
+
+setTimeout(() => map.invalidateSize(), 300);
+
+const CART_STORAGE_KEY = 'colloexpress_food_cart_' + <%- JSON.stringify(currentUser.id) %>;
+
+function readStoredCart() {
+  try {
+    return JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || 'null');
+  } catch (error) {
+    return null;
+  }
+}
+
+function getStoredCartQty(cart) {
+  if (!cart || !Array.isArray(cart.items)) return 0;
+  return cart.items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+}
+
+function refreshStoredCartShortcut() {
+  const fab = document.getElementById('restaurants-cart-fab');
+  const count = document.getElementById('restaurants-cart-count');
+  const storedCart = readStoredCart();
+  const qty = getStoredCartQty(storedCart);
+
+  count.textContent = qty > 99 ? '99+' : String(qty || 0);
+  fab.classList.toggle('is-empty', qty === 0);
+  fab.title = qty > 0 && storedCart && storedCart.restoId
+    ? 'Revenir au panier de ' + (storedCart.restoName || 'votre restaurant')
+    : 'Panier vide';
+}
+
+function openStoredCart() {
+  const storedCart = readStoredCart();
+  if (!storedCart || !getStoredCartQty(storedCart) || !storedCart.restoId) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-error';
+    toast.textContent = 'Votre panier est vide';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 2500);
+    return;
+  }
+  window.location.href = '/client/restaurants/' + encodeURIComponent(storedCart.restoId) + '?openCart=1';
+}
+
+function filterRestos(filter, btn) {
+  document.querySelectorAll('.stab').forEach((entry) => entry.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.resto-card').forEach((card) => {
+    const cat = card.dataset.cat;
+    const open = card.dataset.open === 'true';
+    let show = true;
+    if (filter === 'open' && !open) show = false;
+    if (filter === 'burger' && !cat.includes('burger')) show = false;
+    if (filter === 'pizza' && !cat.includes('pizza')) show = false;
+    if (filter === 'tacos' && !cat.includes('tacos')) show = false;
+    card.style.display = show ? 'block' : 'none';
+  });
+}
+
+refreshStoredCartShortcut();
+window.addEventListener('focus', refreshStoredCartShortcut);
+</script>
+</body>
+</html>
+
