@@ -1,10 +1,111 @@
 <%- include('../partials/head', { title: 'Commandes disponibles', bodyClass: 'page-app' }) %>
 <%- include('../partials/flash') %>
+<style>
+.available-list { padding: 16px 16px 100px; }
+.available-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.available-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.available-id { font-weight: 800; color: var(--text); }
+.available-time { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+.available-price {
+  font-family: var(--font-d);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.available-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(255,179,71,0.1);
+  border: 1px solid rgba(255,179,71,0.24);
+  color: var(--accent2);
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.available-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 11px 12px;
+  margin-top: 8px;
+}
+.available-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.available-value {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.45;
+}
+.route-clean {
+  display: grid;
+  gap: 8px;
+}
+.route-line {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.route-kicker { color: var(--muted); font-size: 12px; }
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.info-pill {
+  background: rgba(255,255,255,0.035);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 10px;
+}
+.info-pill-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+.info-pill-value {
+  font-size: 13px;
+  color: var(--text2);
+  overflow-wrap: anywhere;
+}
+.accept-wrap { margin-top: 12px; }
+@media (max-width: 420px) {
+  .available-head { align-items: stretch; }
+  .available-price { font-size: 23px; }
+  .route-line { grid-template-columns: 72px 1fr; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
 <div class="app-layout">
   <header class="top-bar">
     <a href="/livreur/dashboard" class="back-btn">← Retour</a>
     <h1 class="page-title">Disponibles (<%= pendingOrders.length %>)</h1>
   </header>
+
   <% if (pendingOrders.length === 0) { %>
   <div class="empty-state">
     <div class="empty-icon">🔔</div>
@@ -12,44 +113,91 @@
     <a href="/livreur/dashboard" class="btn-outline">Retour au tableau de bord</a>
   </div>
   <% } else { %>
-  <div class="orders-list" style="padding:16px 16px 100px">
+  <div class="available-list">
     <% pendingOrders.forEach(order => { %>
-    <div class="order-card">
-      <div class="order-card-top">
-        <span class="order-id">#<%= String((order.id || order._id)).padStart(4,'0') %></span>
-        <span class="status-badge status-pending">⏳ En attente</span>
+    <% const orderCreatedAt = order.created_at ? new Date(order.created_at) : null; %>
+    <% const hasValidOrderDate = orderCreatedAt && !Number.isNaN(orderCreatedAt.getTime()); %>
+    <% const algeriaDateOptions = { timeZone: 'Africa/Algiers', day: '2-digit', month: '2-digit', year: 'numeric' }; %>
+    <% const algeriaTimeOptions = { timeZone: 'Africa/Algiers', hour: '2-digit', minute: '2-digit', hour12: false }; %>
+    <% const orderDateLabel = hasValidOrderDate ? orderCreatedAt.toLocaleDateString('fr-FR', algeriaDateOptions) : 'Date inconnue'; %>
+    <% const orderTimeLabel = hasValidOrderDate ? orderCreatedAt.toLocaleTimeString('fr-FR', algeriaTimeOptions) : ''; %>
+    <% const isCourses = order.type === 'courses'; %>
+    <% const orderTypeLabel = order.type === 'food' ? 'Restaurant' : (isCourses ? 'Courses / achats' : 'Colis'); %>
+    <% const pickupLabel = isCourses ? 'Achat a effectuer' : (order.from_address || 'Adresse non indiquee'); %>
+    <% const deliveryLabel = order.to_address || 'Adresse non indiquee'; %>
+    <% const descriptionLabel = order.description || order.notes || ''; %>
+
+    <div class="available-card">
+      <div class="available-head">
+        <div>
+          <div class="available-id">Commande #<%= String((order.id || order._id)).padStart(4,'0') %></div>
+          <div class="available-time">
+            <%= orderDateLabel %><% if (orderTimeLabel) { %> a <%= orderTimeLabel %><% } %>
+            <span style="color:var(--muted)"> · Heure Algerie</span>
+          </div>
+          <span class="available-status">En attente</span>
+        </div>
+        <div class="available-price"><%= Number(order.price || 0).toLocaleString('fr-FR') %> DA</div>
       </div>
-      <% if (order.type === 'courses') { %>
-      <div class="order-route">
-        <span>🛍️ Courses / achats</span>
-        <span class="route-arrow">→</span>
-        <span><%= order.to_address %></span>
+
+      <div class="available-section">
+        <div class="available-label">Trajet</div>
+        <div class="route-clean">
+          <div class="route-line">
+            <div class="route-kicker"><%= isCourses ? 'Demande' : 'Depart' %></div>
+            <div class="available-value"><%= pickupLabel %><% if (!isCourses && order.from_quarter) { %><br><span style="color:var(--muted)"><%= order.from_quarter %></span><% } %></div>
+          </div>
+          <div class="route-line">
+            <div class="route-kicker">Livraison</div>
+            <div class="available-value"><%= deliveryLabel %><% if (order.to_quarter) { %><br><span style="color:var(--muted)"><%= order.to_quarter %></span><% } %></div>
+          </div>
+        </div>
       </div>
-      <% } else { %>
-      <div class="order-route">
-        <span>📍 <%= order.from_address %></span>
-        <span class="route-arrow">→</span>
-        <span><%= order.to_address %></span>
+
+      <div class="info-grid">
+        <div class="info-pill">
+          <div class="info-pill-label">Type</div>
+          <div class="info-pill-value"><%= orderTypeLabel %></div>
+        </div>
+        <div class="info-pill">
+          <div class="info-pill-label">Taille</div>
+          <div class="info-pill-value"><%= order.size || 'Standard' %></div>
+        </div>
+        <div class="info-pill">
+          <div class="info-pill-label">Client</div>
+          <div class="info-pill-value"><%= order.client_name || 'Client' %></div>
+        </div>
+        <% if (order.client_phone) { %>
+        <div class="info-pill">
+          <div class="info-pill-label">Telephone</div>
+          <div class="info-pill-value"><%= order.client_phone %></div>
+        </div>
+        <% } %>
+      </div>
+
+      <% if (order.resto_name || descriptionLabel || order.notes) { %>
+      <div class="available-section">
+        <div class="available-label">Details</div>
+        <% if (order.resto_name) { %><div class="available-value"><strong><%= order.resto_name %></strong></div><% } %>
+        <% if (descriptionLabel) { %><div class="available-value" style="margin-top:4px"><%= descriptionLabel %></div><% } %>
+        <% if (order.notes && order.notes !== descriptionLabel) { %><div class="available-value" style="margin-top:4px;color:var(--text2)"><%= order.notes %></div><% } %>
       </div>
       <% } %>
-      <div class="order-meta">
-        <span>📦 <%= order.size %></span>
-        <span style="color:var(--accent);font-weight:600">💵 <%= order.price %> DA</span>
-        <span>👤 <%= order.client_name %></span>
-      </div>
-      <form action="/livreur/commandes/<%= (order.id || order._id) %>/accepter" method="POST" style="margin-top:12px">
-        <button type="submit" class="btn-primary btn-full" style="padding:12px">✓ Accepter cette livraison</button>
+
+      <form action="/livreur/commandes/<%= (order.id || order._id) %>/accepter" method="POST" class="accept-wrap">
+        <button type="submit" class="btn-primary btn-full" style="padding:12px">Accepter cette livraison</button>
       </form>
     </div>
     <% }) %>
   </div>
   <% } %>
+
   <%- include('../partials/bottom-nav', { navItems: [
     { href: '/livreur/dashboard', icon: '🏠', label: 'Accueil', active: false },
     { href: '/livreur/livraisons', icon: '🛵', label: 'Livraisons', active: false },
     { href: '/livreur/commandes', icon: '🔍', label: 'Disponibles', active: true },
     { href: '/livreur/stats', icon: '📊', label: 'Stats', active: false },
-    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Deco', active: false },
   ]}) %>
 </div>
 <script src="/socket.io/socket.io.js"></script>

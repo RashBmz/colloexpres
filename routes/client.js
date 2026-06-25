@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/db');
-const RESTAURANTS = require('../data/restaurants');
 const { createRateLimiter, getClientKey } = require('../middleware/security');
 const { cleanString, cleanTextBlock, toSafeNumber } = require('../utils/input');
 
@@ -152,12 +151,13 @@ router.get('/nouvelle-commande', (req, res) => {
   res.render('client/new-order');
 });
 
-router.get('/restaurants', (req, res) => {
-  res.render('client/restaurants', { restaurants: RESTAURANTS });
+router.get('/restaurants', async (req, res) => {
+  const restaurants = await db.getRestaurants();
+  res.render('client/restaurants', { restaurants });
 });
 
-router.get('/restaurants/:id', (req, res) => {
-  const resto = RESTAURANTS.find((restaurant) => restaurant.id === req.params.id);
+router.get('/restaurants/:id', async (req, res) => {
+  const resto = await db.findRestaurantById(sanitizeId(req.params.id));
   if (!resto) {
     req.flash('error', 'Restaurant introuvable');
     return res.redirect('/client/restaurants');
@@ -175,7 +175,7 @@ router.post('/commandes/food', clientWriteLimiter, async (req, res) => {
   const userId = req.session.user.id;
   const io = req.app.get('io');
 
-  const resto = RESTAURANTS.find((restaurant) => restaurant.id === restoId);
+  const resto = await db.findRestaurantById(restoId);
   if (!resto) {
     req.flash('error', 'Restaurant introuvable');
     return res.redirect('/client/restaurants');

@@ -1,0 +1,571 @@
+<%- include('../partials/head', { title: 'Restaurants', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+<style>
+.admin-resto-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 12px; }
+.admin-resto-top { display: flex; gap: 12px; align-items: center; }
+.admin-resto-thumb { width: 58px; height: 58px; border-radius: 14px; object-fit: cover; background: var(--surface); border: 1px solid var(--border); flex-shrink: 0; }
+.admin-resto-name { font-weight: 800; font-size: 16px; }
+.admin-resto-meta { color: var(--muted); font-size: 12px; margin-top: 3px; line-height: 1.45; }
+.admin-resto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.admin-resto-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.admin-resto-status { margin-left: auto; font-size: 11px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.admin-resto-status.open { color: var(--green); border-color: rgba(0,230,118,0.35); background: rgba(0,230,118,0.08); }
+.admin-resto-status.closed { color: var(--red); border-color: rgba(255,68,68,0.35); background: rgba(255,68,68,0.08); }
+.menu-json-input { display: none; }
+.menu-builder { border: 1px solid var(--border); border-radius: var(--r); background: rgba(255,255,255,0.02); padding: 12px; margin-top: 10px; }
+.menu-builder-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.menu-builder-title { font-weight: 800; font-size: 14px; }
+.menu-builder-hint { font-size: 11px; color: var(--muted); line-height: 1.45; margin-top: 3px; }
+.menu-template-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+.menu-cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+.menu-cat-head { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
+.menu-cat-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.menu-item-card { background: rgba(0,0,0,0.14); border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-top: 10px; }
+.menu-item-head { display: grid; grid-template-columns: 1.2fr 100px auto; gap: 8px; align-items: start; }
+.menu-item-desc { margin-top: 8px; }
+.menu-options { margin-top: 10px; display: grid; gap: 8px; }
+.menu-option-card { border: 1px dashed rgba(255,255,255,0.16); border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.02); }
+.menu-option-head { display: grid; grid-template-columns: 1fr 120px 92px auto; gap: 8px; align-items: start; }
+.menu-choice-row { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-top: 8px; align-items: start; }
+.mini-btn { border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 10px; min-height: 38px; padding: 0 10px; font-family: var(--font-b); cursor: pointer; }
+.mini-btn:hover { border-color: rgba(255,92,26,0.45); color: var(--accent); }
+.mini-btn.danger { color: var(--red); border-color: rgba(255,68,68,0.28); }
+.mini-btn.accent { background: rgba(255,92,26,0.12); border-color: rgba(255,92,26,0.28); color: var(--accent); }
+.empty-menu-builder { color: var(--muted); font-size: 13px; text-align: center; padding: 18px 8px; border: 1px dashed var(--border); border-radius: 12px; }
+.menu-divider-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 10px 0 6px; }
+.menu-checkline { display: flex; align-items: center; gap: 8px; color: var(--text2); font-size: 12px; min-height: 38px; }
+.menu-checkline input { width: 16px; height: 16px; }
+@media (max-width: 520px) {
+  .admin-resto-grid, .menu-cat-fields, .menu-item-head, .menu-option-head, .menu-choice-row { grid-template-columns: 1fr; }
+  .admin-resto-status { margin-left: 0; }
+}
+</style>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/admin/dashboard" class="back-btn">← Admin</a>
+    <h1 class="page-title">Restaurants (<%= restaurants.length %>)</h1>
+  </header>
+
+  <div class="form-card" style="margin:16px">
+    <h3 class="form-card-title">+ Ajouter un restaurant</h3>
+    <form action="/admin/restaurants" method="POST" class="restaurant-form">
+      <div class="admin-resto-grid">
+        <input class="field-input" type="text" name="name" placeholder="Nom du restaurant" required>
+        <input class="field-input" type="text" name="id" placeholder="Identifiant URL (optionnel)">
+      </div>
+      <div class="admin-resto-grid">
+        <input class="field-input" type="text" name="category" placeholder="Categorie (Pizza, Tacos...)">
+        <select class="field-input" name="open">
+          <option value="true">Ouvert</option>
+          <option value="false">Ferme</option>
+        </select>
+      </div>
+      <textarea class="field-input" name="description" rows="2" placeholder="Description" style="margin-bottom:8px"></textarea>
+      <input class="field-input" type="text" name="address" placeholder="Adresse" style="margin-bottom:8px">
+      <div class="admin-resto-grid">
+        <input class="field-input" type="number" step="0.000001" name="lat" placeholder="Latitude">
+        <input class="field-input" type="number" step="0.000001" name="lng" placeholder="Longitude">
+      </div>
+      <div class="admin-resto-grid">
+        <input class="field-input" type="number" min="0" max="5" step="0.1" name="rating" value="5" placeholder="Note">
+        <input class="field-input" type="text" name="delivery_time" value="25-40 min" placeholder="Temps livraison">
+      </div>
+      <div class="admin-resto-grid">
+        <input class="field-input" type="number" min="0" step="1" name="delivery_fee" value="100" placeholder="Frais livraison">
+        <input class="field-input" type="number" min="0" step="1" name="min_order" value="300" placeholder="Commande minimum">
+      </div>
+      <input class="field-input" type="text" name="tags" placeholder="Tags separes par virgule: Populaire, Pizza" style="margin-bottom:8px">
+      <input class="field-input" type="url" name="image" placeholder="URL image" style="margin-bottom:8px">
+      <input class="field-input" type="url" name="cover_image" placeholder="URL image couverture (optionnel)" style="margin-bottom:8px">
+      <div class="menu-builder" data-menu-builder data-default-menu="fast-food"></div>
+      <textarea class="menu-json-input" name="menu_json" required>{}</textarea>
+      <button type="submit" class="btn-primary btn-full" style="margin-top:10px">Ajouter le restaurant</button>
+    </form>
+  </div>
+
+  <div style="padding:0 16px 110px">
+    <% if (restaurants.length === 0) { %>
+      <div class="empty-state"><div class="empty-icon">🍽</div><p>Aucun restaurant</p></div>
+    <% } %>
+    <% restaurants.forEach((restaurant) => { %>
+      <div class="admin-resto-card">
+        <div class="admin-resto-top">
+          <img class="admin-resto-thumb" src="<%= restaurant.image || restaurant.coverImage || '/images/food/plate.svg' %>" alt="<%= restaurant.name %>" loading="lazy">
+          <div style="min-width:0">
+            <div class="admin-resto-name"><%= restaurant.name %></div>
+            <div class="admin-resto-meta">
+              <%= restaurant.category || 'Sans categorie' %> · <%= restaurant.deliveryFee %> DA · min. <%= restaurant.minOrder %> DA<br>
+              ID: <%= restaurant.id %>
+            </div>
+          </div>
+          <span class="admin-resto-status <%= restaurant.open ? 'open' : 'closed' %>"><%= restaurant.open ? 'Ouvert' : 'Ferme' %></span>
+        </div>
+
+        <details style="margin-top:12px">
+          <summary class="btn-outline" style="list-style:none;width:100%;justify-content:center">Modifier le restaurant</summary>
+          <div class="form-card" style="margin-top:10px;padding:14px">
+            <form action="/admin/restaurants/<%= restaurant.id %>/modifier" method="POST" class="restaurant-form">
+              <div class="admin-resto-grid">
+                <input class="field-input" type="text" name="name" value="<%= restaurant.name %>" required>
+                <input class="field-input" type="text" value="<%= restaurant.id %>" disabled>
+              </div>
+              <div class="admin-resto-grid">
+                <input class="field-input" type="text" name="category" value="<%= restaurant.category || '' %>" placeholder="Categorie">
+                <select class="field-input" name="open">
+                  <option value="true" <%= restaurant.open ? 'selected' : '' %>>Ouvert</option>
+                  <option value="false" <%= !restaurant.open ? 'selected' : '' %>>Ferme</option>
+                </select>
+              </div>
+              <textarea class="field-input" name="description" rows="2" placeholder="Description" style="margin-bottom:8px"><%= restaurant.description || '' %></textarea>
+              <input class="field-input" type="text" name="address" value="<%= restaurant.address || '' %>" placeholder="Adresse" style="margin-bottom:8px">
+              <div class="admin-resto-grid">
+                <input class="field-input" type="number" step="0.000001" name="lat" value="<%= restaurant.lat ?? '' %>" placeholder="Latitude">
+                <input class="field-input" type="number" step="0.000001" name="lng" value="<%= restaurant.lng ?? '' %>" placeholder="Longitude">
+              </div>
+              <div class="admin-resto-grid">
+                <input class="field-input" type="number" min="0" max="5" step="0.1" name="rating" value="<%= restaurant.rating || 5 %>">
+                <input class="field-input" type="text" name="delivery_time" value="<%= restaurant.deliveryTime || '' %>" placeholder="Temps livraison">
+              </div>
+              <div class="admin-resto-grid">
+                <input class="field-input" type="number" min="0" step="1" name="delivery_fee" value="<%= restaurant.deliveryFee || 0 %>">
+                <input class="field-input" type="number" min="0" step="1" name="min_order" value="<%= restaurant.minOrder || 0 %>">
+              </div>
+              <input class="field-input" type="text" name="tags" value="<%= (restaurant.tags || []).join(', ') %>" placeholder="Tags" style="margin-bottom:8px">
+              <input class="field-input" type="url" name="image" value="<%= restaurant.image || '' %>" placeholder="URL image" style="margin-bottom:8px">
+              <input class="field-input" type="url" name="cover_image" value="<%= restaurant.coverImage || '' %>" placeholder="URL image couverture" style="margin-bottom:8px">
+              <div class="menu-builder" data-menu-builder></div>
+              <textarea class="menu-json-input" name="menu_json" required><%= formatMenuJson(restaurant.menu) %></textarea>
+              <div class="admin-resto-actions">
+                <button type="submit" class="btn-primary">Enregistrer</button>
+              </div>
+            </form>
+            <form action="/admin/restaurants/<%= restaurant.id %>/supprimer" method="POST" style="margin-top:10px">
+              <button type="submit" class="btn-danger-sm" onclick="return confirm('Supprimer <%= restaurant.name %> ?')">Supprimer</button>
+            </form>
+          </div>
+        </details>
+      </div>
+    <% }) %>
+  </div>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
+    { href: '/admin/commandes', icon: '📦', label: 'Cmdes', active: false },
+    { href: '/admin/restaurants', icon: '🍔', label: 'Restos', active: true },
+    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Deco', active: false },
+  ]}) %>
+</div>
+<script>
+(function() {
+  const builders = new WeakMap();
+
+  function slugify(value) {
+    return String(value || 'categorie')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '').slice(0, 50) || 'categorie';
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, function(char) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char];
+    });
+  }
+
+  function defaultFastFoodMenu() {
+    return {
+      tacos: {
+        label: 'Tacos',
+        items: [
+          {
+            id: 'tacos-simple',
+            name: 'Tacos Simple',
+            basePrice: 450,
+            description: 'Tacos avec frites et sauce au choix',
+            image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg',
+            options: {
+              viande: {
+                label: 'Viande',
+                required: true,
+                choices: [
+                  { id: 'poulet', label: 'Poulet', price: 0 },
+                  { id: 'viande-hachee', label: 'Viande hachee', price: 0 },
+                  { id: 'mixte', label: 'Mixte', price: 50 },
+                ],
+              },
+              sauce: {
+                label: 'Sauce',
+                required: false,
+                choices: [
+                  { id: 'blanche', label: 'Sauce blanche', price: 0 },
+                  { id: 'harissa', label: 'Harissa', price: 0 },
+                  { id: 'algerienne', label: 'Algerienne', price: 0 },
+                ],
+              },
+              gratine: { label: 'Gratine fromage', required: false, type: 'checkbox', price: 50 },
+            },
+          },
+          {
+            id: 'tacos-double',
+            name: 'Tacos Double',
+            basePrice: 600,
+            description: 'Double viande, frites, fromage',
+            image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg',
+            options: {},
+          },
+        ],
+      },
+      pizzas: {
+        label: 'Pizza',
+        items: [
+          {
+            id: 'pizza-margherita',
+            name: 'Pizza Margherita',
+            basePrice: 600,
+            description: 'Sauce tomate, fromage',
+            image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
+            options: {
+              taille: {
+                label: 'Taille',
+                required: true,
+                choices: [
+                  { id: 'moyenne', label: 'Moyenne', price: 0 },
+                  { id: 'grande', label: 'Grande', price: 150 },
+                  { id: 'xl', label: 'XL', price: 300 },
+                ],
+              },
+              supplement: {
+                label: 'Supplement',
+                required: false,
+                choices: [
+                  { id: 'fromage', label: 'Fromage', price: 80 },
+                  { id: 'thon', label: 'Thon', price: 120 },
+                  { id: 'poulet', label: 'Poulet', price: 150 },
+                ],
+              },
+            },
+          },
+          {
+            id: 'pizza-orientale',
+            name: 'Pizza Orientale',
+            basePrice: 750,
+            description: 'Merguez, poivrons, fromage',
+            image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
+            options: {},
+          },
+        ],
+      },
+      hamburgers: {
+        label: 'Hamburgers',
+        items: [
+          {
+            id: 'burger-classic',
+            name: 'Burger Classic',
+            basePrice: 400,
+            description: 'Steak, fromage, salade, sauce',
+            image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+            options: {
+              viande: {
+                label: 'Viande',
+                required: true,
+                choices: [
+                  { id: 'steak', label: 'Steak', price: 0 },
+                  { id: 'poulet', label: 'Poulet', price: 0 },
+                  { id: 'double-steak', label: 'Double steak', price: 180 },
+                ],
+              },
+              fromage: { label: 'Fromage extra', required: false, type: 'checkbox', price: 50 },
+            },
+          },
+          {
+            id: 'chicken-burger',
+            name: 'Chicken Burger',
+            basePrice: 450,
+            description: 'Poulet crispy, salade, sauce',
+            image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+            options: {},
+          },
+        ],
+      },
+    };
+  }
+
+  function normalizeMenu(raw) {
+    const menu = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+    return Object.entries(menu).map(function([key, category]) {
+      return {
+        key: slugify(key),
+        label: String(category && category.label ? category.label : key || 'Categorie'),
+        items: Array.isArray(category && category.items) ? category.items.map(normalizeItem) : [],
+      };
+    });
+  }
+
+  function normalizeItem(item) {
+    const options = item && item.options && typeof item.options === 'object' && !Array.isArray(item.options)
+      ? Object.entries(item.options).map(function([key, option]) {
+          return {
+            key: slugify(key),
+            label: String(option && option.label ? option.label : key || 'Option'),
+            required: Boolean(option && option.required),
+            type: option && option.type === 'checkbox' ? 'checkbox' : 'choices',
+            price: Number(option && option.price ? option.price : 0),
+            choices: Array.isArray(option && option.choices) ? option.choices.map(function(choice) {
+              return {
+                id: String(choice && choice.id ? choice.id : slugify(choice && choice.label ? choice.label : 'choix')),
+                label: String(choice && choice.label ? choice.label : ''),
+                price: Number(choice && choice.price ? choice.price : 0),
+              };
+            }) : [],
+          };
+        })
+      : [];
+
+    return {
+      id: String(item && item.id ? item.id : slugify(item && item.name ? item.name : 'article')),
+      name: String(item && item.name ? item.name : ''),
+      basePrice: Number(item && item.basePrice ? item.basePrice : 0),
+      description: String(item && item.description ? item.description : ''),
+      image: String(item && item.image ? item.image : ''),
+      options,
+    };
+  }
+
+  function stateToMenu(state) {
+    const menu = {};
+    state.categories.forEach(function(category, catIndex) {
+      const categoryKey = slugify(category.key || category.label || 'categorie-' + (catIndex + 1));
+      menu[categoryKey] = {
+        label: category.label || categoryKey,
+        items: category.items.map(function(item, itemIndex) {
+          const itemId = slugify(item.id || item.name || 'article-' + (itemIndex + 1));
+          const options = {};
+          item.options.forEach(function(option, optionIndex) {
+            const optionKey = slugify(option.key || option.label || 'option-' + (optionIndex + 1));
+            if (option.type === 'checkbox') {
+              options[optionKey] = {
+                label: option.label || optionKey,
+                required: Boolean(option.required),
+                type: 'checkbox',
+                price: Number(option.price || 0),
+              };
+            } else {
+              options[optionKey] = {
+                label: option.label || optionKey,
+                required: Boolean(option.required),
+                choices: option.choices.map(function(choice, choiceIndex) {
+                  return {
+                    id: slugify(choice.id || choice.label || 'choix-' + (choiceIndex + 1)),
+                    label: choice.label || 'Choix',
+                    price: Number(choice.price || 0),
+                  };
+                }),
+              };
+            }
+          });
+          return {
+            id: itemId,
+            name: item.name || itemId,
+            basePrice: Number(item.basePrice || 0),
+            description: item.description || '',
+            image: item.image || '',
+            options,
+          };
+        }),
+      };
+    });
+    return menu;
+  }
+
+  function syncTextarea(builder) {
+    const state = builders.get(builder);
+    state.textarea.value = JSON.stringify(stateToMenu(state), null, 2);
+  }
+
+  function renderBuilder(builder) {
+    const state = builders.get(builder);
+    const categoriesHtml = state.categories.length
+      ? state.categories.map(renderCategory).join('')
+      : '<div class="empty-menu-builder">Aucune categorie pour le moment. Ajoutez une categorie comme Tacos, Burgers ou Pizza.</div>';
+
+    builder.innerHTML =
+      '<div class="menu-builder-head">' +
+        '<div><div class="menu-builder-title">Menu du restaurant</div>' +
+        '<div class="menu-builder-hint">Mode rapide: gardez les categories deja pretes, changez juste noms, prix, images et supplements.</div></div>' +
+        '<button class="mini-btn accent" type="button" data-action="add-cat">+ Categorie</button>' +
+      '</div>' +
+      '<div class="menu-template-row">' +
+        '<button class="mini-btn" type="button" data-action="load-preset">Charger modele Tacos/Pizza/Burger</button>' +
+      '</div>' +
+      '<div data-menu-list>' + categoriesHtml + '</div>';
+    syncTextarea(builder);
+  }
+
+  function renderCategory(category, catIndex) {
+    const itemsHtml = category.items.length
+      ? category.items.map(function(item, itemIndex) { return renderItem(item, catIndex, itemIndex); }).join('')
+      : '<div class="empty-menu-builder">Aucun article dans cette categorie.</div>';
+
+    return '<div class="menu-cat-card" data-cat="' + catIndex + '">' +
+      '<div class="menu-cat-head">' +
+        '<div class="menu-cat-fields">' +
+          inputHtml('Nom categorie', category.label, { field: 'label', cat: catIndex }) +
+          inputHtml('Cle URL', category.key, { field: 'key', cat: catIndex }) +
+        '</div>' +
+        '<button class="mini-btn danger" type="button" data-action="remove-cat" data-cat="' + catIndex + '">Supprimer</button>' +
+      '</div>' +
+      '<div class="menu-divider-label">Articles</div>' +
+      itemsHtml +
+      '<button class="mini-btn accent" type="button" data-action="add-item" data-cat="' + catIndex + '" style="margin-top:8px">+ Article</button>' +
+    '</div>';
+  }
+
+  function renderItem(item, catIndex, itemIndex) {
+    const optionsHtml = item.options.length
+      ? item.options.map(function(option, optionIndex) { return renderOption(option, catIndex, itemIndex, optionIndex); }).join('')
+      : '<div class="empty-menu-builder">Aucune option. Exemple: viande, sauce, supplement fromage.</div>';
+
+    return '<div class="menu-item-card" data-cat="' + catIndex + '" data-item="' + itemIndex + '">' +
+      '<div class="menu-item-head">' +
+        inputHtml('Nom article', item.name, { field: 'name', cat: catIndex, item: itemIndex }) +
+        inputHtml('Prix DA', item.basePrice, { field: 'basePrice', cat: catIndex, item: itemIndex, type: 'number' }) +
+        '<button class="mini-btn danger" type="button" data-action="remove-item" data-cat="' + catIndex + '" data-item="' + itemIndex + '">Supprimer</button>' +
+      '</div>' +
+      '<div class="menu-item-desc">' + inputHtml('Description', item.description, { field: 'description', cat: catIndex, item: itemIndex }) + '</div>' +
+      '<div style="margin-top:8px">' + inputHtml('ID article', item.id, { field: 'id', cat: catIndex, item: itemIndex }) + '</div>' +
+      '<div style="margin-top:8px">' + inputHtml('Image article URL', item.image, { field: 'image', cat: catIndex, item: itemIndex, type: 'url' }) + '</div>' +
+      '<div class="menu-divider-label">Options et supplements</div>' +
+      '<div class="menu-options">' + optionsHtml + '</div>' +
+      '<button class="mini-btn" type="button" data-action="add-option" data-cat="' + catIndex + '" data-item="' + itemIndex + '" style="margin-top:8px">+ Option</button>' +
+    '</div>';
+  }
+
+  function renderOption(option, catIndex, itemIndex, optionIndex) {
+    const choiceHtml = option.type === 'checkbox'
+      ? '<div class="menu-choice-row">' + inputHtml('Prix supplement', option.price, { field: 'price', cat: catIndex, item: itemIndex, option: optionIndex, type: 'number' }) + '</div>'
+      : option.choices.map(function(choice, choiceIndex) {
+          return '<div class="menu-choice-row">' +
+            inputHtml('Choix', choice.label, { field: 'label', cat: catIndex, item: itemIndex, option: optionIndex, choice: choiceIndex }) +
+            inputHtml('Prix +/−', choice.price, { field: 'price', cat: catIndex, item: itemIndex, option: optionIndex, choice: choiceIndex, type: 'number' }) +
+            '<button class="mini-btn danger" type="button" data-action="remove-choice" data-cat="' + catIndex + '" data-item="' + itemIndex + '" data-option="' + optionIndex + '" data-choice="' + choiceIndex + '">Supprimer</button>' +
+          '</div>';
+        }).join('');
+
+    return '<div class="menu-option-card" data-option="' + optionIndex + '">' +
+      '<div class="menu-option-head">' +
+        inputHtml('Nom option', option.label, { field: 'label', cat: catIndex, item: itemIndex, option: optionIndex }) +
+        '<select class="field-input" data-field="type" data-cat="' + catIndex + '" data-item="' + itemIndex + '" data-option="' + optionIndex + '">' +
+          '<option value="choices"' + (option.type !== 'checkbox' ? ' selected' : '') + '>Choix</option>' +
+          '<option value="checkbox"' + (option.type === 'checkbox' ? ' selected' : '') + '>Supplement</option>' +
+        '</select>' +
+        '<label class="menu-checkline"><input type="checkbox" data-field="required" data-cat="' + catIndex + '" data-item="' + itemIndex + '" data-option="' + optionIndex + '"' + (option.required ? ' checked' : '') + '> Requis</label>' +
+        '<button class="mini-btn danger" type="button" data-action="remove-option" data-cat="' + catIndex + '" data-item="' + itemIndex + '" data-option="' + optionIndex + '">Supprimer</button>' +
+      '</div>' +
+      '<div style="margin-top:8px">' + inputHtml('Cle option', option.key, { field: 'key', cat: catIndex, item: itemIndex, option: optionIndex }) + '</div>' +
+      '<div class="menu-divider-label">' + (option.type === 'checkbox' ? 'Prix du supplement' : 'Choix possibles') + '</div>' +
+      choiceHtml +
+      (option.type === 'checkbox' ? '' : '<button class="mini-btn" type="button" data-action="add-choice" data-cat="' + catIndex + '" data-item="' + itemIndex + '" data-option="' + optionIndex + '" style="margin-top:8px">+ Choix</button>') +
+    '</div>';
+  }
+
+  function inputHtml(placeholder, value, meta) {
+    const attrs = Object.entries(meta).map(function([key, val]) {
+      return 'data-' + key + '="' + escapeHtml(val) + '"';
+    }).join(' ');
+    return '<input class="field-input" type="' + escapeHtml(meta.type || 'text') + '" placeholder="' + escapeHtml(placeholder) + '" value="' + escapeHtml(value) + '" ' + attrs + '>';
+  }
+
+  function getIndexes(target) {
+    return {
+      cat: Number(target.dataset.cat),
+      item: target.dataset.item == null ? null : Number(target.dataset.item),
+      option: target.dataset.option == null ? null : Number(target.dataset.option),
+      choice: target.dataset.choice == null ? null : Number(target.dataset.choice),
+      field: target.dataset.field,
+    };
+  }
+
+  function getEditable(state, indexes) {
+    let target = state.categories[indexes.cat];
+    if (indexes.item != null) target = target.items[indexes.item];
+    if (indexes.option != null) target = target.options[indexes.option];
+    if (indexes.choice != null) target = target.choices[indexes.choice];
+    return target;
+  }
+
+  function updateFromInput(builder, input) {
+    const state = builders.get(builder);
+    const indexes = getIndexes(input);
+    if (!indexes.field || Number.isNaN(indexes.cat)) return;
+    const target = getEditable(state, indexes);
+    if (!target) return;
+    if (input.type === 'checkbox') {
+      target[indexes.field] = input.checked;
+    } else if (input.type === 'number') {
+      target[indexes.field] = Number(input.value || 0);
+    } else {
+      target[indexes.field] = input.value;
+    }
+    if (indexes.field === 'type') {
+      if (target.type === 'checkbox') {
+        target.choices = [];
+      } else if (!target.choices.length) {
+        target.choices.push({ id: 'standard', label: 'Standard', price: 0 });
+      }
+      renderBuilder(builder);
+      return;
+    }
+    syncTextarea(builder);
+  }
+
+  function handleAction(builder, button) {
+    const state = builders.get(builder);
+    const action = button.dataset.action;
+    const indexes = getIndexes(button);
+    if (action === 'add-cat') {
+      state.categories.push({ key: 'categorie-' + (state.categories.length + 1), label: 'Nouvelle categorie', items: [] });
+    }
+    if (action === 'load-preset') {
+      state.categories = normalizeMenu(defaultFastFoodMenu());
+    }
+    if (action === 'remove-cat') state.categories.splice(indexes.cat, 1);
+    if (action === 'add-item') state.categories[indexes.cat].items.push({ id: 'article-' + (state.categories[indexes.cat].items.length + 1), name: 'Nouvel article', basePrice: 0, description: '', image: '', options: [] });
+    if (action === 'remove-item') state.categories[indexes.cat].items.splice(indexes.item, 1);
+    if (action === 'add-option') state.categories[indexes.cat].items[indexes.item].options.push({ key: 'option-' + (state.categories[indexes.cat].items[indexes.item].options.length + 1), label: 'Nouvelle option', required: false, type: 'choices', price: 0, choices: [{ id: 'standard', label: 'Standard', price: 0 }] });
+    if (action === 'remove-option') state.categories[indexes.cat].items[indexes.item].options.splice(indexes.option, 1);
+    if (action === 'add-choice') state.categories[indexes.cat].items[indexes.item].options[indexes.option].choices.push({ id: 'choix-' + (state.categories[indexes.cat].items[indexes.item].options[indexes.option].choices.length + 1), label: 'Nouveau choix', price: 0 });
+    if (action === 'remove-choice') state.categories[indexes.cat].items[indexes.item].options[indexes.option].choices.splice(indexes.choice, 1);
+    renderBuilder(builder);
+  }
+
+  document.querySelectorAll('.restaurant-form').forEach(function(form) {
+    const builder = form.querySelector('[data-menu-builder]');
+    const textarea = form.querySelector('.menu-json-input');
+    let parsed = {};
+    try { parsed = JSON.parse(textarea.value || '{}'); } catch (error) { parsed = {}; }
+    const initialCategories = normalizeMenu(parsed);
+    builders.set(builder, {
+      textarea,
+      categories: initialCategories.length || !builder.dataset.defaultMenu ? initialCategories : normalizeMenu(defaultFastFoodMenu())
+    });
+    renderBuilder(builder);
+
+    builder.addEventListener('click', function(event) {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      handleAction(builder, button);
+    });
+    builder.addEventListener('input', function(event) {
+      updateFromInput(builder, event.target);
+    });
+    builder.addEventListener('change', function(event) {
+      updateFromInput(builder, event.target);
+    });
+    form.addEventListener('submit', function() {
+      syncTextarea(builder);
+    });
+  });
+})();
+</script>
+</body></html>

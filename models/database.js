@@ -5,6 +5,7 @@
 const Datastore = require('nedb-promises');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const DEFAULT_RESTAURANTS = require('../data/restaurants');
 
 const dbDir = path.join(__dirname, '../data');
 require('fs').mkdirSync(dbDir, { recursive: true });
@@ -13,10 +14,13 @@ require('fs').mkdirSync(dbDir, { recursive: true });
 const users  = Datastore.create({ filename: path.join(dbDir, 'users.db'),  autoload: true });
 const orders = Datastore.create({ filename: path.join(dbDir, 'orders.db'), autoload: true });
 const notifs = Datastore.create({ filename: path.join(dbDir, 'notifs.db'), autoload: true });
+const restaurants = Datastore.create({ filename: path.join(dbDir, 'restaurants.db'), autoload: true });
 
 users.ensureIndex({ fieldName: 'phone', unique: true });
+restaurants.ensureIndex({ fieldName: 'id', unique: true });
 
 const normalizeOrder = (order) => (order ? { ...order, id: order.id || order._id } : order);
+const normalizeRestaurant = (restaurant) => (restaurant ? { ...restaurant, id: restaurant.id || restaurant._id } : restaurant);
 const getOrderGain = (order = {}) => Number(order.delivery_fee ?? ((order.subtotal != null && order.price != null) ? (order.price - order.subtotal) : order.price ?? 0));
 const getOrderCollected = (order = {}) => Number(order.price ?? getOrderGain(order));
 const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -77,7 +81,7 @@ function buildLivreurPeriodStats(ordersList, baseDate = new Date()) {
 
 // ─── DB HELPER ───────────────────────────────────────
 const db = {
-  users, orders, notifs,
+  users, orders, notifs, restaurants,
 
   // ── Users ──────────────────────────────────────────
   async findUserByPhone(phone) {
@@ -313,10 +317,46 @@ const db = {
       }
     );
   },
+
+  async getRestaurants() {
+    const list = await restaurants.find({});
+    return list
+      .map(normalizeRestaurant)
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'fr'));
+  },
+  async findRestaurantById(id) {
+    return normalizeRestaurant(await restaurants.findOne({ id }));
+  },
+  async createRestaurant(data) {
+    return normalizeRestaurant(await restaurants.insert({
+      ...data,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+  },
+  async updateRestaurant(id, data) {
+    await restaurants.update({ id }, { $set: { ...data, updated_at: new Date().toISOString() } });
+    return this.findRestaurantById(id);
+  },
+  async deleteRestaurant(id) {
+    return restaurants.remove({ id }, {});
+  },
 };
 
 // ─── SEED ────────────────────────────────────────────
 (async () => {
+  const restaurantCount = await restaurants.count({});
+  if (restaurantCount === 0) {
+    const nowIso = new Date().toISOString();
+    for (const restaurant of DEFAULT_RESTAURANTS) {
+      await restaurants.insert({
+        ...restaurant,
+        created_at: nowIso,
+        updated_at: nowIso,
+      });
+    }
+  }
+
   const count = await users.count({});
   if (count > 0) return;
   console.log('🌱 Création des données de démonstration...');

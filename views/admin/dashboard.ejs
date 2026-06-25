@@ -68,6 +68,7 @@
     <div class="quick-actions">
       <a href="/admin/commandes?status=pending" class="quick-btn">⏳ En attente</a>
       <a href="/admin/commandes" class="quick-btn">📦 Toutes</a>
+      <a href="/admin/restaurants" class="quick-btn">🍔 Restaurants</a>
       <a href="/admin/livreurs" class="quick-btn">🛵 Livreurs</a>
       <a href="/admin/clients" class="quick-btn">👥 Clients</a>
     </div>
@@ -235,7 +236,8 @@
 
   <%- include('../partials/bottom-nav', { navItems: [
     { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: true },
-    { href: '/admin/commandes', icon: '📦', label: 'Commandes', active: false },
+    { href: '/admin/commandes', icon: '📦', label: 'Cmdes', active: false },
+    { href: '/admin/restaurants', icon: '🍔', label: 'Restos', active: false },
     { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: false },
     { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
   ]}) %>

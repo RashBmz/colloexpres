@@ -125,41 +125,6 @@ const deliveryDuration = formatDeliveryDuration(deliveryTimerStart, order.delive
   </div>
   <% } %>
 
-  <div class="detail-card">
-    <h3 class="detail-card-title">📍 Itinéraire</h3>
-    <div class="route-detail">
-      <% if (isFoodOrder) { %>
-      <div class="route-point">
-        <div class="route-dot from"></div>
-        <div>
-          <div class="route-point-label">Restaurant</div>
-          <div class="route-point-addr"><%= order.resto_name %></div>
-          <div class="route-point-quarter"><%= order.from_address %></div>
-        </div>
-      </div>
-      <div class="route-connector"></div>
-      <% } else if (!isCoursesOrder) { %>
-      <div class="route-point">
-        <div class="route-dot from"></div>
-        <div>
-          <div class="route-point-label">Ramassage</div>
-          <div class="route-point-addr"><%= order.from_address %></div>
-          <% if (order.from_quarter) { %><div class="route-point-quarter"><%= order.from_quarter %></div><% } %>
-        </div>
-      </div>
-      <div class="route-connector"></div>
-      <% } %>
-      <div class="route-point">
-        <div class="route-dot to"></div>
-        <div>
-          <div class="route-point-label"><%= isCoursesOrder ? 'Adresse du client' : 'Livraison' %></div>
-          <div class="route-point-addr"><%= order.to_address %></div>
-          <% if (order.to_quarter) { %><div class="route-point-quarter"><%= order.to_quarter %></div><% } %>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <% if (order.livreur_name) { %>
   <div class="detail-card">
     <h3 class="detail-card-title">🛵 Votre livreur</h3>
@@ -249,6 +214,41 @@ const deliveryDuration = formatDeliveryDuration(deliveryTimerStart, order.delive
     </div>
   </div>
 
+  <div class="detail-card">
+    <h3 class="detail-card-title">📍 Itinéraire</h3>
+    <div class="route-detail">
+      <% if (isFoodOrder) { %>
+      <div class="route-point">
+        <div class="route-dot from"></div>
+        <div>
+          <div class="route-point-label">Restaurant</div>
+          <div class="route-point-addr"><%= order.resto_name %></div>
+          <div class="route-point-quarter"><%= order.from_address %></div>
+        </div>
+      </div>
+      <div class="route-connector"></div>
+      <% } else if (!isCoursesOrder) { %>
+      <div class="route-point">
+        <div class="route-dot from"></div>
+        <div>
+          <div class="route-point-label">Ramassage</div>
+          <div class="route-point-addr"><%= order.from_address %></div>
+          <% if (order.from_quarter) { %><div class="route-point-quarter"><%= order.from_quarter %></div><% } %>
+        </div>
+      </div>
+      <div class="route-connector"></div>
+      <% } %>
+      <div class="route-point">
+        <div class="route-dot to"></div>
+        <div>
+          <div class="route-point-label"><%= isCoursesOrder ? 'Adresse du client' : 'Livraison' %></div>
+          <div class="route-point-addr"><%= order.to_address %></div>
+          <% if (order.to_quarter) { %><div class="route-point-quarter"><%= order.to_quarter %></div><% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <%- include('../partials/client-cart-fab') %>
 
   <%- include('../partials/bottom-nav', { navItems: [
@@ -329,5 +329,3 @@ function showToast(msg, type) {
 </script>
 </body>
 </html>
-
-

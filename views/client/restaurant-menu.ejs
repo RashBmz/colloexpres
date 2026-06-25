@@ -34,7 +34,7 @@ function categoryImage(key) {
 function cleanLabel(label) {
   return String(label || '').replace(/^[^A-Za-z0-9À-ÿ]+/, '').trim();
 }
-const heroImage = restoImage(resto.id);
+const heroImage = resto.image || resto.coverImage || restoImage(resto.id);
 %>
 <%- include('../partials/head', { title: resto.name, bodyClass: 'page-app' }) %>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -371,7 +371,7 @@ const heroImage = restoImage(resto.id);
     <% cat.items.forEach(item => { %>
     <div class="menu-item" onclick="openItem('<%= JSON.stringify(item).replace(/'/g, "\\'").replace(/"/g, '&quot;') %>')">
       <div class="menu-item-thumb">
-        <img src="<%= catImage %>" alt="<%= item.name %>" loading="lazy">
+        <img src="<%= item.image || catImage %>" alt="<%= item.name %>" loading="lazy">
       </div>
       <div class="menu-item-info">
         <div class="menu-item-name"><%= item.name %></div>
@@ -1097,8 +1097,6 @@ if (openCartOnLoad && cart.length > 0) {
 ]}) %>
 </body>
 </html>
-
-
 
 
 

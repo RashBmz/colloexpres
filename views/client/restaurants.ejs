@@ -171,7 +171,7 @@ function restoImage(id) {
   </div>
 
   <div style="padding:4px 16px 100px" id="restos-list">
-    <% restaurants.forEach(r => { const imageSrc = restoImage(r.id); %>
+    <% restaurants.forEach(r => { const imageSrc = r.image || r.coverImage || restoImage(r.id); %>
     <a href="/client/restaurants/<%= r.id %>" class="resto-card <%= r.open ? '' : 'closed' %>" data-cat="<%= r.category.toLowerCase() %>" data-open="<%= r.open %>">
       <div class="resto-cover">
         <img class="resto-cover-image" src="<%= imageSrc %>" alt="<%= r.name %>" loading="lazy">
@@ -213,19 +213,19 @@ function restoImage(id) {
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const RESTOS = <%- JSON.stringify(restaurants.map((r) => ({ id: r.id, name: r.name, lat: r.lat, lng: r.lng, image: restoImage(r.id), open: r.open }))) %>;
+const RESTOS = <%- JSON.stringify(restaurants.map((r) => ({ id: r.id, name: r.name, lat: r.lat, lng: r.lng, image: r.image || r.coverImage || restoImage(r.id), open: r.open }))) %>;
 const COLLO = [37.0014, 6.5620];
 
 const map = L.map('resto-map', { zoomControl: false, scrollWheelZoom: false }).setView(COLLO, 14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-RESTOS.forEach((r) => {
+RESTOS.filter((r) => Number.isFinite(Number(r.lat)) && Number.isFinite(Number(r.lng))).forEach((r) => {
   const icon = L.divIcon({
     className: '',
     html: `<div class="map-marker" style="outline:${r.open ? '2px solid #ff5c1a' : '2px solid #666'}"><img src="${r.image}" alt="${r.name}"></div>`,
     iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
   });
-  L.marker([r.lat, r.lng], { icon })
+  L.marker([Number(r.lat), Number(r.lng)], { icon })
     .addTo(map)
     .bindPopup(`<b>${r.name}</b><br><a href="/client/restaurants/${r.id}" style="color:#ff5c1a">Voir le menu →</a>`)
     .openPopup;
@@ -295,4 +295,3 @@ window.addEventListener('focus', refreshStoredCartShortcut);
 </script>
 </body>
 </html>
-

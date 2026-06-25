@@ -13,6 +13,63 @@ const adminWriteLimiter = createRateLimiter({
   message: 'Trop d actions admin en peu de temps, reessayez dans quelques minutes',
 });
 
+function slugify(value) {
+  return cleanString(value, 80)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+}
+
+function parseTags(value) {
+  return cleanString(value, 200)
+    .split(',')
+    .map((tag) => cleanString(tag, 30))
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function parseMenuJson(value) {
+  const raw = cleanTextBlock(value, 60000);
+  if (!raw) return {};
+  const parsed = JSON.parse(raw);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('MENU_JSON_INVALID');
+  }
+  return parsed;
+}
+
+function formatMenuJson(menu) {
+  return JSON.stringify(menu || {}, null, 2);
+}
+
+function buildRestaurantPayload(body, existingId = '') {
+  const name = cleanName(body.name);
+  const id = existingId || slugify(body.id || name);
+  const menu = parseMenuJson(body.menu_json);
+
+  return {
+    id,
+    name,
+    category: cleanString(body.category, 120),
+    description: cleanTextBlock(body.description, 500),
+    address: cleanString(body.address, 180),
+    lat: body.lat === '' ? null : toSafeNumber(body.lat, null),
+    lng: body.lng === '' ? null : toSafeNumber(body.lng, null),
+    rating: Math.max(0, Math.min(5, toSafeNumber(body.rating, 5))),
+    deliveryTime: cleanString(body.delivery_time, 40),
+    deliveryFee: Math.max(0, Math.round(toSafeNumber(body.delivery_fee, 0))),
+    minOrder: Math.max(0, Math.round(toSafeNumber(body.min_order, 0))),
+    open: cleanString(body.open, 10) === 'true',
+    tags: parseTags(body.tags),
+    image: cleanString(body.image, 500),
+    coverImage: cleanString(body.cover_image || body.image, 500),
+    menu,
+  };
+}
+
 router.get('/dashboard', async (req, res) => {
   const stats = await db.getStats();
   const recentOrders = (await db.getAllOrders()).slice(0, 8);
@@ -25,6 +82,63 @@ router.get('/commandes', async (req, res) => {
   const search = cleanString(req.query.search || '', 80);
   const orders = await db.getAllOrders({ status, search });
   res.render('admin/orders', { orders, status: status || 'all', search });
+});
+
+router.get('/restaurants', async (req, res) => {
+  const restaurants = await db.getRestaurants();
+  res.render('admin/restaurants', { restaurants, formatMenuJson });
+});
+
+router.post('/restaurants', adminWriteLimiter, async (req, res) => {
+  try {
+    const payload = buildRestaurantPayload(req.body);
+    if (!payload.id || !payload.name) {
+      req.flash('error', 'Nom du restaurant obligatoire');
+      return res.redirect('/admin/restaurants');
+    }
+
+    const existing = await db.findRestaurantById(payload.id);
+    if (existing) {
+      req.flash('error', 'Cet identifiant restaurant existe deja');
+      return res.redirect('/admin/restaurants');
+    }
+
+    await db.createRestaurant(payload);
+    req.flash('success', `Restaurant ${payload.name} ajoute`);
+  } catch (error) {
+    req.flash('error', error.message === 'MENU_JSON_INVALID' ? 'Menu JSON invalide' : 'Impossible d ajouter le restaurant');
+  }
+  res.redirect('/admin/restaurants');
+});
+
+router.post('/restaurants/:id/modifier', adminWriteLimiter, async (req, res) => {
+  const restaurantId = cleanString(req.params.id, 80);
+  try {
+    const existing = await db.findRestaurantById(restaurantId);
+    if (!existing) {
+      req.flash('error', 'Restaurant introuvable');
+      return res.redirect('/admin/restaurants');
+    }
+
+    const payload = buildRestaurantPayload(req.body, restaurantId);
+    if (!payload.name) {
+      req.flash('error', 'Nom du restaurant obligatoire');
+      return res.redirect('/admin/restaurants');
+    }
+
+    await db.updateRestaurant(restaurantId, payload);
+    req.flash('success', `Restaurant ${payload.name} mis a jour`);
+  } catch (error) {
+    req.flash('error', error.message === 'MENU_JSON_INVALID' ? 'Menu JSON invalide' : 'Impossible de modifier le restaurant');
+  }
+  res.redirect('/admin/restaurants');
+});
+
+router.post('/restaurants/:id/supprimer', adminWriteLimiter, async (req, res) => {
+  const restaurantId = cleanString(req.params.id, 80);
+  await db.deleteRestaurant(restaurantId);
+  req.flash('success', 'Restaurant supprime');
+  res.redirect('/admin/restaurants');
 });
 
 router.post('/commandes', adminWriteLimiter, async (req, res) => {

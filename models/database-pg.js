@@ -4,6 +4,7 @@ require('dotenv').config({ quiet: true });
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { Pool } = require('pg');
+const DEFAULT_RESTAURANTS = require('../data/restaurants');
 
 function uid() {
   return crypto.randomUUID().replace(/-/g, '');
@@ -60,6 +61,25 @@ function normalizeNotif(row) {
     _id: row._id || row.id,
     read: Boolean(row.read),
     created_at: toIso(row.created_at),
+  };
+}
+
+function normalizeRestaurant(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    id: row.id || row._id,
+    _id: row._id || row.id,
+    open: Boolean(row.open),
+    rating: Number(row.rating || 0),
+    deliveryFee: Number(row.delivery_fee ?? row.deliveryFee ?? 0),
+    minOrder: Number(row.min_order ?? row.minOrder ?? 0),
+    deliveryTime: row.delivery_time ?? row.deliveryTime ?? '',
+    coverImage: row.cover_image ?? row.coverImage ?? '',
+    tags: Array.isArray(row.tags_json) ? row.tags_json : Array.isArray(row.tags) ? row.tags : [],
+    menu: row.menu_json && typeof row.menu_json === 'object' ? row.menu_json : row.menu || {},
+    created_at: toIso(row.created_at),
+    updated_at: toIso(row.updated_at),
   };
 }
 
@@ -205,7 +225,30 @@ const ready = (async () => {
     )
   `);
 
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)');
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS restaurants (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      category TEXT,
+      description TEXT,
+      address TEXT,
+      lat DOUBLE PRECISION,
+      lng DOUBLE PRECISION,
+      rating NUMERIC(4,2) NOT NULL DEFAULT 5,
+      delivery_time TEXT,
+      delivery_fee INTEGER NOT NULL DEFAULT 0,
+      min_order INTEGER NOT NULL DEFAULT 0,
+      open BOOLEAN NOT NULL DEFAULT TRUE,
+      tags_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+      image TEXT,
+      cover_image TEXT,
+      menu_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders(client_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_livreur_id ON orders(livreur_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC)');
@@ -215,6 +258,43 @@ const ready = (async () => {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_user_read_created_at ON notifications(user_id, read, created_at DESC)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_users_role_available ON users(role, available)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_restaurants_open ON restaurants(open)');
+
+  const existingRestaurants = await pool.query('SELECT COUNT(*)::int AS total FROM restaurants');
+  if (Number(existingRestaurants.rows[0]?.total || 0) === 0) {
+    for (const restaurant of DEFAULT_RESTAURANTS) {
+      await pool.query(
+        `INSERT INTO restaurants (
+          id, name, category, description, address, lat, lng, rating, delivery_time, delivery_fee,
+          min_order, open, tags_json, image, cover_image, menu_json, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+          $11, $12, $13::jsonb, $14, $15, $16::jsonb, $17, $18
+        )
+        ON CONFLICT (id) DO NOTHING`,
+        [
+          restaurant.id,
+          restaurant.name,
+          restaurant.category || '',
+          restaurant.description || '',
+          restaurant.address || '',
+          restaurant.lat == null ? null : Number(restaurant.lat),
+          restaurant.lng == null ? null : Number(restaurant.lng),
+          Number(restaurant.rating || 5),
+          restaurant.deliveryTime || '',
+          Number(restaurant.deliveryFee || 0),
+          Number(restaurant.minOrder || 0),
+          Boolean(restaurant.open),
+          JSON.stringify(restaurant.tags || []),
+          restaurant.image || '',
+          restaurant.coverImage || restaurant.image || '',
+          JSON.stringify(restaurant.menu || {}),
+          new Date().toISOString(),
+          new Date().toISOString(),
+        ]
+      );
+    }
+  }
 
   const existingAdmin = await pool.query('SELECT id FROM users WHERE phone = $1 LIMIT 1', ['admin']);
   if (existingAdmin.rowCount === 0) {
@@ -571,6 +651,105 @@ const db = {
       [livreurId, Number(deliveredCount || 0), Number(earningAmount || 0)]
     );
   },
+
+  async getRestaurants() {
+    await ensureReady();
+    const { rows } = await pool.query('SELECT * FROM restaurants ORDER BY name ASC');
+    return rows.map(normalizeRestaurant);
+  },
+
+  async findRestaurantById(id) {
+    await ensureReady();
+    const { rows } = await pool.query('SELECT * FROM restaurants WHERE id = $1 LIMIT 1', [id]);
+    return normalizeRestaurant(rows[0]);
+  },
+
+  async createRestaurant(data) {
+    await ensureReady();
+    const { rows } = await pool.query(
+      `INSERT INTO restaurants (
+        id, name, category, description, address, lat, lng, rating, delivery_time, delivery_fee,
+        min_order, open, tags_json, image, cover_image, menu_json, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13::jsonb, $14, $15, $16::jsonb, $17, $18
+      ) RETURNING *`,
+      [
+        data.id,
+        data.name,
+        data.category || '',
+        data.description || '',
+        data.address || '',
+        data.lat == null ? null : Number(data.lat),
+        data.lng == null ? null : Number(data.lng),
+        Number(data.rating || 5),
+        data.deliveryTime || '',
+        Number(data.deliveryFee || 0),
+        Number(data.minOrder || 0),
+        Boolean(data.open),
+        JSON.stringify(data.tags || []),
+        data.image || '',
+        data.coverImage || data.image || '',
+        JSON.stringify(data.menu || {}),
+        new Date().toISOString(),
+        new Date().toISOString(),
+      ]
+    );
+    return normalizeRestaurant(rows[0]);
+  },
+
+  async updateRestaurant(id, data) {
+    await ensureReady();
+    const values = [
+      data.name,
+      data.category || '',
+      data.description || '',
+      data.address || '',
+      data.lat == null ? null : Number(data.lat),
+      data.lng == null ? null : Number(data.lng),
+      Number(data.rating || 5),
+      data.deliveryTime || '',
+      Number(data.deliveryFee || 0),
+      Number(data.minOrder || 0),
+      Boolean(data.open),
+      JSON.stringify(data.tags || []),
+      data.image || '',
+      data.coverImage || data.image || '',
+      JSON.stringify(data.menu || {}),
+      new Date().toISOString(),
+      id,
+    ];
+    const { rows } = await pool.query(
+      `UPDATE restaurants
+       SET name = $1,
+           category = $2,
+           description = $3,
+           address = $4,
+           lat = $5,
+           lng = $6,
+           rating = $7,
+           delivery_time = $8,
+           delivery_fee = $9,
+           min_order = $10,
+           open = $11,
+           tags_json = $12::jsonb,
+           image = $13,
+           cover_image = $14,
+           menu_json = $15::jsonb,
+           updated_at = $16
+       WHERE id = $17
+       RETURNING *`,
+      values
+    );
+    return normalizeRestaurant(rows[0]);
+  },
+
+  async deleteRestaurant(id) {
+    await ensureReady();
+    const result = await pool.query('DELETE FROM restaurants WHERE id = $1', [id]);
+    return result.rowCount;
+  },
+
   async getStats() {
     const allOrders = await this.getAllOrders();
     const livreurs = await this.getLivreurs();
@@ -767,5 +946,3 @@ const db = {
 };
 
 module.exports = db;
-
-
