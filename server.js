@@ -11,6 +11,7 @@ const path = require('path');
 const db = require('./models/db');
 const { requireAuth, requireRole } = require('./middleware/auth');
 const { createRateLimiter, getClientKey, securityHeaders, sameOriginWriteGuard } = require('./middleware/security');
+const { i18nMiddleware } = require('./utils/i18n');
 
 const app = express();
 const server = http.createServer(app);
@@ -83,6 +84,7 @@ app.use(sessionMiddleware);
 io.engine.use(sessionMiddleware);
 
 app.use(flash());
+app.use(i18nMiddleware);
 app.use((req, res, next) => {
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
