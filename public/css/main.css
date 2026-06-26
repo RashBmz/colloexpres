@@ -180,6 +180,96 @@ body::before {
   width: 100%; max-width: 320px; margin-bottom: 40px;
 }
 
+.btn-app-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, #ff5c1a 0%, #ffb347 100%);
+  color: #120b08;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 42px rgba(255, 92, 26, 0.34), inset 0 1px 0 rgba(255,255,255,0.28);
+  position: relative;
+  overflow: hidden;
+}
+.btn-app-download::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 17px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transform: translateX(-110%);
+  transition: transform 0.55s ease;
+  pointer-events: none;
+}
+.btn-app-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 50px rgba(255, 92, 26, 0.44), inset 0 1px 0 rgba(255,255,255,0.34);
+}
+.btn-app-download:hover::after { transform: translateX(110%); }
+.btn-app-download:active { transform: scale(0.98); }
+.app-download-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #050505;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+.app-download-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.app-download-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.1;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 900;
+}
+.app-download-copy strong {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+.app-download-copy small {
+  margin-top: 4px;
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: rgba(18, 11, 8, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.app-download-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(18, 11, 8, 0.16);
+  color: #120b08;
+  font-size: 20px;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
 .stats-row {
   display: flex; align-items: center; gap: 20px;
 }
