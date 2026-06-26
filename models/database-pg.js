@@ -83,8 +83,40 @@ function normalizeRestaurant(row) {
   };
 }
 
+function normalizeSettlement(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    id: row.id || row._id,
+    _id: row._id || row.id,
+    commission_rate: Number(row.commission_rate || 0),
+    delivered_count: Number(row.delivered_count || 0),
+    delivery_total: Number(row.delivery_total || 0),
+    collected_total: Number(row.collected_total || 0),
+    commission_due: Number(row.commission_due || 0),
+    amount_paid: Number(row.amount_paid || 0),
+    period_start: toIso(row.period_start),
+    period_end: toIso(row.period_end),
+    paid_at: toIso(row.paid_at),
+    created_at: toIso(row.created_at),
+    updated_at: toIso(row.updated_at),
+  };
+}
+
 const getOrderGain = (order = {}) => Number(order.delivery_fee ?? ((order.subtotal != null && order.price != null) ? (order.price - order.subtotal) : order.price ?? 0));
 const getOrderCollected = (order = {}) => Number(order.price ?? getOrderGain(order));
+
+function roundMoney(value) {
+  return Math.max(0, Math.round(Number(value || 0)));
+}
+
+function normalizeRate(value) {
+  return Math.max(0, Math.min(100, Math.round(Number(value || 0) * 100) / 100));
+}
+
+function getSettlementPeriodKey(livreurId, periodStart, periodEnd, commissionRate) {
+  return `${livreurId}|${new Date(periodStart).toISOString()}|${new Date(periodEnd).toISOString()}|${normalizeRate(commissionRate)}`;
+}
 
 function startOfToday(baseDate = new Date()) {
   const date = new Date(baseDate);
@@ -137,6 +169,104 @@ function buildLivreurPeriodStats(ordersList, baseDate = new Date()) {
     month: summarizeDeliveredOrders(deliveredOrders.filter((order) => order.deliveredDate >= month)),
     year: summarizeDeliveredOrders(deliveredOrders.filter((order) => order.deliveredDate >= year)),
     all: summarizeDeliveredOrders(deliveredOrders),
+  };
+}
+
+function buildAccountingRows(livreurs, deliveredOrders, settlements, periodStart, periodEnd, commissionRate) {
+  const rate = normalizeRate(commissionRate);
+  const startIso = new Date(periodStart).toISOString();
+  const endIso = new Date(periodEnd).toISOString();
+  const periodSettlements = settlements.filter((settlement) => (
+    new Date(settlement.period_start).toISOString() === startIso &&
+    new Date(settlement.period_end).toISOString() === endIso &&
+    normalizeRate(settlement.commission_rate) === rate
+  ));
+
+  const rows = livreurs.map((livreur) => {
+    const livreurId = livreur._id || livreur.id;
+    const orderList = deliveredOrders.filter((order) => order.livreur_id === livreurId);
+    const deliveryTotal = roundMoney(orderList.reduce((sum, order) => sum + getOrderGain(order), 0));
+    const collectedTotal = roundMoney(orderList.reduce((sum, order) => sum + getOrderCollected(order), 0));
+    const commissionDue = roundMoney(deliveryTotal * rate / 100);
+    const paidRecords = periodSettlements.filter((settlement) => settlement.livreur_id === livreurId);
+    const paidAmount = roundMoney(paidRecords.reduce((sum, settlement) => sum + Number(settlement.amount_paid || 0), 0));
+    const remainingDue = Math.max(commissionDue - paidAmount, 0);
+    const latestSettlement = paidRecords
+      .slice()
+      .sort((a, b) => new Date(b.paid_at || b.created_at) - new Date(a.paid_at || a.created_at))[0] || null;
+
+    return {
+      livreur,
+      livreur_id: livreurId,
+      delivered_count: orderList.length,
+      delivery_total: deliveryTotal,
+      collected_total: collectedTotal,
+      commission_due: commissionDue,
+      paid_amount: paidAmount,
+      remaining_due: remainingDue,
+      latest_settlement: latestSettlement,
+      status: commissionDue === 0 ? 'empty' : remainingDue === 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid',
+    };
+  });
+
+  return rows.sort((a, b) => (
+    b.remaining_due - a.remaining_due ||
+    b.commission_due - a.commission_due ||
+    String(a.livreur.name || '').localeCompare(String(b.livreur.name || ''), 'fr')
+  ));
+}
+
+function buildDriverAccountingDetail(livreur, deliveredOrders, settlements, commissionRate) {
+  const rate = normalizeRate(commissionRate);
+  const sortedOrders = deliveredOrders
+    .slice()
+    .sort((a, b) => new Date(b.delivered_at || b.updated_at || b.created_at) - new Date(a.delivered_at || a.updated_at || a.created_at));
+  const sortedSettlements = settlements
+    .slice()
+    .sort((a, b) => new Date(b.paid_at || b.created_at) - new Date(a.paid_at || a.created_at));
+  const deliveryTotal = roundMoney(sortedOrders.reduce((sum, order) => sum + getOrderGain(order), 0));
+  const collectedTotal = roundMoney(sortedOrders.reduce((sum, order) => sum + getOrderCollected(order), 0));
+  const commissionDue = roundMoney(deliveryTotal * rate / 100);
+  const paidAmount = roundMoney(sortedSettlements.reduce((sum, settlement) => sum + Number(settlement.amount_paid || 0), 0));
+  const remainingDue = Math.max(commissionDue - paidAmount, 0);
+  const now = new Date();
+  const periods = [7, 10, 30].map((days) => {
+    const start = new Date(now);
+    start.setDate(start.getDate() - (days - 1));
+    start.setHours(0, 0, 0, 0);
+    const periodOrders = sortedOrders.filter((order) => {
+      const deliveredAt = new Date(order.delivered_at || order.updated_at || order.created_at);
+      return !Number.isNaN(deliveredAt.getTime()) && deliveredAt >= start;
+    });
+    const periodDeliveryTotal = roundMoney(periodOrders.reduce((sum, order) => sum + getOrderGain(order), 0));
+    return {
+      days,
+      delivered_count: periodOrders.length,
+      delivery_total: periodDeliveryTotal,
+      collected_total: roundMoney(periodOrders.reduce((sum, order) => sum + getOrderCollected(order), 0)),
+      commission_due: roundMoney(periodDeliveryTotal * rate / 100),
+    };
+  });
+
+  return {
+    livreur,
+    commission_rate: rate,
+    totals: {
+      delivered_count: sortedOrders.length,
+      delivery_total: deliveryTotal,
+      collected_total: collectedTotal,
+      commission_due: commissionDue,
+      paid_amount: paidAmount,
+      remaining_due: remainingDue,
+    },
+    periods,
+    orders: sortedOrders.slice(0, 80).map((order) => ({
+      ...order,
+      delivery_gain: roundMoney(getOrderGain(order)),
+      collected_amount: roundMoney(getOrderCollected(order)),
+      commission_amount: roundMoney(getOrderGain(order) * rate / 100),
+    })),
+    settlements: sortedSettlements,
   };
 }
 
@@ -264,6 +394,26 @@ const ready = (async () => {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS driver_settlements (
+      id TEXT PRIMARY KEY,
+      livreur_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      period_key TEXT NOT NULL UNIQUE,
+      period_start TIMESTAMPTZ NOT NULL,
+      period_end TIMESTAMPTZ NOT NULL,
+      commission_rate NUMERIC(5,2) NOT NULL,
+      delivered_count INTEGER NOT NULL DEFAULT 0,
+      delivery_total INTEGER NOT NULL DEFAULT 0,
+      collected_total INTEGER NOT NULL DEFAULT 0,
+      commission_due INTEGER NOT NULL DEFAULT 0,
+      amount_paid INTEGER NOT NULL DEFAULT 0,
+      notes TEXT,
+      paid_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders(client_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_livreur_id ON orders(livreur_id)');
@@ -279,6 +429,8 @@ const ready = (async () => {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_push_subscriptions_type ON push_subscriptions(type)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_restaurants_open ON restaurants(open)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_driver_settlements_livreur_id ON driver_settlements(livreur_id)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_driver_settlements_period ON driver_settlements(period_start DESC, period_end DESC)');
 
   const existingRestaurants = await pool.query('SELECT COUNT(*)::int AS total FROM restaurants');
   if (Number(existingRestaurants.rows[0]?.total || 0) === 0) {
@@ -911,6 +1063,109 @@ const db = {
       ...livreur,
       period_stats: buildLivreurPeriodStats(deliveredOrders.filter((order) => order.livreur_id === livreur._id)),
     }));
+  },
+
+  async getDriverSettlements(limit = 40) {
+    await ensureReady();
+    const { rows } = await pool.query(
+      `SELECT ds.*, u.name AS livreur_name
+         FROM driver_settlements ds
+         LEFT JOIN users u ON u.id = ds.livreur_id
+        ORDER BY ds.paid_at DESC, ds.created_at DESC
+        LIMIT $1`,
+      [Math.max(1, Number(limit || 40))]
+    );
+    return rows.map((row) => normalizeSettlement({ ...row, livreur_name: row.livreur_name || 'Livreur supprime' }));
+  },
+
+  async getDriverAccounting({ periodStart, periodEnd, commissionRate }) {
+    await ensureReady();
+    const start = new Date(periodStart);
+    const end = new Date(periodEnd);
+    const livreurs = await this.getLivreurs();
+    const allOrders = await this.getAllOrders();
+    const deliveredOrders = allOrders.filter((order) => {
+      const deliveredAt = new Date(order.delivered_at || order.updated_at || order.created_at);
+      return order.status === 'delivered' && order.livreur_id && !Number.isNaN(deliveredAt.getTime()) && deliveredAt >= start && deliveredAt <= end;
+    });
+    const { rows: settlementRows } = await pool.query('SELECT * FROM driver_settlements');
+    const settlements = settlementRows.map(normalizeSettlement);
+    const rows = buildAccountingRows(livreurs, deliveredOrders, settlements, start, end, commissionRate);
+    const totals = rows.reduce((acc, row) => ({
+      delivered_count: acc.delivered_count + row.delivered_count,
+      delivery_total: acc.delivery_total + row.delivery_total,
+      collected_total: acc.collected_total + row.collected_total,
+      commission_due: acc.commission_due + row.commission_due,
+      paid_amount: acc.paid_amount + row.paid_amount,
+      remaining_due: acc.remaining_due + row.remaining_due,
+    }), { delivered_count: 0, delivery_total: 0, collected_total: 0, commission_due: 0, paid_amount: 0, remaining_due: 0 });
+
+    return {
+      period_start: start.toISOString(),
+      period_end: end.toISOString(),
+      commission_rate: normalizeRate(commissionRate),
+      rows,
+      totals,
+      settlements: await this.getDriverSettlements(30),
+    };
+  },
+
+  async getDriverAccountingDetail(livreurId, { commissionRate = 20 } = {}) {
+    await ensureReady();
+    const livreur = await this.findUserById(String(livreurId));
+    if (!livreur || livreur.role !== 'livreur') return null;
+    const allOrders = await this.getAllOrders();
+    const deliveredOrders = allOrders.filter((order) => order.livreur_id === livreur._id && order.status === 'delivered');
+    const { rows } = await pool.query(
+      'SELECT * FROM driver_settlements WHERE livreur_id = $1 ORDER BY paid_at DESC, created_at DESC',
+      [livreur._id]
+    );
+    return buildDriverAccountingDetail(livreur, deliveredOrders, rows.map(normalizeSettlement), commissionRate);
+  },
+
+  async createDriverSettlement(data) {
+    await ensureReady();
+    const livreurId = String(data.livreur_id || '');
+    const periodStart = new Date(data.period_start);
+    const periodEnd = new Date(data.period_end);
+    const commissionRate = normalizeRate(data.commission_rate);
+    const periodKey = getSettlementPeriodKey(livreurId, periodStart, periodEnd, commissionRate);
+    const values = [
+      data.id || data._id || uid(),
+      livreurId,
+      periodKey,
+      periodStart.toISOString(),
+      periodEnd.toISOString(),
+      commissionRate,
+      roundMoney(data.delivered_count),
+      roundMoney(data.delivery_total),
+      roundMoney(data.collected_total),
+      roundMoney(data.commission_due),
+      roundMoney(data.amount_paid ?? data.commission_due),
+      String(data.notes || '').slice(0, 400),
+      new Date().toISOString(),
+    ];
+    const { rows } = await pool.query(
+      `INSERT INTO driver_settlements (
+        id, livreur_id, period_key, period_start, period_end, commission_rate, delivered_count,
+        delivery_total, collected_total, commission_due, amount_paid, notes, paid_at, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7,
+        $8, $9, $10, $11, $12, $13, NOW(), NOW()
+      )
+      ON CONFLICT (period_key) DO UPDATE SET
+        delivered_count = EXCLUDED.delivered_count,
+        delivery_total = EXCLUDED.delivery_total,
+        collected_total = EXCLUDED.collected_total,
+        commission_due = EXCLUDED.commission_due,
+        amount_paid = LEAST(EXCLUDED.commission_due, driver_settlements.amount_paid + EXCLUDED.amount_paid),
+        notes = EXCLUDED.notes,
+        paid_at = EXCLUDED.paid_at,
+        updated_at = NOW()
+      RETURNING *`,
+      values
+    );
+    return normalizeSettlement(rows[0]);
   },
 
   async upsertUser(data) {

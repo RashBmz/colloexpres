@@ -1,9 +1,10 @@
-const CACHE_NAME = 'colloexpress-v7';
+const CACHE_NAME = 'colloexpress-v9';
 const STATIC_ASSETS = [
-  '/',
-  '/css/main.css?v=app-push-1',
-  '/js/i18n.js?v=app-push-1',
-  '/js/push.js?v=app-push-1',
+  '/css/main.css?v=fluid-1',
+  '/js/i18n.js?v=fluid-1',
+  '/js/push.js?v=fluid-1',
+  '/js/app-fast.js?v=fluid-1',
+  '/js/pwa.js?v=2',
   '/manifest.webmanifest',
   '/images/icons/icon-192.png',
   '/images/icons/icon-512.png'
@@ -35,9 +36,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() => caches.match('/'))
-    );
+    event.respondWith(fetch(request));
     return;
   }
 

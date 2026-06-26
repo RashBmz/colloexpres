@@ -107,6 +107,7 @@
           </form>
         </div>
       </details>
+      <a href="/admin/comptabilite/livreurs/<%= livreurId %>" class="btn-outline" style="width:100%;justify-content:center;margin-top:10px">Fiche compta</a>
     </div>
     <% }) %>
   </div>
@@ -114,7 +115,7 @@
   <%- include('../partials/bottom-nav', { navItems: [
     { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
     { href: '/admin/commandes', icon: '📦', label: 'Cmdes', active: false },
-    { href: '/admin/restaurants', icon: '🍔', label: 'Restos', active: false },
+    { href: '/admin/comptabilite', icon: '💰', label: 'Compta', active: false },
     { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: true },
     { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
   ]}) %>

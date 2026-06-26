@@ -14,6 +14,11 @@ const adminWriteLimiter = createRateLimiter({
   message: 'Trop d actions admin en peu de temps, reessayez dans quelques minutes',
 });
 
+router.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+});
+
 function slugify(value) {
   return cleanString(value, 80)
     .normalize('NFD')
@@ -71,11 +76,40 @@ function buildRestaurantPayload(body, existingId = '') {
   };
 }
 
+function parseDateInput(value, fallbackDate = new Date()) {
+  const raw = cleanString(value || '', 30);
+  if (!raw) return fallbackDate;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? fallbackDate : parsed;
+}
+
+function getAccountingFilters(query = {}) {
+  const days = Math.max(1, Math.min(90, Math.round(toSafeNumber(query.days, 7))));
+  const commissionRate = Math.max(0, Math.min(100, toSafeNumber(query.rate, 20)));
+  const end = parseDateInput(query.end, new Date());
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(end);
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+
+  return {
+    days,
+    rate: commissionRate,
+    endDate: end.toISOString().slice(0, 10),
+    periodStart: start.toISOString(),
+    periodEnd: end.toISOString(),
+  };
+}
+
 router.get('/dashboard', async (req, res) => {
   const stats = await db.getStats();
   const recentOrders = (await db.getAllOrders()).slice(0, 8);
   const livreurs = (await db.getLivreursWithPerformance()).slice(0, 6);
   res.render('admin/dashboard', { stats, recentOrders, livreurs });
+});
+
+router.get('/', (req, res) => {
+  res.redirect('/admin/dashboard');
 });
 
 router.get('/commandes', async (req, res) => {
@@ -287,6 +321,68 @@ router.delete('/commandes/:id', adminWriteLimiter, deleteOrderHandler);
 router.get('/livreurs', async (req, res) => {
   const livreurs = await db.getLivreursWithPerformance();
   res.render('admin/livreurs', { livreurs });
+});
+
+router.get('/comptabilite', async (req, res) => {
+  const filters = getAccountingFilters(req.query);
+  const accounting = await db.getDriverAccounting({
+    periodStart: filters.periodStart,
+    periodEnd: filters.periodEnd,
+    commissionRate: filters.rate,
+  });
+  res.render('admin/accounting', { accounting, filters });
+});
+
+router.get('/comptabilite/livreurs/:id', async (req, res) => {
+  const rate = Math.max(0, Math.min(100, toSafeNumber(req.query.rate, 20)));
+  const livreurId = cleanString(req.params.id, 64);
+  const detail = await db.getDriverAccountingDetail(livreurId, { commissionRate: rate });
+  if (!detail) {
+    req.flash('error', 'Livreur introuvable');
+    return res.redirect('/admin/comptabilite');
+  }
+  res.render('admin/accounting-driver', { detail, rate });
+});
+
+router.post('/comptabilite/reglement', adminWriteLimiter, async (req, res) => {
+  const livreurId = cleanString(req.body.livreur_id, 64);
+  const periodStart = parseDateInput(req.body.period_start, new Date());
+  const periodEnd = parseDateInput(req.body.period_end, new Date());
+  const commissionRate = Math.max(0, Math.min(100, toSafeNumber(req.body.commission_rate, 20)));
+  const amountPaid = Math.max(0, Math.round(toSafeNumber(req.body.amount_paid, 0)));
+
+  if (!livreurId || amountPaid <= 0) {
+    req.flash('error', 'Montant ou livreur invalide');
+    return res.redirect('/admin/comptabilite');
+  }
+
+  const livreur = await db.findUserById(livreurId);
+  if (!livreur || livreur.role !== 'livreur') {
+    req.flash('error', 'Livreur introuvable');
+    return res.redirect('/admin/comptabilite');
+  }
+
+  await db.createDriverSettlement({
+    livreur_id: livreurId,
+    period_start: periodStart.toISOString(),
+    period_end: periodEnd.toISOString(),
+    commission_rate: commissionRate,
+    delivered_count: toSafeNumber(req.body.delivered_count, 0),
+    delivery_total: toSafeNumber(req.body.delivery_total, 0),
+    collected_total: toSafeNumber(req.body.collected_total, 0),
+    commission_due: toSafeNumber(req.body.commission_due, amountPaid),
+    amount_paid: amountPaid,
+    notes: cleanTextBlock(req.body.notes, 400),
+  });
+
+  req.flash('success', `Reglement enregistre pour ${livreur.name}`);
+  const days = Math.max(1, Math.min(90, Math.round(toSafeNumber(req.body.days, 7))));
+  const end = cleanString(req.body.end, 30);
+  const redirectTo = cleanString(req.body.redirect_to, 180);
+  if (redirectTo.startsWith('/admin/comptabilite')) {
+    return res.redirect(redirectTo);
+  }
+  res.redirect(`/admin/comptabilite?days=${days}&rate=${commissionRate}&end=${encodeURIComponent(end)}`);
 });
 
 router.post('/livreurs', adminWriteLimiter, async (req, res) => {

@@ -1,0 +1,38 @@
+<div class="resto-step">
+  <div class="resto-step-title"><span class="resto-step-num">1</span> Infos du restaurant</div>
+  <div class="resto-grid">
+    <div>
+      <input class="field-input" type="text" name="name" placeholder="Nom du restaurant" value="<%= restaurant ? restaurant.name : '' %>" required>
+      <div class="field-help">Exemple: Pizza Collo, Tacos Express, Cafe du Port.</div>
+    </div>
+    <% if (restaurant) { %>
+      <input class="field-input" type="text" value="<%= restaurant.id %>" disabled>
+    <% } else { %>
+      <input class="field-input" type="text" name="id" placeholder="Identifiant URL optionnel">
+    <% } %>
+  </div>
+  <div class="resto-grid">
+    <input class="field-input" type="text" name="category" placeholder="Categorie visible" value="<%= restaurant ? (restaurant.category || '') : 'Tacos · Pizza · Burger' %>">
+    <select class="field-input" name="open">
+      <option value="true" <%= !restaurant || restaurant.open ? 'selected' : '' %>>Ouvert</option>
+      <option value="false" <%= restaurant && !restaurant.open ? 'selected' : '' %>>Ferme</option>
+    </select>
+  </div>
+  <textarea class="field-input" name="description" rows="2" placeholder="Description courte"><%= restaurant ? (restaurant.description || '') : '' %></textarea>
+  <input class="field-input" type="text" name="address" placeholder="Adresse du restaurant" value="<%= restaurant ? (restaurant.address || '') : '' %>">
+  <div class="resto-grid">
+    <input class="field-input" type="url" name="image" placeholder="Image principale URL" value="<%= restaurant ? (restaurant.image || '') : '' %>">
+    <input class="field-input" type="url" name="cover_image" placeholder="Image couverture URL" value="<%= restaurant ? (restaurant.coverImage || '') : '' %>">
+  </div>
+  <div class="resto-grid-3">
+    <input class="field-input" type="text" name="delivery_time" placeholder="Temps livraison" value="<%= restaurant ? (restaurant.deliveryTime || '') : '25-40 min' %>">
+    <input class="field-input" type="number" min="0" step="1" name="delivery_fee" placeholder="Frais livraison DA" value="<%= restaurant ? (restaurant.deliveryFee || 0) : 100 %>">
+    <input class="field-input" type="number" min="0" step="1" name="min_order" placeholder="Minimum DA" value="<%= restaurant ? (restaurant.minOrder || 0) : 300 %>">
+  </div>
+  <div class="resto-grid-3">
+    <input class="field-input" type="number" min="0" max="5" step="0.1" name="rating" placeholder="Note" value="<%= restaurant ? (restaurant.rating || 5) : 5 %>">
+    <input class="field-input" type="number" step="0.000001" name="lat" placeholder="Latitude optionnelle" value="<%= restaurant && restaurant.lat != null ? restaurant.lat : '' %>">
+    <input class="field-input" type="number" step="0.000001" name="lng" placeholder="Longitude optionnelle" value="<%= restaurant && restaurant.lng != null ? restaurant.lng : '' %>">
+  </div>
+  <input class="field-input" type="text" name="tags" placeholder="Tags separes par virgule: Populaire, Nouveau" value="<%= restaurant ? ((restaurant.tags || []).join(', ')) : 'Populaire' %>">
+</div>

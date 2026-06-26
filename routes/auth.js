@@ -22,11 +22,22 @@ const registerLimiter = createRateLimiter({
 });
 
 router.get('/login', (req, res) => {
-  if (req.session.user) return res.redirect('/');
-  res.render('auth/login', { role: cleanRole(req.query.role || 'client') });
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  const role = cleanRole(req.query.role || 'client');
+  if (req.session.user) {
+    if (req.session.user.role === role) {
+      return res.redirect(`/${role}/dashboard`);
+    }
+    return req.session.destroy(() => {
+      res.clearCookie('colloexpress.sid');
+      res.redirect(`/auth/login?role=${role}`);
+    });
+  }
+  res.render('auth/login', { role });
 });
 
 router.get('/register', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   if (req.session.user) return res.redirect('/');
   res.render('auth/register');
 });

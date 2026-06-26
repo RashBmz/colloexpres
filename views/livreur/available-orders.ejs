@@ -1,13 +1,26 @@
 <%- include('../partials/head', { title: 'Commandes disponibles', bodyClass: 'page-app' }) %>
 <%- include('../partials/flash') %>
 <style>
-.available-list { padding: 16px 16px 100px; }
+.page-app {
+  overflow-x: clip;
+}
+.available-list {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 16px 14px 100px;
+  overflow-x: clip;
+}
 .available-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--r);
   padding: 14px;
   margin-bottom: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: clip;
 }
 .available-head {
   display: flex;
@@ -15,8 +28,17 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  min-width: 0;
 }
-.available-id { font-weight: 800; color: var(--text); }
+.available-head > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.available-id {
+  font-weight: 800;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
 .available-time { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
 .available-price {
   font-family: var(--font-d);
@@ -24,6 +46,7 @@
   line-height: 1;
   color: var(--accent);
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 .available-status {
   display: inline-flex;
@@ -44,6 +67,8 @@
   border-radius: 12px;
   padding: 11px 12px;
   margin-top: 8px;
+  min-width: 0;
+  max-width: 100%;
 }
 .available-label {
   font-size: 10px;
@@ -63,22 +88,25 @@
 }
 .route-line {
   display: grid;
-  grid-template-columns: 82px 1fr;
+  grid-template-columns: minmax(64px, 82px) minmax(0, 1fr);
   gap: 10px;
   align-items: start;
+  min-width: 0;
 }
-.route-kicker { color: var(--muted); font-size: 12px; }
+.route-kicker { color: var(--muted); font-size: 12px; min-width: 0; }
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 8px;
+  min-width: 0;
 }
 .info-pill {
   background: rgba(255,255,255,0.035);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 9px 10px;
+  min-width: 0;
 }
 .info-pill-label {
   font-size: 10px;
@@ -92,15 +120,33 @@
   color: var(--text2);
   overflow-wrap: anywhere;
 }
-.accept-wrap { margin-top: 12px; }
+.accept-wrap { margin-top: 12px; min-width: 0; }
 @media (max-width: 420px) {
-  .available-list { padding: 12px 12px 100px; }
-  .available-head { align-items: stretch; flex-direction: column; }
-  .available-price { font-size: 23px; }
+  .top-bar {
+    gap: 10px;
+  }
+  .back-btn {
+    flex: 0 0 auto;
+  }
+  .page-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .available-list { padding: 10px 10px 100px; }
+  .available-head { align-items: stretch; flex-direction: column; gap: 8px; }
+  .available-price {
+    align-self: flex-start;
+    font-size: 23px;
+    white-space: normal;
+  }
   .route-line { grid-template-columns: 1fr; gap: 2px; }
   .info-grid { grid-template-columns: 1fr; }
-  .available-card { padding: 12px; }
+  .available-card { padding: 12px; border-radius: 14px; }
   .available-value { overflow-wrap: anywhere; }
+  .available-section { padding: 10px; }
 }
 </style>
 <div class="app-layout">
@@ -187,7 +233,7 @@
       </div>
       <% } %>
 
-      <form action="/livreur/commandes/<%= (order.id || order._id) %>/accepter" method="POST" class="accept-wrap">
+      <form action="/livreur/commandes/<%= (order.id || order._id) %>/accepter" method="POST" class="accept-wrap js-fast-submit">
         <button type="submit" class="btn-primary btn-full" style="padding:12px">Accepter cette livraison</button>
       </form>
     </div>
@@ -206,8 +252,13 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
+let reloadTimer = null;
+function softReload() {
+  clearTimeout(reloadTimer);
+  reloadTimer = setTimeout(() => location.reload(), 450);
+}
 socket.emit('livreur:register', <%- JSON.stringify(currentUser.id) %>);
-socket.on('new_order', () => location.reload());
-socket.on('order:taken', () => location.reload());
+socket.on('new_order', softReload);
+socket.on('order:taken', softReload);
 </script>
 </body></html>

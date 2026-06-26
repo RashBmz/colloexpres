@@ -1,0 +1,169 @@
+<%- include('../partials/head', { title: 'Compta livreur', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+<%
+const l = detail.livreur;
+const money = (value) => Number(value || 0).toLocaleString('fr-FR') + ' DA';
+const fmtDate = (value) => value ? new Date(value).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+const fmtDateTime = (value) => value ? new Date(value).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
+const firstOrder = detail.orders.length ? detail.orders[detail.orders.length - 1] : null;
+const periodStart = firstOrder ? (firstOrder.delivered_at || firstOrder.updated_at || firstOrder.created_at) : new Date().toISOString();
+const periodEnd = new Date().toISOString();
+%>
+<style>
+.driver-ledger { padding: 14px 16px 110px; display: grid; gap: 12px; }
+.driver-hero {
+  border: 1px solid rgba(255,122,26,.25);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255,122,26,.14), rgba(0,230,118,.07));
+  padding: 16px;
+}
+.driver-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.driver-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; font-family: var(--font-d); font-size: 24px; flex-shrink: 0;
+}
+.driver-title { min-width: 0; flex: 1; }
+.driver-title h2 { margin: 0; font-size: 22px; line-height: 1.1; overflow-wrap: anywhere; }
+.driver-title p { margin: 5px 0 0; color: var(--text2); font-size: 13px; }
+.driver-rate-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 14px; }
+.ledger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ledger-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 13px; min-width: 0;
+}
+.ledger-card span { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .7px; }
+.ledger-card strong { display: block; margin-top: 5px; font-size: 20px; font-family: var(--font-d); color: var(--accent); overflow-wrap: anywhere; }
+.period-card, .history-card, .order-ledger-row {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 13px;
+}
+.periods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.period-card strong { display: block; font-size: 18px; color: var(--accent); margin-top: 4px; }
+.period-card span, .history-card span, .order-ledger-row span { color: var(--muted); font-size: 12px; }
+.settle-box {
+  background: var(--surface); border: 1px solid rgba(255,122,26,.25);
+  border-radius: 16px; padding: 13px;
+}
+.settle-box form { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; align-items: center; }
+.order-ledger-row { display: grid; gap: 8px; margin-bottom: 8px; }
+.order-ledger-top { display: flex; justify-content: space-between; gap: 10px; }
+.order-ledger-top strong { overflow-wrap: anywhere; }
+.order-ledger-money { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.order-ledger-money div { background: var(--surface); border-radius: 10px; padding: 8px; }
+.order-ledger-money b { display: block; font-size: 13px; margin-top: 2px; }
+@media (max-width: 430px) {
+  .ledger-grid, .periods, .order-ledger-money { grid-template-columns: 1fr; }
+  .driver-rate-form, .settle-box form { grid-template-columns: 1fr; }
+}
+</style>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/admin/comptabilite?rate=<%= detail.commission_rate %>" class="back-btn">Retour</a>
+    <h1 class="page-title">Fiche livreur</h1>
+  </header>
+
+  <main class="driver-ledger">
+    <section class="driver-hero">
+      <div class="driver-top">
+        <div class="driver-avatar"><%= String(l.name || '?').charAt(0).toUpperCase() %></div>
+        <div class="driver-title">
+          <h2><%= l.name %></h2>
+          <p><%= l.phone %> - <%= l.vehicle || 'moto' %> - <%= l.available ? 'En ligne' : 'Hors ligne' %></p>
+        </div>
+      </div>
+      <form class="driver-rate-form" action="/admin/comptabilite/livreurs/<%= l.id || l._id %>" method="GET">
+        <input class="field-input" type="number" min="0" max="100" step="0.5" name="rate" value="<%= detail.commission_rate %>" aria-label="Pourcentage commission">
+        <button class="btn-primary btn-sm" type="submit">Changer %</button>
+      </form>
+    </section>
+
+    <section class="ledger-grid">
+      <div class="ledger-card"><span>Livraisons total</span><strong><%= detail.totals.delivered_count %></strong></div>
+      <div class="ledger-card"><span>Frais livraison</span><strong><%= money(detail.totals.delivery_total) %></strong></div>
+      <div class="ledger-card"><span>Ta commission <%= detail.commission_rate %>%</span><strong><%= money(detail.totals.commission_due) %></strong></div>
+      <div class="ledger-card"><span>Reste a recuperer</span><strong style="color:var(--accent)"><%= money(detail.totals.remaining_due) %></strong></div>
+      <div class="ledger-card"><span>Deja encaisse</span><strong style="color:var(--green)"><%= money(detail.totals.paid_amount) %></strong></div>
+      <div class="ledger-card"><span>Total encaisse client</span><strong><%= money(detail.totals.collected_total) %></strong></div>
+    </section>
+
+    <section>
+      <div class="section-header" style="padding:0;margin-bottom:8px"><h3>Periodes rapides</h3></div>
+      <div class="periods">
+        <% detail.periods.forEach(period => { %>
+          <div class="period-card">
+            <span><%= period.days %> derniers jours</span>
+            <strong><%= money(period.commission_due) %></strong>
+            <span><%= period.delivered_count %> livraison(s) - frais: <%= money(period.delivery_total) %></span>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="settle-box">
+      <strong>Encaissement</strong>
+      <p style="margin:6px 0 0;color:var(--text2);font-size:13px">Quand tu recuperes l'argent de ce livreur, indique le montant puis valide. L'historique gardera la trace.</p>
+      <% if (detail.totals.remaining_due > 0) { %>
+        <form action="/admin/comptabilite/reglement" method="POST">
+          <input type="hidden" name="livreur_id" value="<%= l.id || l._id %>">
+          <input type="hidden" name="period_start" value="<%= periodStart %>">
+          <input type="hidden" name="period_end" value="<%= periodEnd %>">
+          <input type="hidden" name="commission_rate" value="<%= detail.commission_rate %>">
+          <input type="hidden" name="delivered_count" value="<%= detail.totals.delivered_count %>">
+          <input type="hidden" name="delivery_total" value="<%= detail.totals.delivery_total %>">
+          <input type="hidden" name="collected_total" value="<%= detail.totals.collected_total %>">
+          <input type="hidden" name="commission_due" value="<%= detail.totals.commission_due %>">
+          <input type="hidden" name="redirect_to" value="/admin/comptabilite/livreurs/<%= l.id || l._id %>?rate=<%= detail.commission_rate %>">
+          <input class="field-input" type="number" min="1" step="1" name="amount_paid" value="<%= detail.totals.remaining_due %>">
+          <button class="btn-primary btn-sm" type="submit">Marquer encaisse</button>
+        </form>
+      <% } else { %>
+        <p style="margin:8px 0 0;color:var(--green);font-size:13px">Rien a recuperer pour le moment.</p>
+      <% } %>
+    </section>
+
+    <section>
+      <div class="section-header" style="padding:0;margin-bottom:8px"><h3>Historique encaissements</h3></div>
+      <% if (!detail.settlements.length) { %>
+        <div class="history-card"><span>Aucun encaissement enregistre</span></div>
+      <% } %>
+      <% detail.settlements.forEach(settlement => { %>
+        <div class="history-card">
+          <strong><%= money(settlement.amount_paid) %></strong>
+          <span><%= fmtDate(settlement.period_start) %> au <%= fmtDate(settlement.period_end) %> - <%= settlement.commission_rate %>% - encaisse le <%= fmtDateTime(settlement.paid_at) %></span>
+        </div>
+      <% }) %>
+    </section>
+
+    <section>
+      <div class="section-header" style="padding:0;margin-bottom:8px"><h3>Dernieres livraisons</h3></div>
+      <% if (!detail.orders.length) { %>
+        <div class="history-card"><span>Aucune livraison terminee</span></div>
+      <% } %>
+      <% detail.orders.forEach(order => { %>
+        <div class="order-ledger-row">
+          <div class="order-ledger-top">
+            <strong>#<%= String(order.id || order._id).slice(-6) %> - <%= order.resto_name || order.description || 'Livraison' %></strong>
+            <span><%= fmtDateTime(order.delivered_at || order.updated_at || order.created_at) %></span>
+          </div>
+          <span><%= order.client_name || 'Client' %> - <%= order.to_address || '' %></span>
+          <div class="order-ledger-money">
+            <div><span>Frais</span><b><%= money(order.delivery_gain) %></b></div>
+            <div><span>Total client</span><b><%= money(order.collected_amount) %></b></div>
+            <div><span>Commission</span><b><%= money(order.commission_amount) %></b></div>
+          </div>
+        </div>
+      <% }) %>
+    </section>
+  </main>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
+    { href: '/admin/commandes', icon: '📦', label: 'Cmdes', active: false },
+    { href: '/admin/comptabilite', icon: '💰', label: 'Compta', active: true },
+    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Deco', active: false },
+  ]}) %>
+</div>
+</body></html>

@@ -1,0 +1,244 @@
+<%- include('../partials/head', { title: 'Comptabilite livreurs', bodyClass: 'page-app' }) %>
+<%- include('../partials/flash') %>
+<%
+const money = (value) => Number(value || 0).toLocaleString('fr-FR') + ' DA';
+const formatDate = (value) => new Date(value).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+const formatDateTime = (value) => value ? new Date(value).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
+const statusLabel = { paid: 'Encaisse', partial: 'Partiel', unpaid: 'A recuperer', empty: 'Rien' };
+%>
+<style>
+.accounting-hero {
+  margin: 14px 16px 10px;
+  padding: 16px;
+  border: 1px solid rgba(255, 122, 26, 0.24);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255,122,26,0.12), rgba(79,195,247,0.08));
+}
+.accounting-hero h2 { margin: 0; font-size: 22px; line-height: 1.1; }
+.accounting-hero p { margin: 8px 0 0; color: var(--text2); font-size: 13px; line-height: 1.45; }
+.accounting-filter {
+  margin: 0 16px 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.accounting-filter .full { grid-column: 1 / -1; }
+.accounting-label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 5px; }
+.accounting-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+.accounting-stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 13px;
+  min-width: 0;
+}
+.accounting-stat strong {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-d);
+  font-size: 22px;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.accounting-stat span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .7px; }
+.accounting-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.accounting-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+.accounting-driver { min-width: 0; }
+.accounting-driver strong { display: block; font-size: 16px; overflow-wrap: anywhere; }
+.accounting-driver span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+.accounting-badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: var(--font-b);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+}
+.accounting-badge.paid { color: var(--green); border-color: rgba(0,230,118,.3); }
+.accounting-badge.partial { color: var(--accent2); border-color: rgba(255,179,71,.35); }
+.accounting-badge.unpaid { color: var(--accent); border-color: rgba(255,92,26,.35); }
+.accounting-badge.empty { color: var(--muted); }
+.accounting-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.accounting-mini {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  min-width: 0;
+}
+.accounting-mini span { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .6px; }
+.accounting-mini strong { display: block; margin-top: 3px; font-size: 14px; overflow-wrap: anywhere; }
+.settlement-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.accounting-history {
+  margin: 8px 16px 100px;
+}
+.history-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.history-row strong { display: block; }
+.history-row span { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+@media (max-width: 420px) {
+  .accounting-filter,
+  .accounting-summary,
+  .accounting-grid {
+    grid-template-columns: 1fr;
+  }
+  .settlement-form {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+<div class="app-layout">
+  <header class="top-bar">
+    <a href="/admin/dashboard" class="back-btn">Retour</a>
+    <h1 class="page-title">Compta</h1>
+  </header>
+
+  <section class="accounting-hero">
+    <h2>Commissions livreurs</h2>
+    <p>Choisis une periode et ton pourcentage. Le calcul se fait sur les frais de livraison du livreur, puis tu marques quand l'argent est encaisse.</p>
+  </section>
+
+  <form class="accounting-filter" action="/admin/comptabilite" method="GET">
+    <label>
+      <span class="accounting-label">Periode</span>
+      <select class="field-input" name="days">
+        <% [7, 10, 14, 30].forEach(day => { %>
+          <option value="<%= day %>" <%= Number(filters.days) === day ? 'selected' : '' %>><%= day %> jours</option>
+        <% }) %>
+      </select>
+    </label>
+    <label>
+      <span class="accounting-label">Commission %</span>
+      <input class="field-input" type="number" min="0" max="100" step="0.5" name="rate" value="<%= filters.rate %>">
+    </label>
+    <label class="full">
+      <span class="accounting-label">Fin de periode</span>
+      <input class="field-input" type="date" name="end" value="<%= filters.endDate %>">
+    </label>
+    <button class="btn-primary btn-full full" type="submit">Actualiser</button>
+  </form>
+
+  <section class="accounting-summary">
+    <div class="accounting-stat"><span>A demander</span><strong><%= money(accounting.totals.remaining_due) %></strong></div>
+    <div class="accounting-stat"><span>Commission totale</span><strong><%= money(accounting.totals.commission_due) %></strong></div>
+    <div class="accounting-stat"><span>Deja encaisse</span><strong><%= money(accounting.totals.paid_amount) %></strong></div>
+    <div class="accounting-stat"><span>Livraisons</span><strong><%= accounting.totals.delivered_count %></strong></div>
+  </section>
+
+  <div style="padding:0 16px">
+    <div class="section-header" style="padding:0;margin-bottom:10px">
+      <h3>Du <%= formatDate(accounting.period_start) %> au <%= formatDate(accounting.period_end) %></h3>
+    </div>
+
+    <% if (!accounting.rows.length) { %>
+      <div class="empty-state"><div class="empty-icon">0</div><p>Aucun livreur pour le moment</p></div>
+    <% } %>
+
+    <% accounting.rows.forEach(row => { %>
+      <% const l = row.livreur; %>
+      <article class="accounting-card">
+        <div class="accounting-card-top">
+          <div class="accounting-driver">
+            <strong><%= l.name %></strong>
+            <span><%= l.phone %> - <%= row.delivered_count %> livraison(s)</span>
+          </div>
+          <span class="accounting-badge <%= row.status %>"><%= statusLabel[row.status] %></span>
+        </div>
+        <div style="margin-top:10px">
+          <a class="btn-outline" style="width:100%;justify-content:center" href="/admin/comptabilite/livreurs/<%= row.livreur_id %>?rate=<%= accounting.commission_rate %>">Voir la fiche complete</a>
+        </div>
+
+        <div class="accounting-grid">
+          <div class="accounting-mini"><span>Frais livraison</span><strong><%= money(row.delivery_total) %></strong></div>
+          <div class="accounting-mini"><span>Total encaisse client</span><strong><%= money(row.collected_total) %></strong></div>
+          <div class="accounting-mini"><span>Ta commission <%= accounting.commission_rate %>%</span><strong><%= money(row.commission_due) %></strong></div>
+          <div class="accounting-mini"><span>Reste a recuperer</span><strong style="color:var(--accent)"><%= money(row.remaining_due) %></strong></div>
+        </div>
+
+        <% if (row.latest_settlement) { %>
+          <div style="margin-top:10px;color:var(--muted);font-size:12px">Dernier encaissement: <%= money(row.paid_amount) %> le <%= formatDateTime(row.latest_settlement.paid_at) %></div>
+        <% } %>
+
+        <% if (row.remaining_due > 0) { %>
+          <form class="settlement-form" action="/admin/comptabilite/reglement" method="POST">
+            <input type="hidden" name="livreur_id" value="<%= row.livreur_id %>">
+            <input type="hidden" name="period_start" value="<%= accounting.period_start %>">
+            <input type="hidden" name="period_end" value="<%= accounting.period_end %>">
+            <input type="hidden" name="commission_rate" value="<%= accounting.commission_rate %>">
+            <input type="hidden" name="delivered_count" value="<%= row.delivered_count %>">
+            <input type="hidden" name="delivery_total" value="<%= row.delivery_total %>">
+            <input type="hidden" name="collected_total" value="<%= row.collected_total %>">
+            <input type="hidden" name="commission_due" value="<%= row.commission_due %>">
+            <input type="hidden" name="days" value="<%= filters.days %>">
+            <input type="hidden" name="end" value="<%= filters.endDate %>">
+            <input class="field-input" type="number" min="1" step="1" name="amount_paid" value="<%= row.remaining_due %>" aria-label="Montant encaisse">
+            <button class="btn-primary btn-sm" type="submit">Encaisse</button>
+          </form>
+        <% } %>
+      </article>
+    <% }) %>
+  </div>
+
+  <section class="accounting-history">
+    <div class="section-header" style="padding:0;margin-bottom:10px">
+      <h3>Historique encaissements</h3>
+    </div>
+    <% if (!accounting.settlements.length) { %>
+      <div class="empty-state"><p>Aucun reglement enregistre</p></div>
+    <% } %>
+    <% accounting.settlements.forEach(settlement => { %>
+      <div class="history-row">
+        <strong><%= settlement.livreur_name %> - <%= money(settlement.amount_paid) %></strong>
+        <span><%= formatDate(settlement.period_start) %> au <%= formatDate(settlement.period_end) %> - <%= settlement.commission_rate %>% - <%= formatDateTime(settlement.paid_at) %></span>
+      </div>
+    <% }) %>
+  </section>
+
+  <%- include('../partials/bottom-nav', { navItems: [
+    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
+    { href: '/admin/commandes', icon: '📦', label: 'Cmdes', active: false },
+    { href: '/admin/comptabilite', icon: '💰', label: 'Compta', active: true },
+    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: false },
+    { href: '/auth/logout', icon: '↩', label: 'Deco', active: false },
+  ]}) %>
+</div>
+</body></html>
