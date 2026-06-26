@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/db');
+const push = require('../services/push');
 const { createRateLimiter, getClientKey } = require('../middleware/security');
 const { cleanString, cleanTextBlock, toSafeNumber } = require('../utils/input');
 
@@ -240,6 +241,22 @@ router.post('/commandes/food', clientWriteLimiter, async (req, res) => {
       order_id: order._id,
     });
   }
+  await push.sendToRole('livreur', {
+    title: `Nouvelle commande ${resto.name}`,
+    body: `${cartResult.items.length} article(s) - ${total} DA`,
+    url: '/livreur/commandes',
+    tag: `order-${order._id}`,
+    orderId: order._id,
+    type: 'new_order',
+  });
+  await push.sendToRole('admin', {
+    title: 'Nouvelle commande',
+    body: `${client.name} - ${resto.name} - ${total} DA`,
+    url: '/admin/commandes',
+    tag: `admin-order-${order._id}`,
+    orderId: order._id,
+    type: 'new_order',
+  });
 
   req.flash('success', `Commande chez ${resto.name} envoyee !`);
   res.redirect(`/client/commandes/${order._id}`);
@@ -317,6 +334,22 @@ router.post('/commandes', clientWriteLimiter, async (req, res) => {
       order_id: order._id,
     });
   }
+  await push.sendToRole('livreur', {
+    title: isCourses ? 'Nouvelle course' : 'Nouvelle livraison',
+    body: isCourses ? `Vers ${toAddress} - ${price} DA` : `${fromAddress} -> ${toAddress} - ${price} DA`,
+    url: '/livreur/commandes',
+    tag: `order-${order._id}`,
+    orderId: order._id,
+    type: 'new_order',
+  });
+  await push.sendToRole('admin', {
+    title: 'Nouvelle commande',
+    body: `${client.name} - ${price} DA`,
+    url: '/admin/commandes',
+    tag: `admin-order-${order._id}`,
+    orderId: order._id,
+    type: 'new_order',
+  });
 
   req.flash('success', isCourses ? 'Demande de course envoyee ! Un livreur va vous contacter.' : 'Commande envoyee ! Un livreur va accepter tres bientot.');
   res.redirect(`/client/commandes/${order._id}`);
@@ -352,6 +385,14 @@ router.post('/commandes/:id/annuler', clientWriteLimiter, async (req, res) => {
 
   io.to(`order_${orderId}`).emit('order:status_update', { status: 'cancelled', order: updatedOrder });
   io.to('admin_room').emit('order:status_changed', { order: updatedOrder });
+  await push.sendToRole('admin', {
+    title: 'Commande annulee',
+    body: `Le client a annule la commande #${String(orderId).slice(-6)}`,
+    url: '/admin/commandes',
+    tag: `cancel-${orderId}`,
+    orderId,
+    type: 'order_cancelled',
+  });
 
   req.flash('success', 'Commande annulee');
   res.redirect(`/client/commandes/${orderId}`);

@@ -81,6 +81,24 @@ const deliveryDuration = formatDeliveryDuration(deliveryTimerStart, order.delive
   font-weight: 800;
   color: var(--accent);
 }
+@media (max-width: 420px) {
+  .invoice-panel { padding: 14px; }
+  .invoice-row,
+  .invoice-total {
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .invoice-row span:first-child,
+  .invoice-total-label {
+    min-width: 0;
+  }
+  .invoice-row span:last-child,
+  .invoice-total-amount {
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .invoice-total-amount { font-size: 20px; }
+}
 </style>
 <%- include('../partials/flash') %>
 

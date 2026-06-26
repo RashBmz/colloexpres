@@ -60,7 +60,7 @@
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 6px">
+  <div class="quick-action-grid">
     <a href="/livreur/livraisons" class="quick-action-card" style="background:linear-gradient(135deg,#00151f,#08273a);border-color:rgba(79,195,247,0.22)">
       <span style="font-size:28px">🛵</span>
       <div>
@@ -78,6 +78,7 @@
   </div>
 
   <style>
+  .quick-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 16px 6px; }
   .quick-action-card {
     background: var(--card); border: 1px solid var(--border);
     border-radius: var(--r); padding: 14px;
@@ -85,6 +86,9 @@
     transition: all 0.2s; color: var(--text);
   }
   .quick-action-card:hover { transform: translateY(-2px); }
+  @media (max-width: 360px) {
+    .quick-action-grid { grid-template-columns:1fr; margin:0 12px 8px; }
+  }
   </style>
 
   <!-- ACTIVE ORDERS -->
@@ -371,5 +375,4 @@ document.getElementById('notif-form').addEventListener('submit', function() {
 </script>
 </body>
 </html>
-
 

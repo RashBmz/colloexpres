@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/db');
+const push = require('../services/push');
 const { createRateLimiter, getClientKey } = require('../middleware/security');
 const { cleanString } = require('../utils/input');
 
@@ -76,6 +77,14 @@ router.post('/commandes/:id/accepter', livreurWriteLimiter, async (req, res) => 
     io.emit('order:taken', { orderId, livreurId });
     io.to(`order_${orderId}`).emit('order:accepted', { livreurId, livreurName: livreur.name });
     io.to('admin_room').emit('order:status_changed', { order: updated });
+    await push.sendToUsers([updated.client_id], {
+      title: 'Commande acceptee',
+      body: `${livreur.name} prend votre commande en charge`,
+      url: `/client/commandes/${orderId}`,
+      tag: `order-${orderId}`,
+      orderId,
+      type: 'order_accepted',
+    });
 
     await db.markNotifReadForOrder(orderId, livreurId);
 
@@ -127,6 +136,14 @@ router.post('/commandes/:id/annuler', livreurWriteLimiter, async (req, res) => {
 
   io.to(`order_${orderId}`).emit('order:status_update', { status: 'cancelled', order: updatedOrder });
   io.to('admin_room').emit('order:status_changed', { order: updatedOrder });
+  await push.sendToUsers([order.client_id], {
+    title: 'Livraison annulee',
+    body: 'Votre livreur a annule la livraison',
+    url: `/client/commandes/${orderId}`,
+    tag: `order-${orderId}`,
+    orderId,
+    type: 'order_cancelled',
+  });
 
   req.flash('success', 'Livraison annulee');
   res.redirect(`/livreur/commandes/${orderId}`);
@@ -171,6 +188,19 @@ router.post('/commandes/:id/statut', livreurWriteLimiter, async (req, res) => {
 
     io.to(`order_${orderId}`).emit('order:status_update', { status, order });
     io.to('admin_room').emit('order:status_changed', { order });
+    const statusLabel = {
+      picked_up: 'Commande recuperee',
+      delivering: 'Commande en route',
+      delivered: 'Commande livree',
+    }[status] || 'Commande mise a jour';
+    await push.sendToUsers([order.client_id], {
+      title: statusLabel,
+      body: status === 'delivered' ? 'Bon appetit, merci pour votre commande' : 'Votre commande avance',
+      url: `/client/commandes/${orderId}`,
+      tag: `order-${orderId}`,
+      orderId,
+      type: 'order_status',
+    });
     res.json({ success: true, status });
   } catch (error) {
     console.error('Erreur mise a jour statut livreur:', error);

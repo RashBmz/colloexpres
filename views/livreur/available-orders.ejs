@@ -94,10 +94,13 @@
 }
 .accept-wrap { margin-top: 12px; }
 @media (max-width: 420px) {
-  .available-head { align-items: stretch; }
+  .available-list { padding: 12px 12px 100px; }
+  .available-head { align-items: stretch; flex-direction: column; }
   .available-price { font-size: 23px; }
-  .route-line { grid-template-columns: 72px 1fr; }
+  .route-line { grid-template-columns: 1fr; gap: 2px; }
   .info-grid { grid-template-columns: 1fr; }
+  .available-card { padding: 12px; }
+  .available-value { overflow-wrap: anywhere; }
 }
 </style>
 <div class="app-layout">

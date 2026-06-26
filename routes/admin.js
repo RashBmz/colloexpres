@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const db = require('../models/db');
+const push = require('../services/push');
 const { createRateLimiter, getClientKey } = require('../middleware/security');
 const { cleanName, cleanPhone, cleanString, cleanTextBlock, toSafeNumber } = require('../utils/input');
 
@@ -183,6 +184,14 @@ router.post('/commandes', adminWriteLimiter, async (req, res) => {
 
   const orderOut = { ...order, client_name: client.name, client_phone: client.phone };
   io.emit('new_order', { order: orderOut });
+  await push.sendToRole('livreur', {
+    title: 'Nouvelle livraison',
+    body: `${fromAddress} -> ${toAddress} - ${price} DA`,
+    url: '/livreur/commandes',
+    tag: `order-${order._id}`,
+    orderId: order._id,
+    type: 'new_order',
+  });
   req.flash('success', 'Commande creee et envoyee aux livreurs');
   res.redirect('/admin/commandes');
 });
@@ -218,12 +227,50 @@ router.post('/commandes/:id/assigner', adminWriteLimiter, async (req, res) => {
   io.to(`livreur_${livreurId}`).emit('order:assigned', { order });
   io.to(`order_${orderId}`).emit('order:accepted', { livreurId, livreurName: livreur.name });
   io.to('admin_room').emit('order:status_changed', { order });
+  await push.sendToUsers([livreurId], {
+    title: 'Livraison assignee',
+    body: `Une commande vous a ete assignee - ${order.price || 0} DA`,
+    url: `/livreur/commandes/${orderId}`,
+    tag: `assigned-${orderId}`,
+    orderId,
+    type: 'order_assigned',
+  });
+  await push.sendToUsers([order.client_id], {
+    title: 'Commande acceptee',
+    body: `${livreur.name} prend votre commande en charge`,
+    url: `/client/commandes/${orderId}`,
+    tag: `order-${orderId}`,
+    orderId,
+    type: 'order_accepted',
+  });
   req.flash('success', 'Livreur assigne avec succes');
   res.redirect('/admin/commandes');
 });
 
 router.post('/commandes/:id/annuler', adminWriteLimiter, async (req, res) => {
-  await db.cancelOrder(cleanString(req.params.id, 64));
+  const orderId = cleanString(req.params.id, 64);
+  const order = await db.findOrderWithUsers(orderId);
+  await db.cancelOrder(orderId);
+  if (order) {
+    await push.sendToUsers([order.client_id], {
+      title: 'Commande annulee',
+      body: 'La commande a ete annulee par Collo',
+      url: `/client/commandes/${orderId}`,
+      tag: `cancel-${orderId}`,
+      orderId,
+      type: 'order_cancelled',
+    });
+    if (order.livreur_id) {
+      await push.sendToUsers([order.livreur_id], {
+        title: 'Commande annulee',
+        body: 'La commande a ete annulee par Collo',
+        url: `/livreur/commandes/${orderId}`,
+        tag: `cancel-${orderId}`,
+        orderId,
+        type: 'order_cancelled',
+      });
+    }
+  }
   req.flash('success', 'Commande annulee');
   res.redirect('/admin/commandes');
 });

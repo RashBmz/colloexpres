@@ -1,5 +1,28 @@
 <%- include('../partials/head', { title: 'Admin Dashboard', bodyClass: 'page-app' }) %>
 <%- include('../partials/flash') %>
+<style>
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.admin-detail-grid > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 420px) {
+  .admin-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-stats-grid .admin-stat-card[style*="grid-column"] > div {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .admin-stats-grid .admin-stat-card[style*="grid-column"] > div > div:last-child {
+    text-align: left !important;
+  }
+}
+</style>
 <div class="app-layout">
   <header class="top-bar">
     <div class="top-bar-left">
@@ -79,7 +102,7 @@
       <h3>Vue détaillée</h3>
     </div>
     <div style="padding:0 16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="admin-detail-grid">
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Commandes aujourd'hui</div>
           <div style="font-family:var(--font-d);font-size:30px;color:var(--accent);margin-top:6px"><%= adminOrdersToday %></div>

@@ -1,17 +1,11 @@
-// Animate feature cards on scroll
 const cards = document.querySelectorAll('.feat-card');
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry, i) => {
-    if (entry.isIntersecting) {
-      entry.target.style.animation = `fadeUp 0.5s ${i * 0.1}s ease both`;
-    }
-  });
-}, { threshold: 0.1 });
-cards.forEach(c => observer.observe(c));
-
-// Parallax on scroll
-window.addEventListener('scroll', () => {
-  const scrollY = window.scrollY;
-  const hero = document.querySelector('.landing-hero');
-  if (hero) hero.style.transform = `translateY(${scrollY * 0.1}px)`;
-});
+if ('IntersectionObserver' in window && cards.length) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: '80px 0px', threshold: 0.01 });
+  cards.forEach((card) => observer.observe(card));
+}

@@ -326,9 +326,35 @@ const heroImage = resto.image || resto.coverImage || restoImage(resto.id);
   margin-top: 12px;
 }
 @media (max-width: 560px) {
-  .resto-hero-layout { align-items: flex-start; }
-  .resto-hero-art { width: 82px; height: 82px; }
-  .resto-hero-name { font-size: 28px; }
+  .resto-hero { padding: 20px 14px 16px; }
+  .resto-hero-layout { align-items: flex-start; gap: 12px; }
+  .resto-hero-art { width: 74px; height: 74px; border-radius: 20px; }
+  .resto-hero-name { font-size: 26px; line-height: 1; overflow-wrap: anywhere; }
+  .resto-hero-desc { font-size: 12px; line-height: 1.45; }
+  .resto-hero-meta { gap: 6px; margin-top: 10px; }
+  .hero-chip { font-size: 11px; padding: 4px 9px; }
+  .cat-tabs { top: 55px; padding: 10px 12px; }
+  .menu-section { padding: 0 12px; }
+  .menu-item { gap: 10px; padding: 12px; }
+  .menu-item-thumb { width: 64px; height: 64px; border-radius: 15px; }
+  .menu-item-name { font-size: 14px; padding-right: 30px; }
+  .menu-item-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .menu-item-add { width: 28px; height: 28px; bottom: 10px; right: 10px; }
+  .modal-sheet { padding: 20px 16px max(20px, env(safe-area-inset-bottom)); }
+  .cart-item-row { flex-direction: column; gap: 8px; }
+  .cart-item-actions { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  #map-delivery { height: 200px; }
+}
+@media (max-width: 360px) {
+  .resto-hero-layout { flex-direction: column; }
+  .resto-hero-art { width: 86px; height: 86px; }
+  .menu-item-thumb { width: 58px; height: 58px; }
+  .menu-item-price { font-size: 14px; }
 }
 </style>
 <%- include('../partials/flash') %>
@@ -1120,6 +1146,5 @@ if (openCartOnLoad && cart.length > 0) {
 ]}) %>
 </body>
 </html>
-
 
 

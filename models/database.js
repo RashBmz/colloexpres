@@ -15,9 +15,12 @@ const users  = Datastore.create({ filename: path.join(dbDir, 'users.db'),  autol
 const orders = Datastore.create({ filename: path.join(dbDir, 'orders.db'), autoload: true });
 const notifs = Datastore.create({ filename: path.join(dbDir, 'notifs.db'), autoload: true });
 const restaurants = Datastore.create({ filename: path.join(dbDir, 'restaurants.db'), autoload: true });
+const pushSubscriptions = Datastore.create({ filename: path.join(dbDir, 'push_subscriptions.db'), autoload: true });
 
 users.ensureIndex({ fieldName: 'phone', unique: true });
 restaurants.ensureIndex({ fieldName: 'id', unique: true });
+pushSubscriptions.ensureIndex({ fieldName: 'endpoint', sparse: true });
+pushSubscriptions.ensureIndex({ fieldName: 'token', sparse: true });
 
 const normalizeOrder = (order) => (order ? { ...order, id: order.id || order._id } : order);
 const normalizeRestaurant = (restaurant) => (restaurant ? { ...restaurant, id: restaurant.id || restaurant._id } : restaurant);
@@ -81,7 +84,7 @@ function buildLivreurPeriodStats(ordersList, baseDate = new Date()) {
 
 // ─── DB HELPER ───────────────────────────────────────
 const db = {
-  users, orders, notifs, restaurants,
+  users, orders, notifs, restaurants, pushSubscriptions,
 
   // ── Users ──────────────────────────────────────────
   async findUserByPhone(phone) {
@@ -304,6 +307,64 @@ const db = {
   },
   async markNotifReadForOrder(orderId, userId) {
     return notifs.update({ order_id: orderId, user_id: userId }, { $set: { read: true } }, { multi: true });
+  },
+  async saveWebPushSubscription(userId, subscription, userAgent = '') {
+    const endpoint = String(subscription?.endpoint || '').slice(0, 1200);
+    const p256dh = String(subscription?.keys?.p256dh || '').slice(0, 300);
+    const auth = String(subscription?.keys?.auth || '').slice(0, 300);
+    if (!userId || !endpoint || !p256dh || !auth) return null;
+    const payload = {
+      user_id: userId,
+      type: 'web',
+      endpoint,
+      p256dh,
+      auth,
+      token: null,
+      platform: 'web',
+      user_agent: String(userAgent || '').slice(0, 300),
+      updated_at: new Date().toISOString(),
+    };
+    const existing = await pushSubscriptions.findOne({ endpoint });
+    if (existing) {
+      await pushSubscriptions.update({ _id: existing._id }, { $set: payload });
+      return pushSubscriptions.findOne({ _id: existing._id });
+    }
+    return pushSubscriptions.insert({ ...payload, created_at: new Date().toISOString() });
+  },
+  async saveNativePushToken(userId, token, platform = 'android', userAgent = '') {
+    const safeToken = String(token || '').slice(0, 1200);
+    if (!userId || !safeToken) return null;
+    const payload = {
+      user_id: userId,
+      type: 'native',
+      endpoint: null,
+      p256dh: null,
+      auth: null,
+      token: safeToken,
+      platform: String(platform || 'android').slice(0, 40),
+      user_agent: String(userAgent || '').slice(0, 300),
+      updated_at: new Date().toISOString(),
+    };
+    const existing = await pushSubscriptions.findOne({ token: safeToken });
+    if (existing) {
+      await pushSubscriptions.update({ _id: existing._id }, { $set: payload });
+      return pushSubscriptions.findOne({ _id: existing._id });
+    }
+    return pushSubscriptions.insert({ ...payload, created_at: new Date().toISOString() });
+  },
+  async getPushTargetsForUsers(userIds = []) {
+    const ids = [...new Set(userIds.filter(Boolean).map(String))];
+    if (!ids.length) return [];
+    return pushSubscriptions.find({ user_id: { $in: ids } });
+  },
+  async getPushTargetsByRole(role) {
+    const roleUsers = await users.find({ role });
+    if (!roleUsers.length) return [];
+    return this.getPushTargetsForUsers(roleUsers.map((user) => user._id));
+  },
+  async removePushTarget(id) {
+    if (!id) return 0;
+    return pushSubscriptions.remove({ _id: id }, {});
   },
   async incrementLivreurTotals(livreurId, deliveredCount, earningAmount) {
     const livreur = await users.findOne({ _id: livreurId });

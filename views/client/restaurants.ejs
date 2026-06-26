@@ -150,6 +150,17 @@ function restoImage(id) {
   border-color: rgba(255,255,255,0.06);
   box-shadow: none;
 }
+@media (max-width: 420px) {
+  #resto-map { height: 190px; margin: 0 12px 4px; border-radius: 14px; }
+  .section-tab { padding: 10px 12px; }
+  .resto-card { margin-bottom: 10px; }
+  .resto-cover { height: 104px; }
+  .resto-body { padding: 12px 13px; }
+  .resto-name { font-size: 16px; overflow-wrap: anywhere; }
+  .resto-cat { line-height: 1.35; }
+  .resto-meta { gap: 6px 10px; }
+  .resto-meta span { font-size: 11px; }
+}
 </style>
 <%- include('../partials/flash') %>
 

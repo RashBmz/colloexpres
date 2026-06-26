@@ -37,7 +37,23 @@
 .menu-checkline input { width: 16px; height: 16px; }
 @media (max-width: 520px) {
   .admin-resto-grid, .menu-cat-fields, .menu-item-head, .menu-option-head, .menu-choice-row { grid-template-columns: 1fr; }
+  .admin-resto-card { padding: 12px; }
+  .admin-resto-top { align-items: flex-start; flex-wrap: wrap; }
+  .admin-resto-thumb { width: 52px; height: 52px; }
+  .admin-resto-name { overflow-wrap: anywhere; }
   .admin-resto-status { margin-left: 0; }
+  .admin-resto-actions { flex-direction: column; }
+  .admin-resto-actions .btn-primary,
+  .admin-resto-actions .btn-outline,
+  .admin-resto-actions .btn-ghost,
+  .admin-resto-actions .btn-danger-sm,
+  .mini-btn {
+    width: 100%;
+  }
+  .menu-builder { padding: 10px; }
+  .menu-builder-head { flex-direction: column; align-items: stretch; }
+  .menu-template-row { flex-direction: column; }
+  .menu-checkline { align-items: flex-start; }
 }
 </style>
 <div class="app-layout">

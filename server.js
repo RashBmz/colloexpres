@@ -3,6 +3,7 @@ require('dotenv').config({ quiet: true });
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const compression = require('compression');
 const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
 const flash = require('connect-flash');
@@ -30,7 +31,21 @@ app.set('trust proxy', process.env.TRUST_PROXY === 'false' ? false : 1);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.set('view cache', isProduction);
+app.use(compression({
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.path.endsWith('.apk')) return false;
+    return compression.filter(req, res);
+  },
+}));
 app.use(securityHeaders);
+app.get('/downloads/colloexpress.apk', (req, res) => {
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="colloexpress.apk"');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.sendFile(path.join(__dirname, 'downloads', 'colloexpress.apk'));
+});
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: true,
   lastModified: true,
@@ -99,6 +114,7 @@ app.use((req, res, next) => {
 
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
+app.use('/push', requireAuth, require('./routes/push'));
 app.use('/client', requireAuth, requireRole('client'), require('./routes/client'));
 app.use('/livreur', requireAuth, requireRole('livreur'), require('./routes/livreur'));
 app.use('/admin', requireAuth, requireRole('admin'), require('./routes/admin'));

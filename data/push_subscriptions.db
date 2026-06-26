@@ -1,0 +1,4 @@
+{"$$indexCreated":{"fieldName":"endpoint","unique":false,"sparse":true}}
+{"$$indexCreated":{"fieldName":"token","unique":false,"sparse":true}}
+{"$$indexCreated":{"fieldName":"endpoint","sparse":true}}
+{"$$indexCreated":{"fieldName":"token","sparse":true}}

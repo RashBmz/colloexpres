@@ -44,6 +44,49 @@ Le package Android est :
 
 `com.colloexpress.app`
 
+## Notifications push
+
+Le site/PWA utilise Web Push. L'app Android utilise Firebase Cloud Messaging quand Firebase est configure.
+
+1. Installe les dependances :
+
+```bash
+npm install
+```
+
+2. Genere les cles Web Push :
+
+```bash
+npm run push:keys
+```
+
+3. Ajoute sur Render :
+
+```bash
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:ton-email@example.com
+```
+
+4. Pour Android natif, cree un projet Firebase, ajoute une app Android avec le package `com.colloexpress.app`, puis telecharge `google-services.json` et place-le dans :
+
+```text
+android/app/google-services.json
+```
+
+5. Dans Firebase, cree une cle de compte de service puis ajoute-la sur Render dans une de ces variables :
+
+```bash
+FIREBASE_SERVICE_ACCOUNT_JSON=...
+FIREBASE_SERVICE_ACCOUNT_BASE64=...
+```
+
+6. Relance la synchro mobile avant de reconstruire l'APK/AAB :
+
+```bash
+npm run mobile:sync
+```
+
 ## iPhone / App Store
 
 Apple impose un Mac avec Xcode pour compiler et envoyer l'app.
@@ -65,3 +108,4 @@ Le Bundle ID iOS est :
 - L'app charge le site en HTTPS, donc Render doit etre en ligne.
 - Apres chaque changement important cote app native, lance `npm run mobile:sync`.
 - Les changements du site deployes sur Render apparaissent dans l'app sans reconstruire l'APK, sauf changement natif comme icones, permissions ou nom de l'app.
+- Les notifications Android sont un changement natif : il faut reconstruire l'APK/AAB apres avoir ajoute Firebase.

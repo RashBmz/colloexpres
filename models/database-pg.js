@@ -248,6 +248,22 @@ const ready = (async () => {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      endpoint TEXT,
+      p256dh TEXT,
+      auth TEXT,
+      token TEXT,
+      platform TEXT,
+      user_agent TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders(client_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_livreur_id ON orders(livreur_id)');
@@ -258,6 +274,10 @@ const ready = (async () => {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_user_read_created_at ON notifications(user_id, read, created_at DESC)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_users_role_available ON users(role, available)');
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subscriptions_endpoint ON push_subscriptions(endpoint) WHERE endpoint IS NOT NULL');
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subscriptions_token ON push_subscriptions(token) WHERE token IS NOT NULL');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_push_subscriptions_type ON push_subscriptions(type)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_restaurants_open ON restaurants(open)');
 
   const existingRestaurants = await pool.query('SELECT COUNT(*)::int AS total FROM restaurants');
@@ -639,6 +659,77 @@ const db = {
   async markNotifReadForOrder(orderId, userId) {
     await ensureReady();
     await pool.query('UPDATE notifications SET read = TRUE WHERE order_id = $1 AND user_id = $2', [orderId, userId]);
+  },
+
+  async saveWebPushSubscription(userId, subscription, userAgent = '') {
+    await ensureReady();
+    const endpoint = String(subscription?.endpoint || '').slice(0, 1200);
+    const p256dh = String(subscription?.keys?.p256dh || '').slice(0, 300);
+    const auth = String(subscription?.keys?.auth || '').slice(0, 300);
+    if (!userId || !endpoint || !p256dh || !auth) return null;
+    const { rows } = await pool.query(
+      `INSERT INTO push_subscriptions (
+        id, user_id, type, endpoint, p256dh, auth, token, platform, user_agent, created_at, updated_at
+      ) VALUES (
+        $1, $2, 'web', $3, $4, $5, NULL, 'web', $6, NOW(), NOW()
+      )
+      ON CONFLICT (endpoint) WHERE endpoint IS NOT NULL DO UPDATE SET
+        user_id = EXCLUDED.user_id,
+        p256dh = EXCLUDED.p256dh,
+        auth = EXCLUDED.auth,
+        user_agent = EXCLUDED.user_agent,
+        updated_at = NOW()
+      RETURNING *`,
+      [uid(), userId, endpoint, p256dh, auth, String(userAgent || '').slice(0, 300)]
+    );
+    return rows[0] || null;
+  },
+
+  async saveNativePushToken(userId, token, platform = 'android', userAgent = '') {
+    await ensureReady();
+    const safeToken = String(token || '').slice(0, 1200);
+    if (!userId || !safeToken) return null;
+    const { rows } = await pool.query(
+      `INSERT INTO push_subscriptions (
+        id, user_id, type, endpoint, p256dh, auth, token, platform, user_agent, created_at, updated_at
+      ) VALUES (
+        $1, $2, 'native', NULL, NULL, NULL, $3, $4, $5, NOW(), NOW()
+      )
+      ON CONFLICT (token) WHERE token IS NOT NULL DO UPDATE SET
+        user_id = EXCLUDED.user_id,
+        platform = EXCLUDED.platform,
+        user_agent = EXCLUDED.user_agent,
+        updated_at = NOW()
+      RETURNING *`,
+      [uid(), userId, safeToken, String(platform || 'android').slice(0, 40), String(userAgent || '').slice(0, 300)]
+    );
+    return rows[0] || null;
+  },
+
+  async getPushTargetsForUsers(userIds = []) {
+    await ensureReady();
+    const ids = [...new Set(userIds.filter(Boolean).map(String))];
+    if (!ids.length) return [];
+    const { rows } = await pool.query('SELECT * FROM push_subscriptions WHERE user_id = ANY($1::text[])', [ids]);
+    return rows;
+  },
+
+  async getPushTargetsByRole(role) {
+    await ensureReady();
+    const { rows } = await pool.query(
+      `SELECT ps.*
+       FROM push_subscriptions ps
+       JOIN users u ON u.id = ps.user_id
+       WHERE u.role = $1`,
+      [role]
+    );
+    return rows;
+  },
+
+  async removePushTarget(id) {
+    await ensureReady();
+    const result = await pool.query('DELETE FROM push_subscriptions WHERE id = $1', [id]);
+    return result.rowCount;
   },
 
   async incrementLivreurTotals(livreurId, deliveredCount, earningAmount) {
