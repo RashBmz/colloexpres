@@ -1,9 +1,9 @@
-const CACHE_NAME = 'colloexpress-v6';
+const CACHE_NAME = 'colloexpress-v7';
 const STATIC_ASSETS = [
   '/',
-  '/css/main.css?v=push-1',
-  '/js/i18n.js?v=push-1',
-  '/js/push.js?v=push-1',
+  '/css/main.css?v=app-push-1',
+  '/js/i18n.js?v=app-push-1',
+  '/js/push.js?v=app-push-1',
   '/manifest.webmanifest',
   '/images/icons/icon-192.png',
   '/images/icons/icon-512.png'
@@ -51,48 +51,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       });
-    })
-  );
-});
-
-self.addEventListener('push', (event) => {
-  let payload = {};
-  try {
-    payload = event.data ? event.data.json() : {};
-  } catch {
-    payload = { title: 'Collo', body: event.data ? event.data.text() : '' };
-  }
-
-  const title = payload.title || 'Collo';
-  const options = {
-    body: payload.body || '',
-    icon: '/images/icons/icon-192.png',
-    badge: '/images/icons/icon-192.png',
-    tag: payload.tag || 'colloexpress',
-    data: {
-      url: payload.url || '/',
-      orderId: payload.orderId || '',
-      type: payload.type || '',
-    },
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const targetUrl = event.notification.data?.url || '/';
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        const clientUrl = new URL(client.url);
-        if (clientUrl.origin === self.location.origin && 'focus' in client) {
-          client.navigate(targetUrl);
-          return client.focus();
-        }
-      }
-      return self.clients.openWindow(targetUrl);
     })
   );
 });

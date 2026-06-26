@@ -9,8 +9,7 @@
     "migrate:supabase": "node scripts/migrate-nedb-to-supabase.js",
     "mobile:sync": "npx cap sync",
     "mobile:android": "npx cap open android",
-    "mobile:ios": "npx cap open ios",
-    "push:keys": "npx web-push generate-vapid-keys"
+    "mobile:ios": "npx cap open ios"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -26,8 +25,7 @@
     "multer": "^1.4.5-lts.1",
     "nedb-promises": "^6.2.1",
     "pg": "^8.20.0",
-    "socket.io": "^4.7.5",
-    "web-push": "^3.6.7"
+    "socket.io": "^4.7.5"
   },
   "devDependencies": {
     "@capacitor/android": "^8.4.1",

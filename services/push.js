@@ -1,26 +1,11 @@
 const db = require('../models/db');
 
-let webpush = null;
 let firebaseAdmin = null;
-
-try {
-  webpush = require('web-push');
-} catch {
-  webpush = null;
-}
 
 try {
   firebaseAdmin = require('firebase-admin');
 } catch {
   firebaseAdmin = null;
-}
-
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || '';
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || '';
-const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:contact@colloexpress.local';
-
-if (webpush && vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 }
 
 function parseFirebaseCredentials() {
@@ -67,8 +52,8 @@ function getFirebaseApp() {
 
 function getPublicConfig() {
   return {
-    webPushEnabled: Boolean(webpush && vapidPublicKey && vapidPrivateKey),
-    vapidPublicKey,
+    webPushEnabled: false,
+    vapidPublicKey: '',
     nativePushEnabled: Boolean(firebaseAdmin),
   };
 }
@@ -82,30 +67,6 @@ function normalizePayload(payload = {}) {
     orderId: payload.orderId ? String(payload.orderId).slice(0, 80) : '',
     type: payload.type ? String(payload.type).slice(0, 60) : '',
   };
-}
-
-async function sendWeb(target, payload) {
-  if (!webpush || !vapidPublicKey || !vapidPrivateKey || !target.endpoint || !target.p256dh || !target.auth) {
-    return false;
-  }
-
-  try {
-    await webpush.sendNotification({
-      endpoint: target.endpoint,
-      keys: {
-        p256dh: target.p256dh,
-        auth: target.auth,
-      },
-    }, JSON.stringify(payload));
-    return true;
-  } catch (error) {
-    if ([404, 410].includes(Number(error.statusCode))) {
-      await db.removePushTarget(target.id || target._id);
-    } else {
-      console.warn('Push web impossible:', error.message);
-    }
-    return false;
-  }
 }
 
 async function sendNative(tokens, payload) {
@@ -127,6 +88,15 @@ async function sendNative(tokens, payload) {
       },
       android: {
         priority: 'high',
+        notification: {
+          channelId: 'collo_orders',
+          icon: 'ic_stat_collo',
+          color: '#ff7a1a',
+          defaultSound: true,
+          defaultVibrateTimings: true,
+          notificationPriority: 'PRIORITY_MAX',
+          visibility: 'PUBLIC',
+        },
       },
     });
     return response.successCount || 0;
@@ -138,16 +108,13 @@ async function sendNative(tokens, payload) {
 
 async function sendTargets(targets, rawPayload) {
   const payload = normalizePayload(rawPayload);
-  const webTargets = targets.filter((target) => target.type === 'web');
   const nativeTokens = [...new Set(targets
     .filter((target) => target.type === 'native' && target.token)
     .map((target) => target.token))];
 
-  const webResults = await Promise.allSettled(webTargets.map((target) => sendWeb(target, payload)));
-  const webCount = webResults.filter((result) => result.status === 'fulfilled' && result.value).length;
   const nativeCount = await sendNative(nativeTokens, payload);
 
-  return { web: webCount, native: nativeCount };
+  return { web: 0, native: nativeCount };
 }
 
 async function sendToUsers(userIds, payload) {

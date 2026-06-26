@@ -46,7 +46,7 @@ Le package Android est :
 
 ## Notifications push
 
-Le site/PWA utilise Web Push. L'app Android utilise Firebase Cloud Messaging quand Firebase est configure.
+Les notifications sont natives dans l'app Android via Firebase Cloud Messaging. Le site web ne demande pas d'autorisation notifications.
 
 1. Installe les dependances :
 
@@ -54,34 +54,20 @@ Le site/PWA utilise Web Push. L'app Android utilise Firebase Cloud Messaging qua
 npm install
 ```
 
-2. Genere les cles Web Push :
-
-```bash
-npm run push:keys
-```
-
-3. Ajoute sur Render :
-
-```bash
-VAPID_PUBLIC_KEY=...
-VAPID_PRIVATE_KEY=...
-VAPID_SUBJECT=mailto:ton-email@example.com
-```
-
-4. Pour Android natif, cree un projet Firebase, ajoute une app Android avec le package `com.colloexpress.app`, puis telecharge `google-services.json` et place-le dans :
+2. Dans Firebase, ajoute une app Android avec le package `com.colloexpress.app`, puis telecharge `google-services.json` et place-le dans :
 
 ```text
 android/app/google-services.json
 ```
 
-5. Dans Firebase, cree une cle de compte de service puis ajoute-la sur Render dans une de ces variables :
+3. Dans Firebase, cree une cle de compte de service puis ajoute-la sur Render dans une de ces variables :
 
 ```bash
 FIREBASE_SERVICE_ACCOUNT_JSON=...
 FIREBASE_SERVICE_ACCOUNT_BASE64=...
 ```
 
-6. Relance la synchro mobile avant de reconstruire l'APK/AAB :
+4. Relance la synchro mobile avant de reconstruire l'APK/AAB :
 
 ```bash
 npm run mobile:sync
