@@ -1,3 +1,6 @@
 node_modules/
 .env
 colloexpress-dev.log
+android/app/google-services.json
+firebase-service-account*.json
+*-firebase-adminsdk-*.json
