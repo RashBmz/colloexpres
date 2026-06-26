@@ -872,6 +872,33 @@ function updateDeliveryPoint(lat, lng, reverseLookup) {
     });
 }
 
+function getGeoErrorMessage(error) {
+  if (!window.isSecureContext) {
+    return 'Le GPS demande une connexion securisee. Ouvre le site en HTTPS, ou en localhost pendant les tests.';
+  }
+  if (!error) return 'Impossible d obtenir votre position actuelle.';
+  if (error.code === 1) return 'Localisation refusee. Autorise la position dans ton navigateur, puis reessaie.';
+  if (error.code === 2) return 'Position indisponible. Active le GPS/Wi-Fi sur ton telephone, puis reessaie.';
+  if (error.code === 3) return 'La localisation prend trop de temps. Reessaie ou place le point manuellement sur la carte.';
+  return 'Impossible d obtenir votre position actuelle.';
+}
+
+function getCurrentPositionReliable(onSuccess, onError) {
+  navigator.geolocation.getCurrentPosition(onSuccess, function(firstError) {
+    navigator.geolocation.getCurrentPosition(onSuccess, function(secondError) {
+      onError(secondError || firstError);
+    }, {
+      enableHighAccuracy: false,
+      timeout: 20000,
+      maximumAge: 300000
+    });
+  }, {
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 30000
+  });
+}
+
 function locateCurrentDeliveryPosition() {
   if (!navigator.geolocation) {
     showToast('La geolocalisation n est pas supportee sur cet appareil', 'error');
@@ -883,7 +910,7 @@ function locateCurrentDeliveryPosition() {
   button.disabled = true;
   button.textContent = '⏳ Localisation...';
 
-  navigator.geolocation.getCurrentPosition(function(position) {
+  getCurrentPositionReliable(function(position) {
     const lat = position.coords.latitude;
     const lng = position.coords.longitude;
     ensureDeliveryMap();
@@ -892,14 +919,10 @@ function locateCurrentDeliveryPosition() {
     showToast('📍 Position actuelle ajoutee', 'success');
     button.disabled = false;
     button.textContent = originalLabel;
-  }, function() {
-    showToast('Impossible d obtenir votre position actuelle', 'error');
+  }, function(error) {
+    showToast(getGeoErrorMessage(error), 'error');
     button.disabled = false;
     button.textContent = originalLabel;
-  }, {
-    enableHighAccuracy: true,
-    timeout: 10000,
-    maximumAge: 60000
   });
 }
 
@@ -1097,7 +1120,6 @@ if (openCartOnLoad && cart.length > 0) {
 ]}) %>
 </body>
 </html>
-
 
 
 
