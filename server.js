@@ -36,6 +36,10 @@ app.use(express.static(path.join(__dirname, 'public'), {
   lastModified: true,
   maxAge: '7d',
   setHeaders(res, filePath) {
+    if (filePath.endsWith(`${path.sep}sw.js`) || filePath.endsWith(`${path.sep}manifest.webmanifest`)) {
+      res.setHeader('Cache-Control', 'no-cache');
+      return;
+    }
     if (/\.(css|js|svg|png|jpg|jpeg|webp|gif|ico)$/i.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
     }

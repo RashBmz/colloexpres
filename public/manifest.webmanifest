@@ -1,0 +1,54 @@
+{
+  "name": "ColloExpress",
+  "short_name": "Collo",
+  "description": "Livraison rapide de repas et colis a Collo.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090910",
+  "theme_color": "#ff5c1a",
+  "categories": ["food", "shopping", "business"],
+  "icons": [
+    {
+      "src": "/images/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/images/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Restaurants",
+      "short_name": "Restos",
+      "url": "/client/restaurants",
+      "icons": [{ "src": "/images/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Mes commandes",
+      "short_name": "Commandes",
+      "url": "/client/commandes",
+      "icons": [{ "src": "/images/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

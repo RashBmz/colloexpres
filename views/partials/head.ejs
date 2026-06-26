@@ -4,7 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#090910">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Collo">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title><%= typeof title !== 'undefined' ? title + ' - ' : '' %>ColloExpress</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/images/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="dns-prefetch" href="https://unpkg.com">
@@ -21,3 +28,4 @@
 window.COLLO_LANG = <%- JSON.stringify(typeof lang !== 'undefined' ? lang : 'fr') %>;
 </script>
 <script defer src="/js/i18n.js?v=lang-switch-2"></script>
+<script defer src="/js/pwa.js?v=1"></script>

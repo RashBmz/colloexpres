@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Collo</string>
+    <string name="title_activity_main">Collo</string>
+    <string name="package_name">com.colloexpress.app</string>
+    <string name="custom_url_scheme">com.colloexpress.app</string>
+</resources>

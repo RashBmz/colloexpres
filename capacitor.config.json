@@ -1,0 +1,23 @@
+{
+  "appId": "com.colloexpress.app",
+  "appName": "Collo",
+  "webDir": "public",
+  "server": {
+    "url": "https://colloexpres.onrender.com",
+    "cleartext": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#090910",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    }
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "automatic"
+  }
+}
