@@ -112,6 +112,14 @@
   function menuToState(menu) {
     var result = [];
     var rows = entries(menu);
+    rows.sort(function (a, b) {
+      var orderA = Number(a[1] && a[1].order);
+      var orderB = Number(b[1] && b[1].order);
+      if (Number.isFinite(orderA) && Number.isFinite(orderB) && orderA !== orderB) return orderA - orderB;
+      if (Number.isFinite(orderA)) return -1;
+      if (Number.isFinite(orderB)) return 1;
+      return 0;
+    });
     for (var i = 0; i < rows.length; i += 1) {
       var key = rows[i][0];
       var cat = rows[i][1] || {};
@@ -119,7 +127,7 @@
       if (Array.isArray(cat.items)) {
         for (var j = 0; j < cat.items.length; j += 1) items.push(itemToState(cat.items[j]));
       }
-      result.push({ key: slugify(key), label: String(cat.label || key || 'Categorie'), items: items });
+      result.push({ key: slugify(key), label: String(cat.label || key || 'Categorie'), order: Number.isFinite(Number(cat.order)) ? Number(cat.order) : i, items: items });
     }
     return result;
   }
@@ -162,7 +170,7 @@
         }
         items.push({ id: slugify(row.id || row.name || 'article-' + (j + 1)), name: row.name || 'Article', basePrice: Number(row.basePrice || 0), description: row.description || '', image: row.image || '', options: options });
       }
-      menu[catKey] = { label: cat.label || catKey, items: items };
+      menu[catKey] = { label: cat.label || catKey, order: i, items: items };
     }
     return menu;
   }
@@ -183,7 +191,7 @@
       '<div class="menu-summary">' + summary(catCount, 'Categories') + summary(itemCount, 'Articles') + summary(optionCount, 'Options') + '</div>' +
       '<div class="quick-cat-row">' + quickCat('tacos') + quickCat('burger') + quickCat('sandwich') + quickCat('pizza') + quickCat('boissons') + '</div>';
     if (!catCount) html += '<div class="builder-empty">Aucune categorie. Clique sur Tacos, Burger ou Pizza.</div>';
-    for (var c = 0; c < state.categories.length; c += 1) html += renderCategory(state.categories[c], c);
+    for (var c = 0; c < state.categories.length; c += 1) html += renderCategory(state.categories[c], c, state.categories.length);
     html += '</div>';
     builder.innerHTML = html;
     sync(builder);
@@ -194,9 +202,17 @@
   function quickCat(type) {
     return '<button class="small-action" type="button" data-action="add-template-cat" data-template="' + type + '">+ ' + esc(CATEGORY_TEMPLATES[type].label) + '</button>';
   }
-  function renderCategory(cat, catIndex) {
+  function categoryPositionInput(catIndex, total) {
+    var options = '';
+    for (var i = 1; i <= total; i += 1) {
+      options += '<option value="' + i + '"' + (i === catIndex + 1 ? ' selected' : '') + '>' + i + '</option>';
+    }
+    return '<label class="cat-position-control"><span>Position</span><select class="field-input" data-field="catPosition" data-cat="' + catIndex + '">' + options + '</select></label>';
+  }
+  function renderCategory(cat, catIndex, totalCategories) {
     var html = '<section class="cat-card" data-cat="' + catIndex + '">' +
-      '<div class="cat-title-line"><div><div class="cat-title">' + esc(cat.label) + '</div><div class="field-help">Chaque ligne est un type separe.</div></div></div>' +
+      '<div class="cat-title-line"><div><div class="cat-title">' + esc(cat.label) + '</div><div class="field-help">Position #' + (catIndex + 1) + ' dans la carte client.</div></div>' +
+      categoryPositionInput(catIndex, totalCategories) + '</div>' +
       '<div class="cat-head"><div class="cat-fields">' +
       input('Nom categorie', cat.label, 'label', catIndex) + input('Cle', cat.key, 'key', catIndex) +
       '</div><button class="small-action danger" type="button" data-action="remove-cat" data-cat="' + catIndex + '">Supprimer</button></div>' +
@@ -260,6 +276,17 @@
     var state = builder._restaurantBuilder;
     var field = el.getAttribute('data-field');
     if (!state || !field) return;
+    if (field === 'catPosition') {
+      var from = num(el.getAttribute('data-cat'));
+      var to = Math.max(1, Math.min(state.categories.length, Number(el.value || 1))) - 1;
+      if (from != null && from !== to && state.categories[from]) {
+        state.categories.splice(to, 0, state.categories.splice(from, 1)[0]);
+        render(builder);
+        return;
+      }
+      sync(builder);
+      return;
+    }
     var obj = getTarget(state, el);
     if (!obj) return;
     obj[field] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value || 0) : el.value;

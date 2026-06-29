@@ -139,13 +139,19 @@ function sanitizeFoodCart(resto, rawItems) {
 router.get('/dashboard', async (req, res) => {
   const userId = req.session.user.id;
   const orders = await db.getOrdersByClient(userId);
+  const restaurants = await db.getRestaurants();
+  const popularRestaurants = restaurants
+    .filter((restaurant) => Array.isArray(restaurant.tags) && restaurant.tags.includes('Populaire'))
+    .concat(restaurants.filter((restaurant) => !Array.isArray(restaurant.tags) || !restaurant.tags.includes('Populaire')))
+    .filter((restaurant, index, list) => list.findIndex((entry) => entry.id === restaurant.id) === index)
+    .slice(0, 4);
   const stats = {
     total: orders.length,
     delivered: orders.filter((o) => o.status === 'delivered').length,
     pending: orders.filter((o) => ['pending', 'accepted', 'picked_up', 'delivering'].includes(o.status)).length,
   };
   const unreadNotifs = await db.countUnreadNotifs(userId);
-  res.render('client/dashboard', { orders: orders.slice(0, 10), stats, unreadNotifs });
+  res.render('client/dashboard', { orders: orders.slice(0, 10), stats, unreadNotifs, restaurants, popularRestaurants });
 });
 
 router.get('/nouvelle-commande', (req, res) => {

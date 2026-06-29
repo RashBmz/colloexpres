@@ -31,6 +31,18 @@ function restaurantInitial(name) {
   return String(name || 'R').trim().charAt(0).toUpperCase() || 'R';
 }
 const heroImage = safeImageUrl(resto.image) || safeImageUrl(resto.coverImage);
+const menuEntries = Object.entries(resto.menu || {})
+  .map(([key, cat], index) => ({ key, cat: cat || {}, index }))
+  .sort((a, b) => {
+    const orderA = Number(a.cat.order);
+    const orderB = Number(b.cat.order);
+    const hasOrderA = Number.isFinite(orderA);
+    const hasOrderB = Number.isFinite(orderB);
+    if (hasOrderA && hasOrderB && orderA !== orderB) return orderA - orderB;
+    if (hasOrderA) return -1;
+    if (hasOrderB) return 1;
+    return a.index - b.index;
+  });
 %>
 <%- include('../partials/head', { title: resto.name, bodyClass: 'page-app' }) %>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -398,20 +410,20 @@ const heroImage = safeImageUrl(resto.image) || safeImageUrl(resto.coverImage);
     </div>
   </div>
   <div class="cat-tabs" id="cat-tabs">
-    <% Object.entries(resto.menu).forEach(([key, cat], i) => { const catImage = categoryImage(key); %>
+    <% menuEntries.forEach(({ key, cat }, i) => { const catImage = categoryImage(key); %>
     <button class="cat-tab <%= i===0?'active':'' %>" onclick="scrollToSection('<%= key %>', this)">
       <img src="<%= catImage %>" alt="<%= cleanLabel(cat.label) %>" loading="lazy">
       <span><%= cleanLabel(cat.label) %></span>
     </button>
     <% }) %>
   </div>
-  <% Object.entries(resto.menu).forEach(([key, cat]) => { const catImage = categoryImage(key); const catLabel = cleanLabel(cat.label); %>
+  <% menuEntries.forEach(({ key, cat }) => { const catImage = categoryImage(key); const catLabel = cleanLabel(cat.label); %>
   <div class="menu-section" id="section-<%= key %>">
     <div class="menu-section-title">
       <img src="<%= catImage %>" alt="<%= catLabel %>" loading="lazy">
       <span><%= catLabel %></span>
     </div>
-    <% cat.items.forEach(item => { %>
+    <% (cat.items || []).forEach(item => { %>
     <div class="menu-item" onclick="openItem('<%= JSON.stringify(item).replace(/'/g, "\\'").replace(/"/g, '&quot;') %>')">
       <div class="menu-item-thumb">
         <img src="<%= safeImageUrl(item.image) || catImage %>" alt="<%= item.name %>" loading="lazy">

@@ -1,3 +1,24 @@
+<%
+function safeImageUrl(url) {
+  const clean = String(url || '').trim();
+  if (!clean) return '';
+  if (/^\/images\/food\//i.test(clean)) return '';
+  if (/^https?:\/\/commons\.wikimedia\.org\//i.test(clean)) return '';
+  if (/\/undefined(?:$|[?#])/i.test(clean)) return '';
+  if (/^https?:\/\/(?:www\.)?imgur\.com\/a\//i.test(clean)) return '';
+  return clean;
+}
+function restaurantCover(r) {
+  return safeImageUrl(r.coverImage) || safeImageUrl(r.image);
+}
+function restaurantInitial(name) {
+  return String(name || 'R').trim().charAt(0).toUpperCase() || 'R';
+}
+const dashboardRestaurants = typeof restaurants !== 'undefined' && Array.isArray(restaurants) ? restaurants : [];
+const dashboardPopularRestaurants = typeof popularRestaurants !== 'undefined' && Array.isArray(popularRestaurants)
+  ? popularRestaurants
+  : dashboardRestaurants.slice(0, 4);
+%>
 <%- include('../partials/head', { title: 'Tableau de bord', bodyClass: 'page-app' }) %>
 <%- include('../partials/flash') %>
 
@@ -29,7 +50,7 @@
       <span style="font-size:32px">🍔</span>
       <div>
         <div style="font-weight:700;font-size:15px">Commander</div>
-        <div style="font-size:11px;color:var(--muted)">10 restaurants</div>
+        <div style="font-size:11px;color:var(--muted)"><%= dashboardRestaurants.length %> restaurants</div>
       </div>
     </a>
     <a href="/client/nouvelle-commande" class="quick-action-card" style="background:linear-gradient(135deg,#001a0d,#002515);border-color:rgba(0,230,118,0.2)">
@@ -81,30 +102,29 @@
       <a href="/client/restaurants" class="see-all">Voir tous →</a>
     </div>
     <div class="popular-restos-grid">
-      <a href="/client/restaurants/la-voute" class="resto-mini-card">
-        <div class="rmc-cover">🏛️</div>
-        <div class="rmc-name">La Voûte</div>
-        <div class="rmc-cat">Tacos • Burgers • Pizza</div>
-        <div class="rmc-badge">⭐ 4.8</div>
-      </a>
-      <a href="/client/restaurants/shawarma-palace" class="resto-mini-card">
-        <div class="rmc-cover">🌮</div>
-        <div class="rmc-name">Shawarma Palace</div>
-        <div class="rmc-cat">Shawarma • Tacos</div>
-        <div class="rmc-badge">⭐ 4.7</div>
-      </a>
-      <a href="/client/restaurants/pizza-collo" class="resto-mini-card">
-        <div class="rmc-cover">🍕</div>
-        <div class="rmc-name">Pizza Collo</div>
-        <div class="rmc-cat">Pizzas au feu</div>
-        <div class="rmc-badge">⭐ 4.6</div>
-      </a>
-      <a href="/client/restaurants/chicken-house" class="resto-mini-card">
-        <div class="rmc-cover">🍗</div>
-        <div class="rmc-name">Chicken House</div>
-        <div class="rmc-cat">Poulet Crispy</div>
-        <div class="rmc-badge">⭐ 4.4</div>
-      </a>
+      <% if (dashboardPopularRestaurants.length === 0) { %>
+        <a href="/client/restaurants" class="resto-mini-card">
+          <div class="rmc-cover rmc-cover-empty">Kolo Go</div>
+          <div class="rmc-name">Restaurants</div>
+          <div class="rmc-cat">Ajoute tes premiers restos</div>
+          <div class="rmc-badge">Voir la liste</div>
+        </a>
+      <% } %>
+      <% dashboardPopularRestaurants.forEach((restaurant) => { const cover = restaurantCover(restaurant); %>
+        <a href="/client/restaurants/<%= restaurant.id %>" class="resto-mini-card">
+          <div class="rmc-cover">
+            <% if (cover) { %>
+              <img class="rmc-cover-img" src="<%= cover %>" alt="<%= restaurant.name %>" loading="lazy" onerror="this.classList.add('is-hidden')">
+              <div class="rmc-cover-placeholder"><%= restaurantInitial(restaurant.name) %></div>
+            <% } else { %>
+              <div class="rmc-cover-placeholder"><%= restaurantInitial(restaurant.name) %></div>
+            <% } %>
+          </div>
+          <div class="rmc-name"><%= restaurant.name %></div>
+          <div class="rmc-cat"><%= restaurant.category || 'Restaurant' %></div>
+          <div class="rmc-badge">? <%= restaurant.rating || '4.5' %></div>
+        </a>
+      <% }) %>
     </div>
   </div>
 
@@ -122,7 +142,19 @@
     transition: all 0.2s; color: var(--text); display: block;
   }
   .resto-mini-card:hover { border-color: rgba(255,92,26,0.3); transform: translateY(-2px); }
-  .rmc-cover { height: 82px; background: linear-gradient(135deg,#1a1a26,#252535); display:flex;align-items:center;justify-content:center;font-size:36px; }
+  .rmc-cover { height: 82px; background: linear-gradient(135deg,#1a1a26,#252535); display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden; }
+  .rmc-cover-img { width:100%; height:100%; object-fit:cover; display:block; }
+  .rmc-cover-placeholder, .rmc-cover-empty {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 24% 18%, rgba(255,129,42,0.32), transparent 34%),
+      linear-gradient(135deg,#171928,#202438 58%,#10263a);
+    color:rgba(255,255,255,0.9); font-family:var(--font-d); font-size:32px; font-weight:900;
+  }
+  .rmc-cover-img + .rmc-cover-placeholder { display:none; }
+  .rmc-cover-img.is-hidden { display:none; }
+  .rmc-cover-img.is-hidden + .rmc-cover-placeholder { display:flex; }
+  .rmc-cover-empty { position:relative; font-size:18px; }
   .rmc-name { font-size: 13px; font-weight: 700; padding: 8px 10px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .rmc-cat { font-size: 10px; color: var(--muted); padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .rmc-badge { font-size: 11px; color: var(--accent2); padding: 6px 10px; }

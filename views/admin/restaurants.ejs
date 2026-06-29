@@ -84,6 +84,22 @@
 }
 .cat-title-line { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 .cat-title { font-weight: 900; overflow-wrap: anywhere; }
+.cat-position-control {
+  width: 96px;
+  flex-shrink: 0;
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.cat-position-control .field-input {
+  min-height: 40px;
+  text-align: center;
+  font-weight: 900;
+}
 .cat-head { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
 .cat-fields { display: grid; grid-template-columns: 1fr 150px; gap: 8px; }
 .item-card {
@@ -165,7 +181,9 @@
   .resto-admin-wrap { padding: 10px 10px 105px; }
   .resto-panel-head { flex-direction: column; }
   .resto-grid, .resto-grid-3, .menu-summary, .cat-fields, .item-main, .item-extra, .option-main, .choice-row { grid-template-columns: 1fr; }
-  .cat-head { grid-template-columns: 1fr; }
+  .cat-head, .cat-title-line { grid-template-columns: 1fr; }
+  .cat-title-line { display: grid; align-items: stretch; }
+  .cat-position-control { width: 100%; }
   .small-action, .preset-btn { width: 100%; }
   .quick-cat-row .small-action, .quick-option-row .small-action { width: auto; flex: 1 1 135px; }
   .resto-row { grid-template-columns: 48px 1fr; align-items: start; }
@@ -271,7 +289,7 @@
   <%- include('nav', { active: 'restaurants' }) %>
 </div>
 
-<script src="/js/admin-restaurant-builder.js?v=1"></script>
+<script src="/js/admin-restaurant-builder.js?v=4"></script>
 <script>
 (function() {
   if (window.__adminRestaurantBuilderReady) return;
