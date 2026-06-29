@@ -1,0 +1,8 @@
+<%- include('../partials/bottom-nav', { navItems: [
+  { href: '/admin/dashboard', icon: 'S', label: 'Stats', active: active === 'dashboard' },
+  { href: '/admin/commandes', icon: 'C', label: 'Cmdes', active: active === 'commandes' },
+  { href: '/admin/restaurants', icon: 'R', label: 'Restos', active: active === 'restaurants' },
+  { href: '/admin/comptabilite', icon: '$', label: 'Compta', active: active === 'compta' },
+  { href: '/admin/livreurs', icon: 'L', label: 'Livreurs', active: active === 'livreurs' },
+  { href: '/auth/logout', icon: 'X', label: 'Deco', active: false },
+]}) %>

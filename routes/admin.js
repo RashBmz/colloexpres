@@ -51,10 +51,20 @@ function formatMenuJson(menu) {
   return JSON.stringify(menu || {}, null, 2);
 }
 
+function cleanImageUrl(value) {
+  const url = cleanString(value, 500);
+  if (!url) return '';
+  if (/\/undefined(?:$|[?#])/i.test(url)) return '';
+  if (/^https?:\/\/(?:www\.)?imgur\.com\/a\//i.test(url)) return '';
+  return url;
+}
+
 function buildRestaurantPayload(body, existingId = '') {
   const name = cleanName(body.name);
   const id = existingId || slugify(body.id || name);
   const menu = parseMenuJson(body.menu_json);
+  const image = cleanImageUrl(body.image);
+  const coverImage = cleanImageUrl(body.cover_image) || image;
 
   return {
     id,
@@ -70,8 +80,8 @@ function buildRestaurantPayload(body, existingId = '') {
     minOrder: Math.max(0, Math.round(toSafeNumber(body.min_order, 0))),
     open: cleanString(body.open, 10) === 'true',
     tags: parseTags(body.tags),
-    image: cleanString(body.image, 500),
-    coverImage: cleanString(body.cover_image || body.image, 500),
+    image,
+    coverImage,
     menu,
   };
 }

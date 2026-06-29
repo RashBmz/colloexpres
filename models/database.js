@@ -1,5 +1,5 @@
-/**
- * ColloExpress — Base de données NeDB
+﻿/**
+ * Kolo Go — Base de données NeDB
  * NeDB = 100% JavaScript, zéro compilation, fonctionne sur Windows/Mac/Linux
  */
 const Datastore = require('nedb-promises');
@@ -629,7 +629,7 @@ const db = {
   const h = p => bcrypt.hashSync(p, 10);
   const now = () => new Date().toISOString();
 
-  await users.insert({ name: 'Admin ColloExpress', phone: 'admin', password: h('admin123'), role: 'admin', available: false, created_at: now() });
+  await users.insert({ name: 'Admin Kolo Go', phone: 'admin', password: h('admin123'), role: 'admin', available: false, created_at: now() });
 
   for (const [name, phone, deliveries, earnings, rating, vehicle] of [
     ['Mohamed Khelil','livreur01',47,11750,4.9,'moto'],

@@ -1,4 +1,4 @@
-require('dotenv').config({ quiet: true });
+﻿require('dotenv').config({ quiet: true });
 
 const express = require('express');
 const http = require('http');
@@ -40,12 +40,14 @@ app.use(compression({
   },
 }));
 app.use(securityHeaders);
-app.get('/downloads/colloexpress.apk', (req, res) => {
+function sendAndroidApk(req, res) {
   res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-  res.setHeader('Content-Disposition', 'attachment; filename="colloexpress.apk"');
+  res.setHeader('Content-Disposition', 'attachment; filename="kolo-go.apk"');
   res.setHeader('Cache-Control', 'public, max-age=3600');
   res.sendFile(path.join(__dirname, 'downloads', 'colloexpress.apk'));
-});
+}
+app.get('/downloads/kolo-go.apk', sendAndroidApk);
+app.get('/downloads/colloexpress.apk', sendAndroidApk);
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: true,
   lastModified: true,
@@ -191,13 +193,13 @@ async function startServer() {
     }
 
     server.listen(PORT, () => {
-      console.log(`\nColloExpress demarre sur http://localhost:${PORT}`);
+      console.log(`\nKolo Go demarre sur http://localhost:${PORT}`);
       console.log(`Stockage actif: ${db.isPostgres ? 'Supabase/PostgreSQL' : 'Local NeDB'}`);
       console.log(`Sessions: ${hasRemoteDatabase ? 'PostgreSQL' : 'MemoryStore local'}`);
       console.log('Socket.IO pret\n');
     });
   } catch (error) {
-    console.error('\nImpossible de demarrer ColloExpress.');
+    console.error('\nImpossible de demarrer Kolo Go.');
     console.error('Verifiez DATABASE_URL / DATABASE_SSL sur Render et Supabase.');
     console.error(error);
     process.exit(1);

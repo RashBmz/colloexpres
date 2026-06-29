@@ -1,4 +1,4 @@
-# Application mobile Collo
+# Application mobile Kolo Go
 
 Cette version mobile utilise Capacitor. L'application Android/iOS ouvre le site Render :
 

@@ -1,18 +1,20 @@
 <%
-function restoImage(id) {
-  const map = {
-    'la-voute': 'https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg',
-    'collo-burger': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
-    'pizza-collo': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
-    'snack-el-bahar': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fish_sandwich.jpg',
-    'shawarma-palace': 'https://commons.wikimedia.org/wiki/Special:FilePath/Spicy_Shawarma.jpg',
-    'chicken-house': 'https://commons.wikimedia.org/wiki/Special:FilePath/Boneless_Fried_Chicken.jpg',
-    'le-gourmet': 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
-    'snack-central': 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
-    'pizza-express': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
-    'fast-delice': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
-  };
-  return map[id] || 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG';
+function safeImageUrl(url) {
+  const clean = String(url || '').trim();
+  if (!clean) return '';
+  if (/^\/images\/food\//i.test(clean)) return '';
+  if (/^https?:\/\/commons\.wikimedia\.org\//i.test(clean)) return '';
+  if (/\/undefined(?:$|[?#])/i.test(clean)) return '';
+  if (/^https?:\/\/(?:www\.)?imgur\.com\/a\//i.test(clean)) return '';
+  return clean;
+}
+
+function restaurantCover(r) {
+  return safeImageUrl(r.coverImage) || safeImageUrl(r.image);
+}
+
+function restaurantInitial(name) {
+  return String(name || 'R').trim().charAt(0).toUpperCase() || 'R';
 }
 %>
 <%- include('../partials/head', { title: 'Restaurants', bodyClass: 'page-app' }) %>
@@ -47,6 +49,23 @@ function restoImage(id) {
   height: 100%;
   object-fit: cover;
 }
+.resto-cover-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 129, 42, 0.32), transparent 34%),
+    linear-gradient(135deg, #171928, #202438 58%, #10263a);
+  color: rgba(255,255,255,0.88);
+  font-family: var(--font-d);
+  font-size: 42px;
+  font-weight: 800;
+}
+.resto-cover-image + .resto-cover-placeholder { display: none; }
+.resto-cover-image.is-hidden { display: none; }
+.resto-cover-image.is-hidden + .resto-cover-placeholder { display: flex; }
 .resto-open-badge {
   position: absolute; top: 10px; right: 10px;
   padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600;
@@ -83,7 +102,6 @@ function restoImage(id) {
   align-items: center;
   gap: 8px;
 }
-.stab img { width: 18px; height: 18px; border-radius: 999px; object-fit: cover; }
 .stab.active { background: var(--accent); border-color: var(--accent); color: white; }
 .map-marker {
   width: 34px;
@@ -93,6 +111,16 @@ function restoImage(id) {
   border: 2px solid white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.35);
   background: #1b2330;
+}
+.map-marker-initial {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ff5c1a, #182033);
 }
 .map-marker img {
   width: 100%;
@@ -176,16 +204,21 @@ function restoImage(id) {
   <div class="section-tab">
     <button class="stab active" onclick="filterRestos('all', this)">Tous (<%= restaurants.length %>)</button>
     <button class="stab" onclick="filterRestos('open', this)">Ouverts</button>
-    <button class="stab" onclick="filterRestos('burger', this)"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg" alt="Burgers" loading="lazy"><span>Burgers</span></button>
-    <button class="stab" onclick="filterRestos('pizza', this)"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg" alt="Pizzas" loading="lazy"><span>Pizzas</span></button>
-    <button class="stab" onclick="filterRestos('tacos', this)"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg" alt="Tacos" loading="lazy"><span>Tacos</span></button>
+    <button class="stab" onclick="filterRestos('burger', this)"><span>Burgers</span></button>
+    <button class="stab" onclick="filterRestos('pizza', this)"><span>Pizzas</span></button>
+    <button class="stab" onclick="filterRestos('tacos', this)"><span>Tacos</span></button>
   </div>
 
   <div style="padding:4px 16px 100px" id="restos-list">
-    <% restaurants.forEach(r => { const imageSrc = r.image || r.coverImage || restoImage(r.id); %>
+    <% restaurants.forEach(r => { const imageSrc = restaurantCover(r); %>
     <a href="/client/restaurants/<%= r.id %>" class="resto-card <%= r.open ? '' : 'closed' %>" data-cat="<%= r.category.toLowerCase() %>" data-open="<%= r.open %>">
       <div class="resto-cover">
-        <img class="resto-cover-image" src="<%= imageSrc %>" alt="<%= r.name %>" loading="lazy">
+        <% if (imageSrc) { %>
+          <img class="resto-cover-image" src="<%= imageSrc %>" alt="<%= r.name %>" loading="lazy" onerror="this.classList.add('is-hidden')">
+          <div class="resto-cover-placeholder"><%= restaurantInitial(r.name) %></div>
+        <% } else { %>
+          <div class="resto-cover-placeholder"><%= restaurantInitial(r.name) %></div>
+        <% } %>
         <span class="resto-open-badge <%= r.open ? 'open-yes' : 'open-no' %>">
           <%= r.open ? 'Ouvert' : 'Fermé' %>
         </span>
@@ -224,7 +257,7 @@ function restoImage(id) {
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const RESTOS = <%- JSON.stringify(restaurants.map((r) => ({ id: r.id, name: r.name, lat: r.lat, lng: r.lng, image: r.image || r.coverImage || restoImage(r.id), open: r.open }))) %>;
+const RESTOS = <%- JSON.stringify(restaurants.map((r) => ({ id: r.id, name: r.name, initial: restaurantInitial(r.name), lat: r.lat, lng: r.lng, image: restaurantCover(r), open: r.open }))) %>;
 const COLLO = [37.0014, 6.5620];
 
 const map = L.map('resto-map', { zoomControl: false, scrollWheelZoom: false }).setView(COLLO, 14);
@@ -233,7 +266,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 RESTOS.filter((r) => Number.isFinite(Number(r.lat)) && Number.isFinite(Number(r.lng))).forEach((r) => {
   const icon = L.divIcon({
     className: '',
-    html: `<div class="map-marker" style="outline:${r.open ? '2px solid #ff5c1a' : '2px solid #666'}"><img src="${r.image}" alt="${r.name}"></div>`,
+    html: `<div class="map-marker" style="outline:${r.open ? '2px solid #ff5c1a' : '2px solid #666'}">${r.image ? `<img src="${r.image}" alt="${r.name}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'map-marker-initial',textContent:'${r.initial || 'R'}'}))">` : `<div class="map-marker-initial">${r.initial || 'R'}</div>`}</div>`,
     iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
   });
   L.marker([Number(r.lat), Number(r.lng)], { icon })

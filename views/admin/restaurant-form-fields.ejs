@@ -12,7 +12,7 @@
     <% } %>
   </div>
   <div class="resto-grid">
-    <input class="field-input" type="text" name="category" placeholder="Categorie visible" value="<%= restaurant ? (restaurant.category || '') : 'Tacos · Pizza · Burger' %>">
+    <input class="field-input" type="text" name="category" placeholder="Categorie visible" value="<%= restaurant ? (restaurant.category || '') : 'Tacos, Burger, Sandwich, Pizza' %>">
     <select class="field-input" name="open">
       <option value="true" <%= !restaurant || restaurant.open ? 'selected' : '' %>>Ouvert</option>
       <option value="false" <%= restaurant && !restaurant.open ? 'selected' : '' %>>Ferme</option>

@@ -233,12 +233,6 @@ const statusLabel = { paid: 'Encaisse', partial: 'Partiel', unpaid: 'A recuperer
     <% }) %>
   </section>
 
-  <%- include('../partials/bottom-nav', { navItems: [
-    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
-    { href: '/admin/commandes', icon: '📦', label: 'Cmdes', active: false },
-    { href: '/admin/comptabilite', icon: '💰', label: 'Compta', active: true },
-    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: false },
-    { href: '/auth/logout', icon: '↩', label: 'Deco', active: false },
-  ]}) %>
+  <%- include('nav', { active: 'compta' }) %>
 </div>
 </body></html>

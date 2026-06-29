@@ -1,40 +1,36 @@
 <%
-function restoImage(id) {
-  const map = {
-    'la-voute': 'https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg',
-    'collo-burger': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
-    'pizza-collo': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
-    'snack-el-bahar': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fish_sandwich.jpg',
-    'shawarma-palace': 'https://commons.wikimedia.org/wiki/Special:FilePath/Spicy_Shawarma.jpg',
-    'chicken-house': 'https://commons.wikimedia.org/wiki/Special:FilePath/Boneless_Fried_Chicken.jpg',
-    'le-gourmet': 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
-    'snack-central': 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
-    'pizza-express': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
-    'fast-delice': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
-  };
-  return map[id] || 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG';
-}
-
 function categoryImage(key) {
   const map = {
-    tacos: 'https://commons.wikimedia.org/wiki/Special:FilePath/Tacos.jpg',
-    burgers: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
-    pizzas: 'https://commons.wikimedia.org/wiki/Special:FilePath/Pizza_food.jpg',
-    sides: 'https://commons.wikimedia.org/wiki/Special:FilePath/French_Fries.jpg',
-    sandwichs: 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
-    shawarma: 'https://commons.wikimedia.org/wiki/Special:FilePath/Spicy_Shawarma.jpg',
-    poulet: 'https://commons.wikimedia.org/wiki/Special:FilePath/Boneless_Fried_Chicken.jpg',
-    plats: 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
-    paninis: 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG',
-    mix: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hamburger_(black_bg).jpg',
+    tacos: '/images/food/tacos.svg',
+    burgers: '/images/food/burger.svg',
+    pizzas: '/images/food/pizza.svg',
+    sides: '/images/food/fries.svg',
+    sandwichs: '/images/food/sandwich.svg',
+    shawarma: '/images/food/tacos.svg',
+    poulet: '/images/food/chicken.svg',
+    plats: '/images/food/plate.svg',
+    paninis: '/images/food/sandwich.svg',
+    mix: '/images/food/plate.svg',
   };
-  return map[key] || 'https://commons.wikimedia.org/wiki/Special:FilePath/Panini_sandwich_in_a_restaurant.JPG';
+  return map[key] || '/images/food/plate.svg';
 }
 
 function cleanLabel(label) {
   return String(label || '').replace(/^[^A-Za-z0-9À-ÿ]+/, '').trim();
 }
-const heroImage = resto.image || resto.coverImage || restoImage(resto.id);
+function safeImageUrl(url) {
+  const clean = String(url || '').trim();
+  if (!clean) return '';
+  if (/^\/images\/food\//i.test(clean)) return '';
+  if (/^https?:\/\/commons\.wikimedia\.org\//i.test(clean)) return '';
+  if (/\/undefined(?:$|[?#])/i.test(clean)) return '';
+  if (/^https?:\/\/(?:www\.)?imgur\.com\/a\//i.test(clean)) return '';
+  return clean;
+}
+function restaurantInitial(name) {
+  return String(name || 'R').trim().charAt(0).toUpperCase() || 'R';
+}
+const heroImage = safeImageUrl(resto.coverImage) || safeImageUrl(resto.image);
 %>
 <%- include('../partials/head', { title: resto.name, bodyClass: 'page-app' }) %>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -77,6 +73,22 @@ const heroImage = resto.image || resto.coverImage || restoImage(resto.id);
   height: 100%;
   object-fit: cover;
 }
+.resto-hero-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 129, 42, 0.32), transparent 34%),
+    linear-gradient(135deg, #171928, #202438 58%, #10263a);
+  color: rgba(255,255,255,0.9);
+  font-family: var(--font-d);
+  font-size: 42px;
+  font-weight: 800;
+}
+.resto-hero-art img.is-hidden { display: none; }
+.resto-hero-art img.is-hidden + .resto-hero-placeholder { display: grid; }
+.resto-hero-art img + .resto-hero-placeholder { display: none; }
 .resto-hero-content {
   min-width: 0;
 }
@@ -366,7 +378,12 @@ const heroImage = resto.image || resto.coverImage || restoImage(resto.id);
   <div class="resto-hero">
     <div class="resto-hero-layout">
       <div class="resto-hero-art">
-        <img src="<%= heroImage %>" alt="<%= resto.name %>" loading="lazy">
+        <% if (heroImage) { %>
+          <img src="<%= heroImage %>" alt="<%= resto.name %>" loading="lazy" onerror="this.classList.add('is-hidden')">
+          <div class="resto-hero-placeholder"><%= restaurantInitial(resto.name) %></div>
+        <% } else { %>
+          <div class="resto-hero-placeholder"><%= restaurantInitial(resto.name) %></div>
+        <% } %>
       </div>
       <div class="resto-hero-content">
         <div class="resto-hero-name"><%= resto.name %></div>
@@ -397,7 +414,7 @@ const heroImage = resto.image || resto.coverImage || restoImage(resto.id);
     <% cat.items.forEach(item => { %>
     <div class="menu-item" onclick="openItem('<%= JSON.stringify(item).replace(/'/g, "\\'").replace(/"/g, '&quot;') %>')">
       <div class="menu-item-thumb">
-        <img src="<%= item.image || catImage %>" alt="<%= item.name %>" loading="lazy">
+        <img src="<%= safeImageUrl(item.image) || catImage %>" alt="<%= item.name %>" loading="lazy">
       </div>
       <div class="menu-item-info">
         <div class="menu-item-name"><%= item.name %></div>
@@ -1146,5 +1163,3 @@ if (openCartOnLoad && cart.length > 0) {
 ]}) %>
 </body>
 </html>
-
-

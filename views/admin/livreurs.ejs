@@ -2,7 +2,7 @@
 <%- include('../partials/flash') %>
 <div class="app-layout">
   <header class="top-bar">
-    <a href="/admin/dashboard" class="back-btn">← Admin</a>
+    <a href="/admin/dashboard" class="back-btn">Retour admin</a>
     <h1 class="page-title">Livreurs (<%= livreurs.length %>)</h1>
   </header>
 
@@ -17,9 +17,9 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <input class="field-input" type="password" name="password" placeholder="Mot de passe" required>
         <select class="field-input" name="vehicle">
-          <option value="moto">🏍 Moto</option>
-          <option value="voiture">🚗 Voiture</option>
-          <option value="vélo">🚲 Vélo</option>
+          <option value="moto">Moto</option>
+          <option value="voiture">Voiture</option>
+          <option value="velo">Velo</option>
         </select>
       </div>
       <button type="submit" class="btn-primary btn-full">Ajouter le livreur</button>
@@ -36,7 +36,7 @@
         <div class="livreur-av" style="width:48px;height:48px;font-size:20px"><%= l.name[0] %></div>
         <div style="flex:1">
           <div class="livreur-row-name"><%= l.name %></div>
-          <div class="livreur-row-stats">ID: <strong><%= l.phone %></strong> · <%= l.vehicle %></div>
+          <div class="livreur-row-stats">ID: <strong><%= l.phone %></strong>  -  <%= l.vehicle %></div>
         </div>
         <div class="livreur-status-indicator">
           <div class="status-dot <%= l.available ? 'online' : 'offline' %>"></div>
@@ -54,7 +54,7 @@
           <div style="font-size:10px;color:var(--muted);margin-top:4px">Total encaisse: <%= Number(safePeriodStats.all.collected || 0).toLocaleString('fr-FR') %> DA</div>
         </div>
         <div class="lsr-item">
-          <div class="lsr-num"><%= l.rating %>⭐</div>
+          <div class="lsr-num"><%= l.rating %>*</div>
           <div class="lsr-label">Note</div>
         </div>
       </div>
@@ -63,7 +63,7 @@
           { key: 'day', label: 'Jour' },
           { key: 'week', label: 'Semaine' },
           { key: 'month', label: 'Mois' },
-          { key: 'year', label: 'Année' },
+          { key: 'year', label: 'Annee' },
         ]; %>
         <% periods.forEach(period => { const stat = safePeriodStats[period.key] || { count: 0, gains: 0, collected: 0 }; %>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px">
@@ -87,7 +87,7 @@
               <select class="field-input" name="vehicle">
                 <option value="moto" <%= l.vehicle === 'moto' ? 'selected' : '' %>>Moto</option>
                 <option value="voiture" <%= l.vehicle === 'voiture' ? 'selected' : '' %>>Voiture</option>
-                <option value="vélo" <%= l.vehicle === 'vélo' ? 'selected' : '' %>>Vélo</option>
+                <option value="velo" <%= l.vehicle === 'velo' ? 'selected' : '' %>>Velo</option>
               </select>
               <select class="field-input" name="available">
                 <option value="true" <%= l.available ? 'selected' : '' %>>En ligne</option>
@@ -112,12 +112,6 @@
     <% }) %>
   </div>
 
-  <%- include('../partials/bottom-nav', { navItems: [
-    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
-    { href: '/admin/commandes', icon: '📦', label: 'Cmdes', active: false },
-    { href: '/admin/comptabilite', icon: '💰', label: 'Compta', active: false },
-    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: true },
-    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
-  ]}) %>
+  <%- include('nav', { active: 'livreurs' }) %>
 </div>
 </body></html>

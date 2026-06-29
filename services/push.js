@@ -60,7 +60,7 @@ function getPublicConfig() {
 
 function normalizePayload(payload = {}) {
   return {
-    title: String(payload.title || 'Collo').slice(0, 80),
+    title: String(payload.title || 'Kolo Go').slice(0, 80),
     body: String(payload.body || '').slice(0, 180),
     url: String(payload.url || '/').slice(0, 300),
     tag: String(payload.tag || 'colloexpress').slice(0, 80),

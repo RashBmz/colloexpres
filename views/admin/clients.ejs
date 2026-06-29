@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: 'Clients', bodyClass: 'page-app' }) %>
 <div class="app-layout">
   <header class="top-bar">
-    <a href="/admin/dashboard" class="back-btn">← Admin</a>
+    <a href="/admin/dashboard" class="back-btn">Retour admin</a>
     <h1 class="page-title">Clients (<%= clients.length %>)</h1>
   </header>
   <div style="padding:16px 16px 100px">
@@ -11,19 +11,13 @@
         <div class="livreur-av" style="background:linear-gradient(135deg,#4fc3f7,#0277bd)"><%= c.name[0] %></div>
         <div>
           <div class="livreur-row-name"><%= c.name %></div>
-          <div class="livreur-row-stats">📞 <%= c.phone %> · <%= c.order_count %> commande(s)</div>
+          <div class="livreur-row-stats">Tel: <%= c.phone %> - <%= c.order_count %> commande(s)</div>
           <div class="livreur-row-stats">Inscrit le <%= new Date(c.created_at).toLocaleDateString('fr-FR') %></div>
         </div>
       </div>
     </div>
     <% }) %>
   </div>
-  <%- include('../partials/bottom-nav', { navItems: [
-    { href: '/admin/dashboard', icon: '📊', label: 'Stats', active: false },
-    { href: '/admin/commandes', icon: '📦', label: 'Cmdes', active: false },
-    { href: '/admin/comptabilite', icon: '💰', label: 'Compta', active: false },
-    { href: '/admin/livreurs', icon: '🛵', label: 'Livreurs', active: false },
-    { href: '/auth/logout', icon: '↩', label: 'Déco', active: false },
-  ]}) %>
+  <%- include('nav', { active: 'clients' }) %>
 </div>
 </body></html>

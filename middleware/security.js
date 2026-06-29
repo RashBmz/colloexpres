@@ -60,7 +60,7 @@ function securityHeaders(req, res, next) {
     "base-uri 'self'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    "img-src 'self' data: https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org",
+    "img-src 'self' data: https://commons.wikimedia.org https://upload.wikimedia.org https://i.imgur.com https://imgur.com https://tile.openstreetmap.org https://*.tile.openstreetmap.org",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
     "script-src 'self' 'unsafe-inline' https://unpkg.com",
     "font-src 'self' data: https://fonts.gstatic.com",
