@@ -2,6 +2,22 @@
   const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   if (!isSecure) return;
 
+  const PUSH_PERMISSION_STATE_KEY = 'kolo_go_push_permission_state_v1';
+
+  function getStoredPushState() {
+    try {
+      return localStorage.getItem(PUSH_PERMISSION_STATE_KEY) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  function setStoredPushState(state) {
+    try {
+      localStorage.setItem(PUSH_PERMISSION_STATE_KEY, state);
+    } catch {}
+  }
+
   async function postJson(url, body) {
     const response = await fetch(url, {
       method: 'POST',
@@ -29,13 +45,30 @@
     document.body.appendChild(button);
   }
 
+  async function checkNativePushPermission() {
+    const capacitor = window.Capacitor;
+    const pushPlugin = capacitor?.Plugins?.PushNotifications;
+    if (!capacitor?.isNativePlatform?.() || !pushPlugin?.checkPermissions) return '';
+    try {
+      const permission = await pushPlugin.checkPermissions();
+      return permission.receive || '';
+    } catch {
+      return '';
+    }
+  }
+
   async function registerNativePush() {
     const capacitor = window.Capacitor;
     const pushPlugin = capacitor?.Plugins?.PushNotifications;
     if (!capacitor?.isNativePlatform?.() || !pushPlugin) return false;
 
     const permission = await pushPlugin.requestPermissions();
-    if (permission.receive !== 'granted') return false;
+    if (permission.receive !== 'granted') {
+      setStoredPushState('denied');
+      return false;
+    }
+
+    setStoredPushState('granted');
 
     if (capacitor.getPlatform?.() === 'android' && pushPlugin.createChannel) {
       await pushPlugin.createChannel({
@@ -57,19 +90,22 @@
         platform: capacitor.getPlatform?.() || 'android',
       }).catch(() => null);
     });
+
     await pushPlugin.addListener('pushNotificationActionPerformed', (event) => {
       const url = event.notification?.data?.url || '/';
       window.location.href = url;
     });
+
     await pushPlugin.register();
     return true;
   }
 
-  async function activate(config) {
+  async function activate() {
     try {
       await registerNativePush();
-      document.querySelector('.push-permission-btn')?.remove();
     } catch {
+      setStoredPushState('denied');
+    } finally {
       document.querySelector('.push-permission-btn')?.remove();
     }
   }
@@ -79,8 +115,22 @@
     if (!config) return;
 
     const isNative = window.Capacitor?.isNativePlatform?.();
-    if (isNative) {
-      buildButton(() => activate(config));
+    if (!isNative) return;
+
+    const nativePermission = await checkNativePushPermission();
+    if (nativePermission === 'granted') {
+      setStoredPushState('granted');
+      activate();
+      return;
     }
+
+    const storedState = getStoredPushState();
+    if (storedState === 'granted') {
+      activate();
+      return;
+    }
+    if (storedState === 'denied') return;
+
+    buildButton(() => activate());
   });
 })();

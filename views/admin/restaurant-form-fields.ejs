@@ -21,8 +21,14 @@
   <textarea class="field-input" name="description" rows="2" placeholder="Description courte"><%= restaurant ? (restaurant.description || '') : '' %></textarea>
   <input class="field-input" type="text" name="address" placeholder="Adresse du restaurant" value="<%= restaurant ? (restaurant.address || '') : '' %>">
   <div class="resto-grid">
-    <input class="field-input" type="url" name="image" placeholder="Image principale URL" value="<%= restaurant ? (restaurant.image || '') : '' %>">
-    <input class="field-input" type="url" name="cover_image" placeholder="Image couverture URL" value="<%= restaurant ? (restaurant.coverImage || '') : '' %>">
+    <div>
+      <input class="field-input" type="url" name="image" placeholder="Image page restaurant URL" value="<%= restaurant ? (restaurant.image || '') : '' %>">
+      <div class="field-help">Affichee en haut de la page du restaurant.</div>
+    </div>
+    <div>
+      <input class="field-input" type="url" name="cover_image" placeholder="Banniere liste restaurants URL" value="<%= restaurant ? (restaurant.coverImage || '') : '' %>">
+      <div class="field-help">Affichee sur la carte restaurant dans la liste.</div>
+    </div>
   </div>
   <div class="resto-grid-3">
     <input class="field-input" type="text" name="delivery_time" placeholder="Temps livraison" value="<%= restaurant ? (restaurant.deliveryTime || '') : '25-40 min' %>">

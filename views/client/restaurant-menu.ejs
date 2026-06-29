@@ -30,7 +30,7 @@ function safeImageUrl(url) {
 function restaurantInitial(name) {
   return String(name || 'R').trim().charAt(0).toUpperCase() || 'R';
 }
-const heroImage = safeImageUrl(resto.coverImage) || safeImageUrl(resto.image);
+const heroImage = safeImageUrl(resto.image) || safeImageUrl(resto.coverImage);
 %>
 <%- include('../partials/head', { title: resto.name, bodyClass: 'page-app' }) %>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -926,6 +926,36 @@ function getGeoErrorMessage(error) {
   return 'Impossible d obtenir votre position actuelle.';
 }
 
+const GEO_PERMISSION_DENIED_KEY = 'kolo_go_geo_permission_denied_v1';
+
+function setGeoDenied(denied) {
+  try {
+    if (denied) localStorage.setItem(GEO_PERMISSION_DENIED_KEY, '1');
+    else localStorage.removeItem(GEO_PERMISSION_DENIED_KEY);
+  } catch(e) {}
+}
+
+function hasGeoDenied() {
+  try {
+    return localStorage.getItem(GEO_PERMISSION_DENIED_KEY) === '1';
+  } catch(e) {
+    return false;
+  }
+}
+
+async function canRequestGeolocation() {
+  if (!hasGeoDenied()) return true;
+  if (!navigator.permissions || !navigator.permissions.query) return false;
+  try {
+    const permission = await navigator.permissions.query({ name: 'geolocation' });
+    if (permission.state === 'granted' || permission.state === 'prompt') {
+      setGeoDenied(false);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
 function getCurrentPositionReliable(onSuccess, onError) {
   navigator.geolocation.getCurrentPosition(onSuccess, function(firstError) {
     navigator.geolocation.getCurrentPosition(onSuccess, function(secondError) {
@@ -942,9 +972,15 @@ function getCurrentPositionReliable(onSuccess, onError) {
   });
 }
 
-function locateCurrentDeliveryPosition() {
+async function locateCurrentDeliveryPosition() {
   if (!navigator.geolocation) {
     showToast('La geolocalisation n est pas supportee sur cet appareil', 'error');
+    return;
+  }
+
+  const canRequest = await canRequestGeolocation();
+  if (!canRequest) {
+    showToast('Localisation refusee. Pour la reactiver, va dans les reglages de l application ou du navigateur.', 'error');
     return;
   }
 
@@ -954,6 +990,7 @@ function locateCurrentDeliveryPosition() {
   button.textContent = '⏳ Localisation...';
 
   getCurrentPositionReliable(function(position) {
+    setGeoDenied(false);
     const lat = position.coords.latitude;
     const lng = position.coords.longitude;
     ensureDeliveryMap();
@@ -963,6 +1000,7 @@ function locateCurrentDeliveryPosition() {
     button.disabled = false;
     button.textContent = originalLabel;
   }, function(error) {
+    if (error && error.code === 1) setGeoDenied(true);
     showToast(getGeoErrorMessage(error), 'error');
     button.disabled = false;
     button.textContent = originalLabel;

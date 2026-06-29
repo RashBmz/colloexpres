@@ -222,6 +222,36 @@ function getGeoErrorMessage(error) {
   return 'Impossible d obtenir votre position.';
 }
 
+const GEO_PERMISSION_DENIED_KEY = 'kolo_go_geo_permission_denied_v1';
+
+function setGeoDenied(denied) {
+  try {
+    if (denied) localStorage.setItem(GEO_PERMISSION_DENIED_KEY, '1');
+    else localStorage.removeItem(GEO_PERMISSION_DENIED_KEY);
+  } catch(e) {}
+}
+
+function hasGeoDenied() {
+  try {
+    return localStorage.getItem(GEO_PERMISSION_DENIED_KEY) === '1';
+  } catch(e) {
+    return false;
+  }
+}
+
+async function canRequestGeolocation() {
+  if (!hasGeoDenied()) return true;
+  if (!navigator.permissions || !navigator.permissions.query) return false;
+  try {
+    const permission = await navigator.permissions.query({ name: 'geolocation' });
+    if (permission.state === 'granted' || permission.state === 'prompt') {
+      setGeoDenied(false);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
 function getCurrentPositionReliable(onSuccess, onError) {
   navigator.geolocation.getCurrentPosition(onSuccess, function(firstError) {
     navigator.geolocation.getCurrentPosition(onSuccess, function(secondError) {
@@ -238,9 +268,14 @@ function getCurrentPositionReliable(onSuccess, onError) {
   });
 }
 
-function locateMe(which) {
+async function locateMe(which) {
   if (!navigator.geolocation) return alert('Geolocalisation non supportee');
+  const canRequest = await canRequestGeolocation();
+  if (!canRequest) {
+    return alert('Localisation refusee. Pour la reactiver, va dans les reglages de l application ou du navigateur.');
+  }
   getCurrentPositionReliable(pos => {
+    setGeoDenied(false);
     const { latitude: lat, longitude: lng } = pos.coords;
     if (which === 'from') {
       mapFrom.setView([lat, lng], 16);
@@ -249,7 +284,10 @@ function locateMe(which) {
       mapTo.setView([lat, lng], 16);
       mapTo.fireEvent('click', { latlng: { lat, lng } });
     }
-  }, error => alert(getGeoErrorMessage(error)));
+  }, error => {
+    if (error && error.code === 1) setGeoDenied(true);
+    alert(getGeoErrorMessage(error));
+  });
 }
 
 function clearPickupData() {

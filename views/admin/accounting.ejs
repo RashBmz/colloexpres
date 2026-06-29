@@ -1,4 +1,4 @@
-<%- include('../partials/head', { title: 'Comptabilite livreurs', bodyClass: 'page-app' }) %>
+<%- include('../partials/head', { title: 'Comptabilite livreurs', bodyClass: 'page-app', disableI18n: true }) %>
 <%- include('../partials/flash') %>
 <%
 const money = (value) => Number(value || 0).toLocaleString('fr-FR') + ' DA';

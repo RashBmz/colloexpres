@@ -1,10 +1,10 @@
-﻿const CACHE_NAME = 'kolo-go-v1';
+const CACHE_NAME = 'kolo-go-v4';
 const STATIC_ASSETS = [
-  '/css/main.css?v=fluid-2',
-  '/js/i18n.js?v=ar-2',
-  '/js/push.js?v=fluid-1',
+  '/css/main.css?v=fluid-5',
+  '/js/i18n.js?v=ar-3',
+  '/js/push.js?v=permission-once-1',
   '/js/app-fast.js?v=fluid-1',
-  '/js/pwa.js?v=3',
+  '/js/pwa.js?v=4',
   '/manifest.webmanifest',
   '/images/icons/icon-192.png',
   '/images/icons/icon-512.png'

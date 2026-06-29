@@ -1,4 +1,5 @@
 (function () {
+  if (location.pathname.startsWith('/admin')) return;
   if (window.COLLO_LANG !== 'ar') return;
 
   const TEXT = {

@@ -64,7 +64,7 @@ function buildRestaurantPayload(body, existingId = '') {
   const id = existingId || slugify(body.id || name);
   const menu = parseMenuJson(body.menu_json);
   const image = cleanImageUrl(body.image);
-  const coverImage = cleanImageUrl(body.cover_image) || image;
+  const coverImage = cleanImageUrl(body.cover_image);
 
   return {
     id,
