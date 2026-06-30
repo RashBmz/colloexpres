@@ -1,0 +1,2230 @@
+{
+  "id": "le-gourmet",
+  "name": "Dalida",
+  "menu_json": {
+    "tacos": {
+      "items": [
+        {
+          "id": "tacos-poulet",
+          "name": "Tacos poulet",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 300
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 350,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "tacos-viande",
+          "name": "Tacos viande",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 350
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "tacos-abat",
+          "name": "Tacos abat",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 350
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "tacos-poulet-crispy",
+          "name": "Tacos poulet crispy",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 450,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "tacos-mix",
+          "name": "Tacos mix",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 450
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 450,
+          "description": "Taille L ou XL"
+        }
+      ],
+      "label": "Nos Tacos",
+      "order": 4
+    },
+    "burgers": {
+      "items": [
+        {
+          "id": "burger-simple",
+          "name": "Burger simple",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 300,
+          "description": ""
+        },
+        {
+          "id": "burger-poulet-crispy",
+          "name": "Burger poulet crispy",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 350,
+          "description": ""
+        },
+        {
+          "id": "burger-double-viande",
+          "name": "Burger double viande",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": ""
+        },
+        {
+          "id": "black-burger",
+          "name": "Black burger",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 300,
+          "description": ""
+        },
+        {
+          "id": "red-burger",
+          "name": "Red burger",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 300,
+          "description": ""
+        }
+      ],
+      "label": "Nos Burger",
+      "order": 0
+    },
+    "makloub": {
+      "items": [
+        {
+          "id": "makloub-poulet",
+          "name": "Makloub poulet",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 500,
+          "description": ""
+        },
+        {
+          "id": "makloub-viande",
+          "name": "Makloub viande",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 550,
+          "description": ""
+        },
+        {
+          "id": "makloub-abat",
+          "name": "Makloub abat",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 550,
+          "description": ""
+        },
+        {
+          "id": "makloub-poulet-crispy",
+          "name": "Makloub poulet crispy",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 550,
+          "description": ""
+        }
+      ],
+      "label": "Nos Makloub",
+      "order": 3
+    },
+    "poutine": {
+      "items": [
+        {
+          "id": "poutine-poulet",
+          "name": "Poutine poulet",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 550,
+          "description": ""
+        },
+        {
+          "id": "poutine-viande",
+          "name": "Poutine viande",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 600,
+          "description": ""
+        },
+        {
+          "id": "poutine-abat",
+          "name": "Poutine abat",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 600,
+          "description": ""
+        },
+        {
+          "id": "poutine-poulet-crispy",
+          "name": "Poutine poulet crispy",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 600,
+          "description": ""
+        }
+      ],
+      "label": "Nos Poutine",
+      "order": 6
+    },
+    "twister": {
+      "items": [
+        {
+          "id": "twister-poulet",
+          "name": "Twister poulet",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 500,
+          "description": ""
+        },
+        {
+          "id": "twister-abat",
+          "name": "Twister abat",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 550,
+          "description": ""
+        },
+        {
+          "id": "twister-poulet-crispy",
+          "name": "Twister poulet crispy",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 600,
+          "description": ""
+        }
+      ],
+      "label": "Nos Twister",
+      "order": 7
+    },
+    "libanais": {
+      "items": [
+        {
+          "id": "libanais-poulet",
+          "name": "Libanais poulet",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 300,
+          "description": ""
+        },
+        {
+          "id": "libanais-viande",
+          "name": "Libanais viande",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 300,
+          "description": ""
+        },
+        {
+          "id": "libanais-abat",
+          "name": "Libanais abat",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 300,
+          "description": ""
+        },
+        {
+          "id": "libanais-poulet-crispy",
+          "name": "Libanais poulet crispy",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 350,
+          "description": ""
+        }
+      ],
+      "label": "Nos Libanais",
+      "order": 2
+    },
+    "sandwichs": {
+      "items": [
+        {
+          "id": "sandwich-poulet",
+          "name": "Sandwich poulet",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 300,
+          "description": ""
+        },
+        {
+          "id": "sandwich-viande",
+          "name": "Sandwich viande",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 350,
+          "description": ""
+        },
+        {
+          "id": "sandwich-abat",
+          "name": "Sandwich abat",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 350,
+          "description": ""
+        },
+        {
+          "id": "sandwich-poulet-crispy",
+          "name": "Sandwich poulet crispy",
+          "image": "",
+          "options": {
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 350,
+          "description": ""
+        }
+      ],
+      "label": "Nos Sandwich",
+      "order": 1
+    },
+    "pizza_boise": {
+      "items": [
+        {
+          "id": "pizza-boise-margherita",
+          "name": "Pizza boise Margherita",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 350
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 350,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-boise-poulet",
+          "name": "Pizza boise poulet",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-boise-viande",
+          "name": "Pizza boise viande",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 450
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 450,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-boise-merguez",
+          "name": "Pizza boise merguez",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 450
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 450,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-4-fromage",
+          "name": "Pizza 4 fromage",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 500
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 500,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-poulet-fume-boise",
+          "name": "Pizza poulet fume boise",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 450
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 650,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-boise-royale",
+          "name": "Pizza boise royale",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 800
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 800,
+          "description": "Taille L ou XL"
+        }
+      ],
+      "label": "Pizza Boise",
+      "order": 9
+    },
+    "tacos_gratine": {
+      "items": [
+        {
+          "id": "tacos-gratine-poulet",
+          "name": "Tacos gratine poulet",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 350
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "tacos-gratine-viande",
+          "name": "Tacos gratine viande",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 450,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "tacos-gratine-abat",
+          "name": "Tacos gratine abat",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 450,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "tacos-gratine-poulet-crispy",
+          "name": "Tacos gratine poulet crispy",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 450
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 500,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "tacos-gratine-mix",
+          "name": "Tacos gratine mix",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 450
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 500,
+          "description": "Taille L ou XL"
+        }
+      ],
+      "label": "Tacos Gratine",
+      "order": 5
+    },
+    "pizza_sauce_tomate": {
+      "items": [
+        {
+          "id": "pizza-margherita",
+          "name": "Pizza Margherita",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 300
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 300,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-poulet",
+          "name": "Pizza poulet",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 350
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 350,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-viande",
+          "name": "Pizza viande",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-thon",
+          "name": "Pizza thon",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 450
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 450,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-merguez",
+          "name": "Pizza merguez",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-champignon",
+          "name": "Pizza champignon",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-pepperoni",
+          "name": "Pizza pepperoni",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 450
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 450,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-vegetarien",
+          "name": "Pizza vegetarien",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 400,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-poulet-fume",
+          "name": "Pizza poulet fume",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 400
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 600,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-fruits-de-mer",
+          "name": "Pizza fruits de mer",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 700
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 800,
+          "description": "Taille L ou XL"
+        },
+        {
+          "id": "pizza-royale",
+          "name": "Pizza royale",
+          "image": "",
+          "options": {
+            "taille": {
+              "label": "Taille",
+              "choices": [
+                {
+                  "id": "l",
+                  "label": "L",
+                  "price": 0
+                },
+                {
+                  "id": "xl",
+                  "label": "XL",
+                  "price": 700
+                }
+              ],
+              "required": true
+            },
+            "poulet_fume": {
+              "type": "checkbox",
+              "label": "Poulet fume",
+              "price": 100,
+              "required": false
+            },
+            "fromage_rouge": {
+              "type": "checkbox",
+              "label": "Fromage rouge",
+              "price": 100,
+              "required": false
+            },
+            "fromage_gruyere": {
+              "type": "checkbox",
+              "label": "Fromage gruyere",
+              "price": 100,
+              "required": false
+            },
+            "fromage_camembert": {
+              "type": "checkbox",
+              "label": "Fromage camembert",
+              "price": 100,
+              "required": false
+            }
+          },
+          "basePrice": 700,
+          "description": "Taille L ou XL"
+        }
+      ],
+      "label": "Pizza sauce tomate",
+      "order": 8
+    }
+  }
+}

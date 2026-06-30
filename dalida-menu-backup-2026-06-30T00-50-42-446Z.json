@@ -1,0 +1,35 @@
+{
+  "id": "le-gourmet",
+  "name": "Dalida",
+  "menu_json": {
+    "plats": {
+      "items": [
+        {
+          "id": "lg1",
+          "name": "Poulet rôti",
+          "image": "",
+          "options": {},
+          "basePrice": 800,
+          "description": "Demi-poulet rôti avec accompagnements"
+        },
+        {
+          "id": "lg2",
+          "name": "Sandwich Kefta",
+          "image": "",
+          "options": {},
+          "basePrice": 250,
+          "description": "Kefta grillée, oignons, harissa"
+        },
+        {
+          "id": "lg3",
+          "name": "Salade César Poulet",
+          "image": "",
+          "options": {},
+          "basePrice": 350,
+          "description": "Salade romaine, poulet grillé, croutons"
+        }
+      ],
+      "label": "Plats"
+    }
+  }
+}
