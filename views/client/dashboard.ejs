@@ -9,7 +9,15 @@ function safeImageUrl(url) {
   return clean;
 }
 function restaurantCover(r) {
-  return safeImageUrl(r.coverImage) || safeImageUrl(r.image);
+  return optimizedImageUrl(r.coverImage, 'l') || optimizedImageUrl(r.image, 'l');
+}
+function optimizedImageUrl(url, size = 'l') {
+  const clean = safeImageUrl(url);
+  if (!clean) return '';
+  const match = clean.match(/^(https?:\/\/i\.imgur\.com\/)([A-Za-z0-9]+)([a-z])?(\.(?:jpg|jpeg|png|webp))(?:[?#].*)?$/i);
+  if (!match) return clean;
+  const suffix = ['s', 'b', 't', 'm', 'l', 'h'].includes(size) ? size : 'l';
+  return `${match[1]}${match[2]}${suffix}${match[4]}`;
 }
 function restaurantInitial(name) {
   return String(name || 'R').trim().charAt(0).toUpperCase() || 'R';
@@ -110,11 +118,11 @@ const dashboardPopularRestaurants = typeof popularRestaurants !== 'undefined' &&
           <div class="rmc-badge">Voir la liste</div>
         </a>
       <% } %>
-      <% dashboardPopularRestaurants.forEach((restaurant) => { const cover = restaurantCover(restaurant); %>
+      <% dashboardPopularRestaurants.forEach((restaurant, index) => { const cover = restaurantCover(restaurant); %>
         <a href="/client/restaurants/<%= restaurant.id %>" class="resto-mini-card">
           <div class="rmc-cover">
             <% if (cover) { %>
-              <img class="rmc-cover-img" src="<%= cover %>" alt="<%= restaurant.name %>" loading="lazy" onerror="this.classList.add('is-hidden')">
+              <img class="rmc-cover-img" src="<%= cover %>" alt="<%= restaurant.name %>" width="640" height="240" loading="<%= index < 2 ? 'eager' : 'lazy' %>" decoding="async" fetchpriority="<%= index === 0 ? 'high' : 'auto' %>" onerror="this.classList.add('is-hidden')">
               <div class="rmc-cover-placeholder"><%= restaurantInitial(restaurant.name) %></div>
             <% } else { %>
               <div class="rmc-cover-placeholder"><%= restaurantInitial(restaurant.name) %></div>
@@ -139,7 +147,7 @@ const dashboardPopularRestaurants = typeof popularRestaurants !== 'undefined' &&
     min-width: 0;
     background: var(--card); border: 1px solid var(--border);
     border-radius: var(--r); overflow: hidden;
-    transition: all 0.2s; color: var(--text); display: block;
+    transition: border-color 0.12s ease, transform 0.12s ease; color: var(--text); display: block;
   }
   .resto-mini-card:hover { border-color: rgba(255,92,26,0.3); transform: translateY(-2px); }
   .rmc-cover { height: 82px; background: linear-gradient(135deg,#1a1a26,#252535); display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden; }

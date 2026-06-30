@@ -1,7 +1,7 @@
 (function () {
   if (!('serviceWorker' in navigator)) return;
 
-  const ACTIVE_CACHE = 'kolo-go-v5';
+  const ACTIVE_CACHE = 'kolo-go-v6';
 
   window.addEventListener('load', function () {
     if (window.caches) {

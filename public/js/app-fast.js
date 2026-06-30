@@ -1,5 +1,24 @@
 (function () {
   const TAP_SELECTOR = 'a, button, [role="button"], input[type="submit"]';
+  const MIN_SPLASH_MS = 260;
+  const splashStartedAt = Date.now();
+
+  function getSplash() {
+    return document.getElementById('app-splash');
+  }
+
+  function hideSplashSoon() {
+    const splash = getSplash();
+    if (!splash) return;
+    const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - splashStartedAt));
+    window.setTimeout(() => splash.classList.add('is-hidden'), wait);
+  }
+
+  function showSplash() {
+    const splash = getSplash();
+    if (!splash) return;
+    splash.classList.remove('is-hidden');
+  }
 
   function isLocalNavigationLink(link) {
     if (!link || link.target || link.hasAttribute('download')) return false;
@@ -18,15 +37,32 @@
     window.setTimeout(() => el.classList.remove('tap-active'), 140);
   }
 
+  function prefetchLink(link) {
+    if (!isLocalNavigationLink(link) || link.dataset.prefetched === '1') return;
+    link.dataset.prefetched = '1';
+    fetch(link.href, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: { 'X-Prefetch': '1' },
+      priority: 'low',
+    }).catch(() => null);
+  }
+
   document.addEventListener('pointerdown', (event) => {
     const target = event.target.closest(TAP_SELECTOR);
     if (target) setPressed(target);
+  }, { passive: true });
+
+  document.addEventListener('mouseover', (event) => {
+    const link = event.target.closest('a');
+    if (link) prefetchLink(link);
   }, { passive: true });
 
   document.addEventListener('click', (event) => {
     const link = event.target.closest('a');
     if (!isLocalNavigationLink(link)) return;
     link.classList.add('is-submitting');
+    showSplash();
   }, { passive: true });
 
   document.addEventListener('submit', (event) => {
@@ -45,9 +81,11 @@
         button.textContent = 'Chargement...';
       }
     }
+    showSplash();
   }, true);
 
   window.addEventListener('pageshow', () => {
+    hideSplashSoon();
     document.querySelectorAll('.is-submitting').forEach((el) => el.classList.remove('is-submitting'));
     document.querySelectorAll('form[data-submitting="1"]').forEach((form) => {
       delete form.dataset.submitting;
@@ -59,4 +97,10 @@
       }
     });
   });
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    hideSplashSoon();
+  } else {
+    document.addEventListener('DOMContentLoaded', hideSplashSoon, { once: true });
+  }
 })();

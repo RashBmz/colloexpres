@@ -30,10 +30,18 @@ function safeImageUrl(url) {
   if (/^https?:\/\/(?:www\.)?imgur\.com\/a\//i.test(clean)) return '';
   return clean;
 }
+function optimizedImageUrl(url, size = 'l') {
+  const clean = safeImageUrl(url);
+  if (!clean) return '';
+  const match = clean.match(/^(https?:\/\/i\.imgur\.com\/)([A-Za-z0-9]+)([a-z])?(\.(?:jpg|jpeg|png|webp))(?:[?#].*)?$/i);
+  if (!match) return clean;
+  const suffix = ['s', 'b', 't', 'm', 'l', 'h'].includes(size) ? size : 'l';
+  return `${match[1]}${match[2]}${suffix}${match[4]}`;
+}
 function restaurantInitial(name) {
   return String(name || 'R').trim().charAt(0).toUpperCase() || 'R';
 }
-const heroImage = safeImageUrl(resto.image) || safeImageUrl(resto.coverImage);
+const heroImage = optimizedImageUrl(resto.image, 'l') || optimizedImageUrl(resto.coverImage, 'l');
 const menuEntries = Object.entries(resto.menu || {})
   .map(([key, cat], index) => ({ key, cat: cat || {}, index }))
   .sort((a, b) => {
@@ -142,7 +150,7 @@ const menuEntries = Object.entries(resto.menu || {})
   white-space: nowrap;
   cursor: pointer;
   font-family: var(--font-b);
-  transition: all 0.2s;
+  transition: border-color 0.12s ease, transform 0.12s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -187,6 +195,7 @@ const menuEntries = Object.entries(resto.menu || {})
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background: #171928;
 }
 .menu-item-info { flex: 1; min-width: 0; }
 .menu-item-name { font-size: 15px; font-weight: 600; }
@@ -208,7 +217,7 @@ const menuEntries = Object.entries(resto.menu || {})
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.12s ease, background-color 0.12s ease;
 }
 .menu-item-add:hover { transform: scale(1.1); }
 .modal-overlay {
@@ -424,7 +433,7 @@ const menuEntries = Object.entries(resto.menu || {})
     <div class="resto-hero-layout">
       <div class="resto-hero-art">
         <% if (heroImage) { %>
-          <img src="<%= heroImage %>" alt="<%= resto.name %>" loading="lazy" onerror="this.classList.add('is-hidden')">
+          <img src="<%= heroImage %>" alt="<%= resto.name %>" width="320" height="320" loading="eager" decoding="async" fetchpriority="high" onerror="this.classList.add('is-hidden')">
           <div class="resto-hero-placeholder"><%= restaurantInitial(resto.name) %></div>
         <% } else { %>
           <div class="resto-hero-placeholder"><%= restaurantInitial(resto.name) %></div>
@@ -459,7 +468,7 @@ const menuEntries = Object.entries(resto.menu || {})
     <% (cat.items || []).forEach(item => { %>
     <div class="menu-item" onclick="openItem('<%= JSON.stringify(item).replace(/'/g, "\\'").replace(/"/g, '&quot;') %>')">
       <div class="menu-item-thumb">
-        <img src="<%= safeImageUrl(item.image) || catImage %>" alt="<%= item.name %>" loading="lazy">
+        <img src="<%= optimizedImageUrl(item.image, 'm') || catImage %>" alt="<%= item.name %>" width="144" height="144" loading="lazy" decoding="async">
       </div>
       <div class="menu-item-info">
         <div class="menu-item-name"><%= item.name %></div>
@@ -783,6 +792,8 @@ async function ensureCartForCurrentRestaurant() {
 }
 
 function openItem(itemJson) {
+  const modal = document.getElementById('item-modal');
+  modal.classList.add('show');
   currentItem = JSON.parse(itemJson.replace(/&quot;/g, '"'));
   currentOptions = {};
   currentQty = 1;
@@ -835,7 +846,6 @@ function openItem(itemJson) {
   }
 
   updateModalPrice();
-  document.getElementById('item-modal').classList.add('show');
 }
 
 function closeItemModal() {

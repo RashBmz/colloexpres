@@ -25,8 +25,67 @@ const pageIsArabic = disableI18nPage ? false : (typeof isArabic !== 'undefined' 
 <link rel="dns-prefetch" href="https://tile.openstreetmap.org">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/main.css?v=fluid-5">
+<style>
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255,92,26,0.18), transparent 34%),
+    #090910;
+  color: #fff;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  pointer-events: none;
+}
+.app-splash.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+.app-splash-logo {
+  width: 92px;
+  height: 92px;
+  border-radius: 24px;
+  box-shadow: 0 18px 48px rgba(255,92,26,0.22);
+}
+.app-splash-title {
+  font: 800 22px/1 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0;
+}
+.app-splash-loader {
+  width: 64px;
+  height: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.12);
+}
+.app-splash-loader::after {
+  content: '';
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff5c1a, #ffb347);
+  animation: appSplashLoad 0.85s ease-in-out infinite;
+}
+@keyframes appSplashLoad {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(260%); }
+}
+</style>
 </head>
 <body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %> <%= pageIsArabic ? 'lang-ar' : 'lang-fr' %>">
+<div class="app-splash" id="app-splash" aria-hidden="true">
+  <img class="app-splash-logo" src="/images/icons/icon-192.png" width="92" height="92" alt="">
+  <div class="app-splash-title">Kolo Go</div>
+  <div class="app-splash-loader"></div>
+</div>
 <% if (!disableI18nPage) { %>
   <a class="lang-switch" href="/lang/<%= typeof langSwitchTarget !== 'undefined' ? langSwitchTarget : 'ar' %>" aria-label="Changer la langue">
     <%= typeof langSwitchLabel !== 'undefined' ? langSwitchLabel : 'AR' %>
@@ -40,4 +99,4 @@ window.COLLO_LANG = <%- JSON.stringify(pageLang) %>;
 <% } %>
 <script defer src="/js/pwa.js?v=5"></script>
 <script defer src="/js/push.js?v=pwa-push-1"></script>
-<script defer src="/js/app-fast.js?v=fluid-1"></script>
+<script defer src="/js/app-fast.js?v=fluid-3"></script>

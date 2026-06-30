@@ -10,7 +10,16 @@ function safeImageUrl(url) {
 }
 
 function restaurantCover(r) {
-  return safeImageUrl(r.coverImage) || safeImageUrl(r.image);
+  return optimizedImageUrl(r.coverImage, 'l') || optimizedImageUrl(r.image, 'l');
+}
+
+function optimizedImageUrl(url, size = 'l') {
+  const clean = safeImageUrl(url);
+  if (!clean) return '';
+  const match = clean.match(/^(https?:\/\/i\.imgur\.com\/)([A-Za-z0-9]+)([a-z])?(\.(?:jpg|jpeg|png|webp))(?:[?#].*)?$/i);
+  if (!match) return clean;
+  const suffix = ['s', 'b', 't', 'm', 'l', 'h'].includes(size) ? size : 'l';
+  return `${match[1]}${match[2]}${suffix}${match[4]}`;
 }
 
 function restaurantInitial(name) {
@@ -24,7 +33,10 @@ function restaurantInitial(name) {
 .resto-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--r); overflow: hidden; margin-bottom: 12px;
-  transition: all 0.2s; display: block; color: var(--text);
+  transition: border-color 0.12s ease, transform 0.12s ease, opacity 0.12s ease;
+  display: block; color: var(--text);
+  content-visibility: auto;
+  contain-intrinsic-size: 250px;
 }
 .resto-card:hover { border-color: rgba(255,92,26,0.3); transform: translateY(-1px); }
 .resto-card.closed { opacity: 0.6; }
@@ -48,6 +60,7 @@ function restaurantInitial(name) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background: #171928;
 }
 .resto-cover-placeholder {
   position: absolute;
@@ -181,7 +194,7 @@ function restaurantInitial(name) {
 @media (max-width: 420px) {
   #resto-map { height: 190px; margin: 0 12px 4px; border-radius: 14px; }
   .section-tab { padding: 10px 12px; }
-  .resto-card { margin-bottom: 10px; }
+  .resto-card { margin-bottom: 10px; contain-intrinsic-size: 230px; }
   .resto-cover { height: 104px; }
   .resto-body { padding: 12px 13px; }
   .resto-name { font-size: 16px; overflow-wrap: anywhere; }
@@ -210,11 +223,11 @@ function restaurantInitial(name) {
   </div>
 
   <div style="padding:4px 16px 100px" id="restos-list">
-    <% restaurants.forEach(r => { const imageSrc = restaurantCover(r); %>
+    <% restaurants.forEach((r, index) => { const imageSrc = restaurantCover(r); %>
     <a href="/client/restaurants/<%= r.id %>" class="resto-card <%= r.open ? '' : 'closed' %>" data-cat="<%= r.category.toLowerCase() %>" data-open="<%= r.open %>">
       <div class="resto-cover">
         <% if (imageSrc) { %>
-          <img class="resto-cover-image" src="<%= imageSrc %>" alt="<%= r.name %>" loading="lazy" onerror="this.classList.add('is-hidden')">
+          <img class="resto-cover-image" src="<%= imageSrc %>" alt="<%= r.name %>" width="640" height="240" loading="<%= index < 2 ? 'eager' : 'lazy' %>" decoding="async" fetchpriority="<%= index === 0 ? 'high' : 'auto' %>" onerror="this.classList.add('is-hidden')">
           <div class="resto-cover-placeholder"><%= restaurantInitial(r.name) %></div>
         <% } else { %>
           <div class="resto-cover-placeholder"><%= restaurantInitial(r.name) %></div>
@@ -257,25 +270,31 @@ function restaurantInitial(name) {
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const RESTOS = <%- JSON.stringify(restaurants.map((r) => ({ id: r.id, name: r.name, initial: restaurantInitial(r.name), lat: r.lat, lng: r.lng, image: restaurantCover(r), open: r.open }))) %>;
+const RESTOS = <%- JSON.stringify(restaurants.map((r) => ({ id: r.id, name: r.name, initial: restaurantInitial(r.name), lat: r.lat, lng: r.lng, image: optimizedImageUrl(restaurantCover(r), 's'), open: r.open }))) %>;
 const COLLO = [37.0014, 6.5620];
 
-const map = L.map('resto-map', { zoomControl: false, scrollWheelZoom: false }).setView(COLLO, 14);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+function initRestaurantMap() {
+  if (!window.L || initRestaurantMap.done) return;
+  initRestaurantMap.done = true;
+  const map = L.map('resto-map', { zoomControl: false, scrollWheelZoom: false, attributionControl: false }).setView(COLLO, 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-RESTOS.filter((r) => Number.isFinite(Number(r.lat)) && Number.isFinite(Number(r.lng))).forEach((r) => {
-  const icon = L.divIcon({
-    className: '',
-    html: `<div class="map-marker" style="outline:${r.open ? '2px solid #ff5c1a' : '2px solid #666'}">${r.image ? `<img src="${r.image}" alt="${r.name}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'map-marker-initial',textContent:'${r.initial || 'R'}'}))">` : `<div class="map-marker-initial">${r.initial || 'R'}</div>`}</div>`,
-    iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
+  RESTOS.filter((r) => Number.isFinite(Number(r.lat)) && Number.isFinite(Number(r.lng))).forEach((r) => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="map-marker" style="outline:${r.open ? '2px solid #ff5c1a' : '2px solid #666'}">${r.image ? `<img src="${r.image}" alt="${r.name}" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'map-marker-initial',textContent:'${r.initial || 'R'}'}))">` : `<div class="map-marker-initial">${r.initial || 'R'}</div>`}</div>`,
+      iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
+    });
+    L.marker([Number(r.lat), Number(r.lng)], { icon })
+      .addTo(map)
+      .bindPopup(`<b>${r.name}</b><br><a href="/client/restaurants/${r.id}" style="color:#ff5c1a">Voir le menu ?</a>`);
   });
-  L.marker([Number(r.lat), Number(r.lng)], { icon })
-    .addTo(map)
-    .bindPopup(`<b>${r.name}</b><br><a href="/client/restaurants/${r.id}" style="color:#ff5c1a">Voir le menu →</a>`)
-    .openPopup;
-});
 
-setTimeout(() => map.invalidateSize(), 300);
+  setTimeout(() => map.invalidateSize(), 120);
+}
+
+if ('requestIdleCallback' in window) requestIdleCallback(initRestaurantMap, { timeout: 1200 });
+else setTimeout(initRestaurantMap, 450);
 
 const CART_STORAGE_KEY = 'colloexpress_food_cart_' + <%- JSON.stringify(currentUser.id) %>;
 
