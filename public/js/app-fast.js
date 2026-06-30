@@ -1,6 +1,6 @@
 (function () {
   const TAP_SELECTOR = 'a, button, [role="button"], input[type="submit"]';
-  const MIN_SPLASH_MS = 260;
+  const MIN_SPLASH_MS = 950;
   const splashStartedAt = Date.now();
 
   function getSplash() {

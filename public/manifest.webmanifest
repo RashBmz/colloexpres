@@ -4,11 +4,11 @@
   "description": "Livraison rapide de repas et colis a Collo.",
   "lang": "fr",
   "dir": "ltr",
-  "start_url": "/?source=pwa",
+  "start_url": "/?source=pwa&v=7",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#090910",
+  "background_color": "#11111b",
   "theme_color": "#ff5c1a",
   "categories": ["food", "shopping", "business"],
   "icons": [
