@@ -20,10 +20,12 @@ router.get('/config', (req, res) => {
 router.post('/subscribe', pushLimiter, async (req, res) => {
   try {
     const subscription = req.body?.subscription || req.body;
+    const platform = cleanString(req.body?.platform || 'pwa', 40);
     const saved = await db.saveWebPushSubscription(
       req.session.user.id,
       subscription,
-      req.get('user-agent') || ''
+      req.get('user-agent') || '',
+      platform
     );
     res.json({ success: Boolean(saved) });
   } catch (error) {

@@ -513,10 +513,11 @@ const db = {
   async markNotifReadForOrder(orderId, userId) {
     return notifs.update({ order_id: orderId, user_id: userId }, { $set: { read: true } }, { multi: true });
   },
-  async saveWebPushSubscription(userId, subscription, userAgent = '') {
+  async saveWebPushSubscription(userId, subscription, userAgent = '', platform = 'pwa') {
     const endpoint = String(subscription?.endpoint || '').slice(0, 1200);
     const p256dh = String(subscription?.keys?.p256dh || '').slice(0, 300);
     const auth = String(subscription?.keys?.auth || '').slice(0, 300);
+    const safePlatform = String(platform || 'pwa').slice(0, 40);
     if (!userId || !endpoint || !p256dh || !auth) return null;
     const payload = {
       user_id: userId,
@@ -525,16 +526,29 @@ const db = {
       p256dh,
       auth,
       token: null,
-      platform: 'web',
+      platform: safePlatform,
       user_agent: String(userAgent || '').slice(0, 300),
       updated_at: new Date().toISOString(),
     };
     const existing = await pushSubscriptions.findOne({ endpoint });
     if (existing) {
       await pushSubscriptions.update({ _id: existing._id }, { $set: payload });
+      if (safePlatform.startsWith('pwa')) {
+        const stale = await pushSubscriptions.find({ user_id: userId, type: 'web' });
+        await Promise.all(stale
+          .filter((entry) => entry.endpoint !== endpoint && !String(entry.platform || '').startsWith('pwa'))
+          .map((entry) => pushSubscriptions.remove({ _id: entry._id }, {})));
+      }
       return pushSubscriptions.findOne({ _id: existing._id });
     }
-    return pushSubscriptions.insert({ ...payload, created_at: new Date().toISOString() });
+    const saved = await pushSubscriptions.insert({ ...payload, created_at: new Date().toISOString() });
+    if (safePlatform.startsWith('pwa')) {
+      const stale = await pushSubscriptions.find({ user_id: userId, type: 'web' });
+      await Promise.all(stale
+        .filter((entry) => entry.endpoint !== endpoint && !String(entry.platform || '').startsWith('pwa'))
+        .map((entry) => pushSubscriptions.remove({ _id: entry._id }, {})));
+    }
+    return saved;
   },
   async saveNativePushToken(userId, token, platform = 'android', userAgent = '') {
     const safeToken = String(token || '').slice(0, 1200);

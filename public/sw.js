@@ -1,10 +1,10 @@
-const CACHE_NAME = 'kolo-go-v4';
+const CACHE_NAME = 'kolo-go-v5';
 const STATIC_ASSETS = [
   '/css/main.css?v=fluid-5',
   '/js/i18n.js?v=ar-3',
-  '/js/push.js?v=permission-once-1',
+  '/js/push.js?v=pwa-push-1',
   '/js/app-fast.js?v=fluid-1',
-  '/js/pwa.js?v=4',
+  '/js/pwa.js?v=5',
   '/manifest.webmanifest',
   '/images/icons/icon-192.png',
   '/images/icons/icon-512.png'
@@ -50,6 +50,48 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       });
+    })
+  );
+});
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : '' };
+  }
+
+  const title = payload.title || 'Kolo Go';
+  const options = {
+    body: payload.body || '',
+    icon: payload.icon || '/images/icons/icon-192.png',
+    badge: payload.badge || '/images/icons/icon-192.png',
+    tag: payload.tag || 'kolo-go',
+    renotify: true,
+    data: {
+      url: payload.url || '/',
+      orderId: payload.orderId || '',
+      type: payload.type || '',
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      return clients.openWindow(targetUrl);
     })
   );
 });

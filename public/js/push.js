@@ -4,6 +4,26 @@
 
   const PUSH_PERMISSION_STATE_KEY = 'kolo_go_push_permission_state_v1';
 
+  function isStandalonePwa() {
+    return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function getWebPushPlatform() {
+    const ua = navigator.userAgent || '';
+    if (/iPad|iPhone|iPod/i.test(ua)) return 'pwa-ios';
+    if (/Android/i.test(ua)) return 'pwa-android';
+    return 'pwa-web';
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i += 1) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
   function getStoredPushState() {
     try {
       return localStorage.getItem(PUSH_PERMISSION_STATE_KEY) || '';
@@ -100,9 +120,39 @@
     return true;
   }
 
-  async function activate() {
+  async function registerWebPush(config) {
+    if (!config?.webPushEnabled || !config.vapidPublicKey) return false;
+    if (!isStandalonePwa()) return false;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return false;
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      setStoredPushState('denied');
+      return false;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(config.vapidPublicKey),
+      });
+    }
+
+    await postJson('/push/subscribe', {
+      subscription,
+      platform: getWebPushPlatform(),
+    });
+    setStoredPushState('granted');
+    return true;
+  }
+
+  async function activate(config) {
     try {
-      await registerNativePush();
+      const isNative = window.Capacitor?.isNativePlatform?.();
+      if (isNative) await registerNativePush();
+      else await registerWebPush(config);
     } catch {
       setStoredPushState('denied');
     } finally {
@@ -115,22 +165,25 @@
     if (!config) return;
 
     const isNative = window.Capacitor?.isNativePlatform?.();
-    if (!isNative) return;
+    const isPwa = isStandalonePwa();
+    if (!isNative && !isPwa) return;
+    if (isNative && !config.nativePushEnabled) return;
+    if (!isNative && isPwa && !config.webPushEnabled) return;
 
     const nativePermission = await checkNativePushPermission();
     if (nativePermission === 'granted') {
       setStoredPushState('granted');
-      activate();
+      activate(config);
       return;
     }
 
     const storedState = getStoredPushState();
     if (storedState === 'granted') {
-      activate();
+      activate(config);
       return;
     }
     if (storedState === 'denied') return;
 
-    buildButton(() => activate());
+    buildButton(() => activate(config));
   });
 })();

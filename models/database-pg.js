@@ -813,27 +813,36 @@ const db = {
     await pool.query('UPDATE notifications SET read = TRUE WHERE order_id = $1 AND user_id = $2', [orderId, userId]);
   },
 
-  async saveWebPushSubscription(userId, subscription, userAgent = '') {
+  async saveWebPushSubscription(userId, subscription, userAgent = '', platform = 'pwa') {
     await ensureReady();
     const endpoint = String(subscription?.endpoint || '').slice(0, 1200);
     const p256dh = String(subscription?.keys?.p256dh || '').slice(0, 300);
     const auth = String(subscription?.keys?.auth || '').slice(0, 300);
+    const safePlatform = String(platform || 'pwa').slice(0, 40);
     if (!userId || !endpoint || !p256dh || !auth) return null;
     const { rows } = await pool.query(
       `INSERT INTO push_subscriptions (
         id, user_id, type, endpoint, p256dh, auth, token, platform, user_agent, created_at, updated_at
       ) VALUES (
-        $1, $2, 'web', $3, $4, $5, NULL, 'web', $6, NOW(), NOW()
+        $1, $2, 'web', $3, $4, $5, NULL, $6, $7, NOW(), NOW()
       )
       ON CONFLICT (endpoint) WHERE endpoint IS NOT NULL DO UPDATE SET
         user_id = EXCLUDED.user_id,
         p256dh = EXCLUDED.p256dh,
         auth = EXCLUDED.auth,
+        platform = EXCLUDED.platform,
         user_agent = EXCLUDED.user_agent,
         updated_at = NOW()
       RETURNING *`,
-      [uid(), userId, endpoint, p256dh, auth, String(userAgent || '').slice(0, 300)]
+      [uid(), userId, endpoint, p256dh, auth, safePlatform, String(userAgent || '').slice(0, 300)]
     );
+    if (safePlatform.startsWith('pwa')) {
+      await pool.query(
+        `DELETE FROM push_subscriptions
+         WHERE user_id = $1 AND type = 'web' AND endpoint IS NOT NULL AND endpoint <> $2 AND COALESCE(platform, '') NOT LIKE 'pwa%'`,
+        [userId, endpoint]
+      );
+    }
     return rows[0] || null;
   },
 

@@ -1,11 +1,18 @@
 const db = require('../models/db');
 
 let firebaseAdmin = null;
+let webPush = null;
 
 try {
   firebaseAdmin = require('firebase-admin');
 } catch {
   firebaseAdmin = null;
+}
+
+try {
+  webPush = require('web-push');
+} catch {
+  webPush = null;
 }
 
 function parseFirebaseCredentials() {
@@ -51,9 +58,10 @@ function getFirebaseApp() {
 }
 
 function getPublicConfig() {
+  const webPushEnabled = Boolean(webPush && process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
   return {
-    webPushEnabled: false,
-    vapidPublicKey: '',
+    webPushEnabled,
+    vapidPublicKey: webPushEnabled ? process.env.VAPID_PUBLIC_KEY : '',
     nativePushEnabled: Boolean(firebaseAdmin),
   };
 }
@@ -106,15 +114,79 @@ async function sendNative(tokens, payload) {
   }
 }
 
+function configureWebPush() {
+  const config = getPublicConfig();
+  if (!config.webPushEnabled) return false;
+
+  try {
+    webPush.setVapidDetails(
+      process.env.VAPID_SUBJECT || 'mailto:contact@kolo-go.app',
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+    return true;
+  } catch (error) {
+    console.warn('Web Push non configure:', error.message);
+    return false;
+  }
+}
+
+async function sendWeb(targets, payload) {
+  if (!configureWebPush()) return 0;
+
+  let sent = 0;
+  const webTargets = targets.filter((target) => (
+    target.type === 'web'
+    && target.endpoint
+    && target.p256dh
+    && target.auth
+    && String(target.platform || '').startsWith('pwa')
+  ));
+
+  for (const target of webTargets) {
+    try {
+      await webPush.sendNotification({
+        endpoint: target.endpoint,
+        keys: {
+          p256dh: target.p256dh,
+          auth: target.auth,
+        },
+      }, JSON.stringify({
+        title: payload.title,
+        body: payload.body,
+        url: payload.url,
+        tag: payload.tag,
+        orderId: payload.orderId || '',
+        type: payload.type || '',
+        icon: '/images/icons/icon-192.png',
+        badge: '/images/icons/icon-192.png',
+      }));
+      sent += 1;
+    } catch (error) {
+      const statusCode = Number(error.statusCode || error.status || 0);
+      if (statusCode === 404 || statusCode === 410) {
+        await db.removePushTarget(target.id || target._id).catch(() => null);
+      } else {
+        console.warn('Web Push impossible:', error.message);
+      }
+    }
+  }
+
+  return sent;
+}
+
 async function sendTargets(targets, rawPayload) {
   const payload = normalizePayload(rawPayload);
   const nativeTokens = [...new Set(targets
     .filter((target) => target.type === 'native' && target.token)
     .map((target) => target.token))];
 
-  const nativeCount = await sendNative(nativeTokens, payload);
+  const [nativeCount, webCount] = await Promise.all([
+    sendNative(nativeTokens, payload),
+    sendWeb(targets, payload),
+  ]);
 
-  return { web: 0, native: nativeCount };
+  return { web: webCount, native: nativeCount };
 }
 
 async function sendToUsers(userIds, payload) {
