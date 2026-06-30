@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="colorPrimary">#ff7a1a</color>
+    <color name="colorPrimaryDark">#090910</color>
+    <color name="colorAccent">#ffb347</color>
     <color name="collo_notification_color">#ff7a1a</color>
 </resources>

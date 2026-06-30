@@ -15,17 +15,20 @@ const pageIsArabic = disableI18nPage ? false : (typeof isArabic !== 'undefined' 
 <meta name="apple-mobile-web-app-title" content="Kolo Go">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title><%= typeof title !== 'undefined' ? title + ' - ' : '' %>Kolo Go</title>
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="/images/icons/icon-192.png">
-<link rel="apple-touch-icon" href="/images/icons/icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="dns-prefetch" href="https://unpkg.com">
-<link rel="dns-prefetch" href="https://upload.wikimedia.org">
-<link rel="dns-prefetch" href="https://tile.openstreetmap.org">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/main.css?v=fluid-5">
+<script>
+(function () {
+  try {
+    if (sessionStorage.getItem('kolo_go_start_splash_seen') === '1') {
+      document.documentElement.classList.add('app-splash-seen');
+    }
+  } catch (_) {}
+})();
+</script>
 <style>
+html,
+body {
+  background: #090910;
+}
 .app-splash {
   position: fixed;
   inset: 0;
@@ -44,6 +47,9 @@ const pageIsArabic = disableI18nPage ? false : (typeof isArabic !== 'undefined' 
   transition: opacity 0.18s ease, visibility 0.18s ease;
   pointer-events: none;
 }
+html.app-splash-seen .app-splash {
+  display: none;
+}
 .app-splash.is-hidden {
   opacity: 0;
   visibility: hidden;
@@ -55,7 +61,7 @@ const pageIsArabic = disableI18nPage ? false : (typeof isArabic !== 'undefined' 
   box-shadow: 0 18px 48px rgba(255,92,26,0.22);
 }
 .app-splash-title {
-  font: 800 22px/1 'DM Sans', system-ui, sans-serif;
+  font: 800 22px/1 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   letter-spacing: 0;
 }
 .app-splash-loader {
@@ -79,6 +85,16 @@ const pageIsArabic = disableI18nPage ? false : (typeof isArabic !== 'undefined' 
   100% { transform: translateX(260%); }
 }
 </style>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/images/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://unpkg.com">
+<link rel="dns-prefetch" href="https://upload.wikimedia.org">
+<link rel="dns-prefetch" href="https://tile.openstreetmap.org">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css?v=fluid-5">
 </head>
 <body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %> <%= pageIsArabic ? 'lang-ar' : 'lang-fr' %>">
 <div class="app-splash" id="app-splash" aria-hidden="true">
@@ -99,4 +115,4 @@ window.COLLO_LANG = <%- JSON.stringify(pageLang) %>;
 <% } %>
 <script defer src="/js/pwa.js?v=5"></script>
 <script defer src="/js/push.js?v=pwa-push-1"></script>
-<script defer src="/js/app-fast.js?v=fluid-3"></script>
+<script defer src="/js/app-fast.js?v=fluid-4"></script>

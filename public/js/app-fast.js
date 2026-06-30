@@ -10,14 +10,18 @@
   function hideSplashSoon() {
     const splash = getSplash();
     if (!splash) return;
+    if (document.documentElement.classList.contains('app-splash-seen')) {
+      splash.classList.add('is-hidden');
+      return;
+    }
     const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - splashStartedAt));
-    window.setTimeout(() => splash.classList.add('is-hidden'), wait);
-  }
-
-  function showSplash() {
-    const splash = getSplash();
-    if (!splash) return;
-    splash.classList.remove('is-hidden');
+    window.setTimeout(() => {
+      splash.classList.add('is-hidden');
+      document.documentElement.classList.add('app-splash-seen');
+      try {
+        sessionStorage.setItem('kolo_go_start_splash_seen', '1');
+      } catch (_) {}
+    }, wait);
   }
 
   function isLocalNavigationLink(link) {
@@ -62,7 +66,6 @@
     const link = event.target.closest('a');
     if (!isLocalNavigationLink(link)) return;
     link.classList.add('is-submitting');
-    showSplash();
   }, { passive: true });
 
   document.addEventListener('submit', (event) => {
@@ -81,7 +84,6 @@
         button.textContent = 'Chargement...';
       }
     }
-    showSplash();
   }, true);
 
   window.addEventListener('pageshow', () => {
