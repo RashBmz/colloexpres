@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Kolo Go</string>
-    <string name="title_activity_main">Kolo Go</string>
+    <string name="app_name">Koloo Go</string>
+    <string name="title_activity_main">Koloo Go</string>
     <string name="package_name">com.colloexpress.app</string>
     <string name="custom_url_scheme">com.colloexpress.app</string>
 </resources>

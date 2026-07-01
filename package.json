@@ -1,7 +1,7 @@
 {
   "name": "kolo-go",
   "version": "1.0.0",
-  "description": "Plateforme de livraison rapide - Kolo Go, Collo, Algérie",
+  "description": "Plateforme de livraison rapide - Koloo Go, Collo, Algérie",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -69,7 +69,7 @@ self.addEventListener('push', (event) => {
     payload = { body: event.data ? event.data.text() : '' };
   }
 
-  const title = payload.title || 'Kolo Go';
+  const title = payload.title || 'Koloo Go';
   const options = {
     body: payload.body || '',
     icon: payload.icon || '/images/icons/icon-192.png',

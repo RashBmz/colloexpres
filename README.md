@@ -1,4 +1,4 @@
-# 🛵 Kolo Go — Plateforme de Livraison
+# 🛵 Koloo Go — Plateforme de Livraison
 
 Plateforme de livraison mobile-first pour **Collo, Skikda, Algérie**.  
 Paiement **cash à la livraison**, notifications en temps réel via **Socket.IO**.
@@ -118,4 +118,4 @@ Base de données: colloexpress.db (SQLite, créé automatiquement)
 
 ---
 
-*Développé pour Kolo Go, Collo 🇩🇿*
+*Développé pour Koloo Go, Collo 🇩🇿*

@@ -1,6 +1,6 @@
-﻿/**
- * Kolo Go — Base de données NeDB
- * NeDB = 100% JavaScript, zéro compilation, fonctionne sur Windows/Mac/Linux
+/**
+ * Koloo Go � Base de donn�es NeDB
+ * NeDB = 100% JavaScript, z�ro compilation, fonctionne sur Windows/Mac/Linux
  */
 const Datastore = require('nedb-promises');
 const bcrypt = require('bcryptjs');
@@ -11,7 +11,7 @@ const DEFAULT_RESTAURANTS = require('../data/restaurants');
 const dbDir = path.join(__dirname, '../data');
 require('fs').mkdirSync(dbDir, { recursive: true });
 
-// ─── COLLECTIONS ─────────────────────────────────────
+// --- COLLECTIONS -------------------------------------
 const users  = Datastore.create({ filename: path.join(dbDir, 'users.db'),  autoload: true });
 const orders = Datastore.create({ filename: path.join(dbDir, 'orders.db'), autoload: true });
 const notifs = Datastore.create({ filename: path.join(dbDir, 'notifs.db'), autoload: true });
@@ -201,11 +201,11 @@ function buildLivreurPeriodStats(ordersList, baseDate = new Date()) {
   };
 }
 
-// ─── DB HELPER ───────────────────────────────────────
+// --- DB HELPER ---------------------------------------
 const db = {
   users, orders, notifs, restaurants, pushSubscriptions, driverSettlements,
 
-  // ── Users ──────────────────────────────────────────
+  // -- Users ------------------------------------------
   async findUserByPhone(phone) {
     return users.findOne({ phone });
   },
@@ -237,7 +237,7 @@ const db = {
     return users.remove({ _id: id, role: 'livreur' }, {});
   },
 
-  // ── Orders ─────────────────────────────────────────
+  // -- Orders -----------------------------------------
   async createOrder(data) {
     return normalizeOrder(await orders.insert({
       ...data,
@@ -334,7 +334,7 @@ const db = {
     return orders.remove({ _id: id }, {});
   },
 
-  // ── Stats ──────────────────────────────────────────
+  // -- Stats ------------------------------------------
   async getStats() {
     const now = new Date();
     const today = startOfToday(now);
@@ -410,7 +410,7 @@ const db = {
     });
   },
 
-  // ── Notifications ──────────────────────────────────
+  // -- Notifications ----------------------------------
   async getDriverSettlements(limit = 40) {
     const list = await driverSettlements.find({});
     const withLivreurs = await Promise.all(list.map(async (settlement) => {
@@ -623,7 +623,7 @@ const db = {
   },
 };
 
-// ─── SEED ────────────────────────────────────────────
+// --- SEED --------------------------------------------
 (async () => {
   const restaurantCount = await restaurants.count({});
   if (restaurantCount === 0) {
@@ -639,18 +639,18 @@ const db = {
 
   const count = await users.count({});
   if (count > 0) return;
-  console.log('🌱 Création des données de démonstration...');
+  console.log('?? Cr�ation des donn�es de d�monstration...');
   const h = p => bcrypt.hashSync(p, 10);
   const now = () => new Date().toISOString();
 
-  await users.insert({ name: 'Admin Kolo Go', phone: 'admin', password: h('admin123'), role: 'admin', available: false, created_at: now() });
+  await users.insert({ name: 'Admin Koloo Go', phone: 'admin', password: h('admin123'), role: 'admin', available: false, created_at: now() });
 
   for (const [name, phone, deliveries, earnings, rating, vehicle] of [
     ['Mohamed Khelil','livreur01',47,11750,4.9,'moto'],
     ['Amine Benhamed','livreur02',32,8000,4.8,'moto'],
     ['Sofiane Tabet',  'livreur03',28,7000,4.7,'voiture'],
     ['Riad Mansouri',  'livreur04',51,12750,4.9,'moto'],
-    ['Walid Aichour',  'livreur05',19,4750,4.6,'vélo'],
+    ['Walid Aichour',  'livreur05',19,4750,4.6,'v�lo'],
     ['Nabil Hamdi',    'livreur06',8,2000,4.5,'moto'],
   ]) {
     await users.insert({ name, phone, password: h('1234'), role: 'livreur', available: true, total_deliveries: deliveries, total_earnings: earnings, rating, vehicle, created_at: now() });
@@ -659,11 +659,11 @@ const db = {
   const client = await users.insert({ name: 'Ahmed Belarbi', phone: '0555000001', password: h('1234'), role: 'client', created_at: now() });
   const lv = await users.find({ role: 'livreur' });
 
-  await orders.insert({ client_id: client._id, livreur_id: lv[0]._id, from_address: 'Rue Didouche Mourad', from_quarter: 'Centre-ville', to_address: 'Cité El Wiam', to_quarter: 'Ouest', description: 'Documents', size: 'petit', price: 150, status: 'delivered', payment_status: 'collected', created_at: now(), accepted_at: now(), delivered_at: now(), updated_at: now() });
-  await orders.insert({ client_id: client._id, livreur_id: lv[1]._id, from_address: 'Marché Central', from_quarter: 'Centre', to_address: 'Plage Stora', to_quarter: 'Stora', description: 'Vêtements', size: 'moyen', price: 250, status: 'delivering', payment_status: 'pending', created_at: now(), accepted_at: now(), updated_at: now() });
-  await orders.insert({ client_id: client._id, from_address: 'Zone Industrielle', from_quarter: 'Zone Ind.', to_address: 'Cité 500 Logts', to_quarter: 'Nord', description: 'Equipement', size: 'grand', price: 400, status: 'pending', payment_status: 'pending', created_at: now(), updated_at: now() });
+  await orders.insert({ client_id: client._id, livreur_id: lv[0]._id, from_address: 'Rue Didouche Mourad', from_quarter: 'Centre-ville', to_address: 'Cit� El Wiam', to_quarter: 'Ouest', description: 'Documents', size: 'petit', price: 150, status: 'delivered', payment_status: 'collected', created_at: now(), accepted_at: now(), delivered_at: now(), updated_at: now() });
+  await orders.insert({ client_id: client._id, livreur_id: lv[1]._id, from_address: 'March� Central', from_quarter: 'Centre', to_address: 'Plage Stora', to_quarter: 'Stora', description: 'V�tements', size: 'moyen', price: 250, status: 'delivering', payment_status: 'pending', created_at: now(), accepted_at: now(), updated_at: now() });
+  await orders.insert({ client_id: client._id, from_address: 'Zone Industrielle', from_quarter: 'Zone Ind.', to_address: 'Cit� 500 Logts', to_quarter: 'Nord', description: 'Equipement', size: 'grand', price: 400, status: 'pending', payment_status: 'pending', created_at: now(), updated_at: now() });
 
-  console.log('✅ Données de démonstration créées !');
+  console.log('? Donn�es de d�monstration cr��es !');
 })();
 
 module.exports = db;

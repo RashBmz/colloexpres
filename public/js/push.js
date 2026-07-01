@@ -93,7 +93,7 @@
     if (capacitor.getPlatform?.() === 'android' && pushPlugin.createChannel) {
       await pushPlugin.createChannel({
         id: 'collo_orders',
-        name: 'Commandes Kolo Go',
+        name: 'Commandes Koloo Go',
         description: 'Alertes de commandes et livraisons',
         importance: 5,
         visibility: 1,

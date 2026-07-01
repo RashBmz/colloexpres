@@ -1,6 +1,6 @@
 {
   "appId": "com.colloexpress.app",
-  "appName": "Kolo Go",
+  "appName": "Koloo Go",
   "webDir": "public",
   "server": {
     "url": "https://colloexpres.onrender.com",

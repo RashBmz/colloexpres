@@ -1,4 +1,4 @@
-﻿require('dotenv').config({ quiet: true });
+require('dotenv').config({ quiet: true });
 
 const express = require('express');
 const http = require('http');
@@ -193,13 +193,13 @@ async function startServer() {
     }
 
     server.listen(PORT, () => {
-      console.log(`\nKolo Go demarre sur http://localhost:${PORT}`);
+      console.log(`\nKoloo Go demarre sur http://localhost:${PORT}`);
       console.log(`Stockage actif: ${db.isPostgres ? 'Supabase/PostgreSQL' : 'Local NeDB'}`);
       console.log(`Sessions: ${hasRemoteDatabase ? 'PostgreSQL' : 'MemoryStore local'}`);
       console.log('Socket.IO pret\n');
     });
   } catch (error) {
-    console.error('\nImpossible de demarrer Kolo Go.');
+    console.error('\nImpossible de demarrer Koloo Go.');
     console.error('Verifiez DATABASE_URL / DATABASE_SSL sur Render et Supabase.');
     console.error(error);
     process.exit(1);

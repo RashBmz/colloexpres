@@ -4,7 +4,7 @@
 
   const TEXT = {
     // Accueil
-    'Kolo Go': 'Kolo Go',
+    'Koloo Go': 'Koloo Go',
     'KOLO': 'كولو',
     'GO': 'غو',
     'COLLO': 'كولو',
@@ -41,7 +41,7 @@
     'Connectez-vous avec votre identifiant livreur': 'سجل الدخول بمعرف عامل التوصيل',
     'Acces reserve aux administrateurs': 'الدخول مخصص للمسيرين فقط',
     'Accès réservé aux administrateurs': 'الدخول مخصص للمسيرين فقط',
-    'Bienvenue sur Kolo Go': 'مرحبا بك في Kolo Go',
+    'Bienvenue sur Koloo Go': 'مرحبا بك في Koloo Go',
     'Retour': 'رجوع',
     '<- Retour': 'رجوع',
     'Identifiant': 'المعرف',

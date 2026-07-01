@@ -1,4 +1,4 @@
-﻿
+
 require('dotenv').config({ quiet: true });
 
 const bcrypt = require('bcryptjs');
@@ -472,7 +472,7 @@ const ready = (async () => {
   if (existingAdmin.rowCount === 0) {
     await pool.query(
       'INSERT INTO users (id, name, phone, password, role, available, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [uid(), 'Admin Kolo Go', 'admin', bcrypt.hashSync('admin123', 10), 'admin', false, new Date().toISOString()]
+      [uid(), 'Admin Koloo Go', 'admin', bcrypt.hashSync('admin123', 10), 'admin', false, new Date().toISOString()]
     );
   }
 })();
