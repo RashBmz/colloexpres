@@ -42,11 +42,12 @@ app.use(compression({
 app.use(securityHeaders);
 function sendAndroidApk(req, res) {
   res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-  res.setHeader('Content-Disposition', 'attachment; filename="kolo-go.apk"');
+  res.setHeader('Content-Disposition', 'attachment; filename="koloo-go.apk"');
   res.setHeader('Cache-Control', 'public, max-age=3600');
   res.sendFile(path.join(__dirname, 'downloads', 'colloexpress.apk'));
 }
 app.get('/downloads/kolo-go.apk', sendAndroidApk);
+app.get('/downloads/koloo-go.apk', sendAndroidApk);
 app.get('/downloads/colloexpress.apk', sendAndroidApk);
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: true,

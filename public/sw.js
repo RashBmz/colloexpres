@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kolo-go-v8';
+const CACHE_NAME = 'koloo-go-v9';
 const STATIC_ASSETS = [
   '/css/main.css?v=fluid-5',
   '/js/i18n.js?v=ar-3',
@@ -11,7 +11,7 @@ const STATIC_ASSETS = [
   '/images/splash/apple-splash-1290x2796.png',
   '/images/splash/apple-splash-1179x2556.png',
   '/images/splash/apple-splash-1080x1920.png',
-  '/js/pwa.js?v=5',
+  '/js/pwa.js?v=6',
   '/manifest.webmanifest',
   '/images/icons/icon-192.png',
   '/images/icons/icon-512.png'

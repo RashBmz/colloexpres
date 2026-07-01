@@ -1,13 +1,13 @@
 (function () {
   if (!('serviceWorker' in navigator)) return;
 
-  const ACTIVE_CACHE = 'kolo-go-v6';
+  const ACTIVE_CACHE = 'koloo-go-v9';
 
   window.addEventListener('load', function () {
     if (window.caches) {
       caches.keys().then(function (keys) {
         keys.forEach(function (key) {
-          if ((key.indexOf('colloexpress-') === 0 || key.indexOf('kolo-go-') === 0) && key !== ACTIVE_CACHE) {
+          if ((key.indexOf('colloexpress-') === 0 || key.indexOf('kolo-go-') === 0 || key.indexOf('koloo-go-') === 0) && key !== ACTIVE_CACHE) {
             caches.delete(key);
           }
         });
