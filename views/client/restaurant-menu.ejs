@@ -445,7 +445,7 @@ const menuEntries = Object.entries(resto.menu || {})
         <div class="resto-hero-meta">
           <span class="hero-chip">⭐ <%= resto.rating %></span>
           <span class="hero-chip">🕒 <%= resto.deliveryTime %></span>
-          <span class="hero-chip">🛵 <%= resto.deliveryFee %> DA livraison</span>
+          <span class="hero-chip">🛵 Dès 100 DA livraison</span>
           <span class="hero-chip">💵 Min. <%= resto.minOrder %> DA</span>
         </div>
       </div>
@@ -520,7 +520,7 @@ const menuEntries = Object.entries(resto.menu || {})
     </div>
     <div class="order-summary">
       <div class="sum-row"><span>Sous-total</span><span id="sum-subtotal">0 DA</span></div>
-      <div class="sum-row"><span>Frais de livraison</span><span><%= resto.deliveryFee %> DA</span></div>
+      <div class="sum-row"><span>Frais de livraison</span><span id="sum-delivery-fee"><%= (typeof deliveryPricing !== 'undefined' ? deliveryPricing.defaultFee : 200) %> DA</span></div>
       <div class="sum-row total"><span>Total</span><span id="sum-total">0 DA</span></div>
     </div>
     <p style="font-size:12px;color:var(--muted);text-align:center;margin:12px 0">💵 Paiement cash à la livraison</p>
@@ -562,9 +562,13 @@ const CURRENT_RESTO = {
   id: <%- JSON.stringify(resto.id) %>,
   name: <%- JSON.stringify(resto.name) %>,
   deliveryFee: Number(<%= resto.deliveryFee %>),
+  lat: <%- JSON.stringify(resto.lat ?? null) %>,
+  lng: <%- JSON.stringify(resto.lng ?? null) %>,
   minOrder: Number(<%= resto.minOrder %>)
 };
-const DELIVERY_FEE = CURRENT_RESTO.deliveryFee;
+const DELIVERY_PRICING = <%- JSON.stringify(typeof deliveryPricing !== 'undefined' ? deliveryPricing : { defaultFee: 200, zones: [], outsideFirstZoneFee: 200 }) %>;
+const DEFAULT_DELIVERY_FEE = Number(DELIVERY_PRICING.outsideFirstZoneFee || DELIVERY_PRICING.defaultFee || 200);
+let currentDeliveryFee = DEFAULT_DELIVERY_FEE;
 const MIN_ORDER = CURRENT_RESTO.minOrder;
 const CART_STORAGE_KEY = 'colloexpress_food_cart_' + USER_ID;
 const PENDING_CART_CLEAR_KEY = CART_STORAGE_KEY + '_pending_submit';
@@ -573,7 +577,7 @@ function emptyCartState(resto) {
   return {
     restoId: resto.id,
     restoName: resto.name,
-    deliveryFee: Number(resto.deliveryFee || 0),
+    deliveryFee: DEFAULT_DELIVERY_FEE,
     minOrder: Number(resto.minOrder || 0),
     items: [],
     deliveryAddress: '',
@@ -619,7 +623,7 @@ function normalizeCartState(raw) {
   return {
     restoId: String(raw.restoId || ''),
     restoName: String(raw.restoName || ''),
-    deliveryFee: Number(raw.deliveryFee || 0),
+    deliveryFee: DEFAULT_DELIVERY_FEE,
     minOrder: Number(raw.minOrder || 0),
     items: Array.isArray(raw.items) ? raw.items.map(normalizeCartItem).filter(function(item) { return item.id && item.qty > 0; }) : [],
     deliveryAddress: String(raw.deliveryAddress || ''),
@@ -673,7 +677,7 @@ function buildCurrentCartState() {
   return {
     restoId: CURRENT_RESTO.id,
     restoName: CURRENT_RESTO.name,
-    deliveryFee: DELIVERY_FEE,
+    deliveryFee: currentDeliveryFee,
     minOrder: MIN_ORDER,
     items: cart.map(function(item) { return { id: item.id, name: item.name, unitPrice: item.unitPrice, qty: item.qty, total: item.total, options: item.options || '', selectedOptions: normalizeSelectedOptions(item.selectedOptions) }; }),
     deliveryAddress: getTextInputValue('delivery-address-input'),
@@ -924,6 +928,42 @@ function getDraftCoords() {
   return null;
 }
 
+function pointInPolygon(point, polygon) {
+  if (!point || !Array.isArray(polygon) || polygon.length < 3) return false;
+  var inside = false;
+  for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+    var yi = Number(polygon[i][0]);
+    var xi = Number(polygon[i][1]);
+    var yj = Number(polygon[j][0]);
+    var xj = Number(polygon[j][1]);
+    var intersects = ((yi > point.lat) !== (yj > point.lat))
+      && (point.lng < ((xj - xi) * (point.lat - yi)) / ((yj - yi) || 1e-12) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function calculateDeliveryFeePreview(lat, lng) {
+  var to = Number.isFinite(Number(lat)) && Number.isFinite(Number(lng)) ? { lat: Number(lat), lng: Number(lng) } : null;
+  var defaultFee = DEFAULT_DELIVERY_FEE;
+  if (!to) return defaultFee;
+
+  for (var i = 0; i < (DELIVERY_PRICING.zones || []).length; i += 1) {
+    var zone = DELIVERY_PRICING.zones[i];
+    var toInside = pointInPolygon(to, zone.polygon);
+    if (toInside) return Number(zone.fee || defaultFee);
+  }
+
+  return defaultFee;
+}
+
+function updateDeliveryFeePreview() {
+  var coords = getDraftCoords();
+  currentDeliveryFee = coords ? calculateDeliveryFeePreview(coords[0], coords[1]) : DEFAULT_DELIVERY_FEE;
+  var feeEl = document.getElementById('sum-delivery-fee');
+  if (feeEl) feeEl.textContent = currentDeliveryFee + ' DA';
+}
+
 function ensureDeliveryMarker(lat, lng) {
   if (deliveryMarker) {
     deliveryMarker.setLatLng([lat, lng]);
@@ -950,6 +990,8 @@ function updateDeliveryPoint(lat, lng, reverseLookup) {
   ensureDeliveryMarker(lat, lng);
   document.getElementById('fo-to-lat').value = String(lat);
   document.getElementById('fo-to-lng').value = String(lng);
+  updateDeliveryFeePreview();
+  if (cart.length) renderCartSheet();
   if (deliveryMap) deliveryMap.setView([lat, lng], Math.max(deliveryMap.getZoom(), 15));
 
   if (!reverseLookup) {
@@ -1110,7 +1152,8 @@ function closeCart() {
 function renderCartSheet() {
   const list = document.getElementById('cart-items-list');
   const subtotal = cart.reduce(function(sum, item) { return sum + item.total; }, 0);
-  const total = subtotal + DELIVERY_FEE;
+  updateDeliveryFeePreview();
+  const total = subtotal + currentDeliveryFee;
 
   if (!cart.length) {
     list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">Panier vide</p>';
@@ -1169,6 +1212,10 @@ function placeOrder() {
   const addr = getTextInputValue('delivery-address-input');
   if (!addr) {
     showToast('❌ Entrez votre adresse de livraison', 'error');
+    return;
+  }
+  if (!getDraftCoords()) {
+    showToast('📍 Placez votre point sur la carte pour calculer la livraison', 'error');
     return;
   }
 

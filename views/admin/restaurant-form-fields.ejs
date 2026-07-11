@@ -32,7 +32,7 @@
   </div>
   <div class="resto-grid-3">
     <input class="field-input" type="text" name="delivery_time" placeholder="Temps livraison" value="<%= restaurant ? (restaurant.deliveryTime || '') : '25-40 min' %>">
-    <input class="field-input" type="number" min="0" step="1" name="delivery_fee" placeholder="Frais livraison DA" value="<%= restaurant ? (restaurant.deliveryFee || 0) : 100 %>">
+    <input type="hidden" name="delivery_fee" value="<%= restaurant ? (restaurant.deliveryFee || 100) : 100 %>">
     <input class="field-input" type="number" min="0" step="1" name="min_order" placeholder="Minimum DA" value="<%= restaurant ? (restaurant.minOrder || 0) : 300 %>">
   </div>
   <div class="resto-grid-3">

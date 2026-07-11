@@ -4,6 +4,7 @@ const db = require('../models/db');
 const push = require('../services/push');
 const { createRateLimiter, getClientKey } = require('../middleware/security');
 const { cleanString, cleanTextBlock, toSafeNumber } = require('../utils/input');
+const { calculateDeliveryFee, getPublicDeliveryPricing } = require('../utils/delivery-pricing');
 
 const clientWriteLimiter = createRateLimiter({
   windowMs: 5 * 60 * 1000,
@@ -169,7 +170,7 @@ router.get('/restaurants/:id', async (req, res) => {
     req.flash('error', 'Restaurant introuvable');
     return res.redirect('/client/restaurants');
   }
-  res.render('client/restaurant-menu', { resto });
+  res.render('client/restaurant-menu', { resto, deliveryPricing: getPublicDeliveryPricing() });
 });
 
 router.post('/commandes/food', clientWriteLimiter, async (req, res) => {
@@ -191,6 +192,10 @@ router.post('/commandes/food', clientWriteLimiter, async (req, res) => {
     req.flash('error', 'Adresse de livraison requise');
     return res.redirect(`/client/restaurants/${restoId}`);
   }
+  if (toLat == null || toLng == null) {
+    req.flash('error', 'Placez votre adresse sur la carte pour calculer le prix de livraison');
+    return res.redirect(`/client/restaurants/${restoId}`);
+  }
 
   let rawItems;
   try {
@@ -210,7 +215,12 @@ router.post('/commandes/food', clientWriteLimiter, async (req, res) => {
     return res.redirect(`/client/restaurants/${restoId}`);
   }
 
-  const total = cartResult.subtotal + Number(resto.deliveryFee || 0);
+  const deliveryPricing = calculateDeliveryFee({
+    toLat,
+    toLng,
+  });
+  const deliveryFee = deliveryPricing.fee;
+  const total = cartResult.subtotal + deliveryFee;
   const client = await db.findUserById(userId);
   const order = await db.createOrder({
     client_id: userId,
@@ -231,7 +241,7 @@ router.post('/commandes/food', clientWriteLimiter, async (req, res) => {
     size: 'moyen',
     price: total,
     subtotal: cartResult.subtotal,
-    delivery_fee: Number(resto.deliveryFee || 0),
+    delivery_fee: deliveryFee,
   });
 
   const orderOut = { ...order, client_name: client.name, client_phone: client.phone };
@@ -306,20 +316,27 @@ router.post('/commandes', clientWriteLimiter, async (req, res) => {
     return res.redirect('/client/nouvelle-commande');
   }
 
-  const price = DELIVERY_PRICES[size] || DELIVERY_PRICES.petit;
-  const client = await db.findUserById(userId);
   const isCourses = requestKind === 'courses';
+  const fromLat = isCourses ? null : clampCoord(req.body.from_lat, -90, 90);
+  const fromLng = isCourses ? null : clampCoord(req.body.from_lng, -180, 180);
+  const toLat = clampCoord(req.body.to_lat, -90, 90);
+  const toLng = clampCoord(req.body.to_lng, -180, 180);
+  const price = calculateDeliveryFee({
+    toLat,
+    toLng,
+  }).fee;
+  const client = await db.findUserById(userId);
   const order = await db.createOrder({
     client_id: userId,
     type: isCourses ? 'courses' : 'colis',
     from_address: isCourses ? 'Courses / achats a effectuer' : fromAddress,
     from_quarter: isCourses ? '' : fromQuarter,
-    from_lat: isCourses ? null : clampCoord(req.body.from_lat, -90, 90),
-    from_lng: isCourses ? null : clampCoord(req.body.from_lng, -180, 180),
+    from_lat: fromLat,
+    from_lng: fromLng,
     to_address: toAddress,
     to_quarter: toQuarter,
-    to_lat: clampCoord(req.body.to_lat, -90, 90),
-    to_lng: clampCoord(req.body.to_lng, -180, 180),
+    to_lat: toLat,
+    to_lng: toLng,
     description,
     size,
     price,

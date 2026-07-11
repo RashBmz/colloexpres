@@ -252,7 +252,7 @@
               <img class="resto-thumb" src="<%= restaurant.image || restaurant.coverImage || '/images/icons/icon-192.png' %>" alt="<%= restaurant.name %>" loading="lazy">
               <div>
                 <div class="resto-name"><%= restaurant.name %></div>
-                <div class="resto-meta"><%= restaurant.category || 'Sans categorie' %>  <%= restaurant.deliveryFee %> DA livraison  min <%= restaurant.minOrder %> DA<br>ID: <%= restaurant.id %></div>
+                <div class="resto-meta"><%= restaurant.category || 'Sans categorie' %>  livraison par palier  min <%= restaurant.minOrder %> DA<br>ID: <%= restaurant.id %></div>
               </div>
               <span class="resto-status <%= restaurant.open ? 'open' : 'closed' %>"><%= restaurant.open ? 'Ouvert' : 'Ferme' %></span>
             </div>
