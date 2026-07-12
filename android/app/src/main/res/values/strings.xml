@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Koloo Go</string>
     <string name="title_activity_main">Koloo Go</string>
-    <string name="package_name">com.colloexpress.app</string>
-    <string name="custom_url_scheme">com.colloexpress.app</string>
+    <string name="package_name">com.koloogo.app</string>
+    <string name="custom_url_scheme">com.koloogo.app</string>
 </resources>

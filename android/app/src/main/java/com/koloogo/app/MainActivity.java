@@ -1,4 +1,4 @@
-package com.colloexpress.app;
+package com.koloogo.app;
 
 import com.getcapacitor.BridgeActivity;
 
