@@ -3,6 +3,7 @@
   if (!isSecure) return;
 
   const PUSH_PERMISSION_STATE_KEY = 'kolo_go_push_permission_state_v1';
+  const PUSH_PERMISSION_LAST_ATTEMPT_KEY = 'kolo_go_push_permission_last_attempt_v1';
 
   function isStandalonePwa() {
     return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -10,9 +11,10 @@
 
   function getWebPushPlatform() {
     const ua = navigator.userAgent || '';
-    if (/iPad|iPhone|iPod/i.test(ua)) return 'pwa-ios';
-    if (/Android/i.test(ua)) return 'pwa-android';
-    return 'pwa-web';
+    const prefix = isStandalonePwa() ? 'pwa' : 'web';
+    if (/iPad|iPhone|iPod/i.test(ua)) return prefix + '-ios';
+    if (/Android/i.test(ua)) return prefix + '-android';
+    return prefix;
   }
 
   function urlBase64ToUint8Array(base64String) {
@@ -55,14 +57,18 @@
     return response.json();
   }
 
-  function buildButton(onClick) {
-    if (document.querySelector('.push-permission-btn')) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'push-permission-btn';
-    button.textContent = window.COLLO_LANG === 'ar' ? 'تفعيل التنبيهات' : 'Activer notifications';
-    button.addEventListener('click', onClick);
-    document.body.appendChild(button);
+  function markPermissionAttempt() {
+    try {
+      localStorage.setItem(PUSH_PERMISSION_LAST_ATTEMPT_KEY, String(Date.now()));
+    } catch {}
+  }
+
+  function wasPermissionAttempted() {
+    try {
+      return Boolean(localStorage.getItem(PUSH_PERMISSION_LAST_ATTEMPT_KEY));
+    } catch {
+      return false;
+    }
   }
 
   async function checkNativePushPermission() {
@@ -122,12 +128,11 @@
 
   async function registerWebPush(config) {
     if (!config?.webPushEnabled || !config.vapidPublicKey) return false;
-    if (!isStandalonePwa()) return false;
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return false;
 
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      setStoredPushState('denied');
+      setStoredPushState(permission === 'denied' ? 'denied' : 'prompted');
       return false;
     }
 
@@ -151,12 +156,11 @@
   async function activate(config) {
     try {
       const isNative = window.Capacitor?.isNativePlatform?.();
+      markPermissionAttempt();
       if (isNative) await registerNativePush();
       else await registerWebPush(config);
     } catch {
-      setStoredPushState('denied');
-    } finally {
-      document.querySelector('.push-permission-btn')?.remove();
+      setStoredPushState('prompted');
     }
   }
 
@@ -166,9 +170,8 @@
 
     const isNative = window.Capacitor?.isNativePlatform?.();
     const isPwa = isStandalonePwa();
-    if (!isNative && !isPwa) return;
     if (isNative && !config.nativePushEnabled) return;
-    if (!isNative && isPwa && !config.webPushEnabled) return;
+    if (!isNative && !config.webPushEnabled) return;
 
     const nativePermission = await checkNativePushPermission();
     if (nativePermission === 'granted') {
@@ -182,8 +185,8 @@
       activate(config);
       return;
     }
-    if (storedState === 'denied') return;
+    if (storedState === 'denied' || storedState === 'prompted' || wasPermissionAttempted()) return;
 
-    buildButton(() => activate(config));
+    window.setTimeout(() => activate(config), 900);
   });
 })();

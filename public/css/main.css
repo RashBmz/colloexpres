@@ -994,27 +994,6 @@ body::before {
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
 }
 
-.push-permission-btn {
-  position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  z-index: 1200;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  background: linear-gradient(135deg, #ff7a1a, #f43f5e);
-  color: #fff;
-  box-shadow: 0 16px 36px rgba(244, 63, 94, 0.28);
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 800;
-  padding: 0.85rem 1rem;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.push-permission-btn:active {
-  transform: translateY(1px);
-}
 .lang-switch::before {
   content: "🌐";
   margin-right: 8px;

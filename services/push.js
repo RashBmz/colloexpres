@@ -140,7 +140,6 @@ async function sendWeb(targets, payload) {
     && target.endpoint
     && target.p256dh
     && target.auth
-    && String(target.platform || '').startsWith('pwa')
   ));
 
   for (const target of webTargets) {

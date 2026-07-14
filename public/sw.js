@@ -1,8 +1,10 @@
-const CACHE_NAME = 'koloo-go-v9';
+const CACHE_NAME = 'koloo-go-v11';
+const PUBLIC_SITE_ORIGIN = 'https://colloexpres.onrender.com';
 const STATIC_ASSETS = [
   '/css/main.css?v=fluid-5',
   '/js/i18n.js?v=ar-3',
-  '/js/push.js?v=pwa-push-1',
+  '/js/push.js?v=pwa-push-3',
+  '/js/permissions.js?v=1',
   '/js/app-fast.js?v=fluid-5',
   '/images/splash/apple-splash-1170x2532.png',
   '/images/splash/apple-splash-1125x2436.png',
@@ -88,17 +90,9 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin).href;
+  const targetUrl = new URL(event.notification.data?.url || '/', PUBLIC_SITE_ORIGIN).href;
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if ('focus' in client) {
-          client.navigate(targetUrl);
-          return client.focus();
-        }
-      }
-      return clients.openWindow(targetUrl);
-    })
+    clients.openWindow(targetUrl)
   );
 });

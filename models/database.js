@@ -530,24 +530,20 @@ const db = {
       user_agent: String(userAgent || '').slice(0, 300),
       updated_at: new Date().toISOString(),
     };
+    const removeOtherWebTargets = async () => {
+      const stale = await pushSubscriptions.find({ user_id: userId, type: 'web' });
+      await Promise.all(stale
+        .filter((entry) => entry.endpoint !== endpoint)
+        .map((entry) => pushSubscriptions.remove({ _id: entry._id }, {})));
+    };
     const existing = await pushSubscriptions.findOne({ endpoint });
     if (existing) {
       await pushSubscriptions.update({ _id: existing._id }, { $set: payload });
-      if (safePlatform.startsWith('pwa')) {
-        const stale = await pushSubscriptions.find({ user_id: userId, type: 'web' });
-        await Promise.all(stale
-          .filter((entry) => entry.endpoint !== endpoint && !String(entry.platform || '').startsWith('pwa'))
-          .map((entry) => pushSubscriptions.remove({ _id: entry._id }, {})));
-      }
+      await removeOtherWebTargets();
       return pushSubscriptions.findOne({ _id: existing._id });
     }
     const saved = await pushSubscriptions.insert({ ...payload, created_at: new Date().toISOString() });
-    if (safePlatform.startsWith('pwa')) {
-      const stale = await pushSubscriptions.find({ user_id: userId, type: 'web' });
-      await Promise.all(stale
-        .filter((entry) => entry.endpoint !== endpoint && !String(entry.platform || '').startsWith('pwa'))
-        .map((entry) => pushSubscriptions.remove({ _id: entry._id }, {})));
-    }
+    await removeOtherWebTargets();
     return saved;
   },
   async saveNativePushToken(userId, token, platform = 'android', userAgent = '') {

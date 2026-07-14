@@ -836,13 +836,11 @@ const db = {
       RETURNING *`,
       [uid(), userId, endpoint, p256dh, auth, safePlatform, String(userAgent || '').slice(0, 300)]
     );
-    if (safePlatform.startsWith('pwa')) {
-      await pool.query(
-        `DELETE FROM push_subscriptions
-         WHERE user_id = $1 AND type = 'web' AND endpoint IS NOT NULL AND endpoint <> $2 AND COALESCE(platform, '') NOT LIKE 'pwa%'`,
-        [userId, endpoint]
-      );
-    }
+    await pool.query(
+      `DELETE FROM push_subscriptions
+       WHERE user_id = $1 AND type = 'web' AND endpoint IS NOT NULL AND endpoint <> $2`,
+      [userId, endpoint]
+    );
     return rows[0] || null;
   },
 
