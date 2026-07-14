@@ -323,7 +323,7 @@ const menu = {
 const marciminiPayload = {
   id: 'marcimini-food',
   name: 'Marcimini Food',
-  category: 'Pizza • Tacos • Burger • Chawarma',
+  category: 'Pizza - Tacos - Burger - Chawarma',
   description: 'Fast-food genereux a Collo: pizzas tomate et boisees, tacos, burgers, chawarma, poutines, desserts et boissons.',
   address: 'Collo, Skikda',
   lat: null,
@@ -356,7 +356,13 @@ async function main() {
   console.log('Marcimini Food cree: marcimini-food');
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  marciminiPayload,
+};
