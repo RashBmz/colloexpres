@@ -809,7 +809,13 @@ function openItem(itemJson) {
   optContainer.innerHTML = '';
 
   if (currentItem.options && Object.keys(currentItem.options).length > 0) {
-    Object.entries(currentItem.options).forEach(function(entry) {
+    Object.entries(currentItem.options)
+      .sort(function(a, b) {
+        if (a[0] === 'sauce' && b[0] !== 'sauce') return 1;
+        if (b[0] === 'sauce' && a[0] !== 'sauce') return -1;
+        return 0;
+      })
+      .forEach(function(entry) {
       const key = entry[0];
       const opt = entry[1];
       const group = document.createElement('div');

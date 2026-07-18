@@ -24,6 +24,9 @@ const io = new Server(server, {
 const sessionSecret = process.env.SESSION_SECRET || 'colloexpress-dev-secret-change-me';
 const isProduction = process.env.NODE_ENV === 'production';
 const hasRemoteDatabase = Boolean(process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('[YOUR-PASSWORD]'));
+const launchAt = new Date(process.env.LAUNCH_AT || '2026-07-19T09:00:00.000Z');
+const launchPassword = process.env.LAUNCH_PASSWORD || 'khlcollo';
+const launchModeEnabled = process.env.LAUNCH_MODE === 'true' || (process.env.LAUNCH_MODE !== 'false' && Date.now() < launchAt.getTime());
 
 app.set('io', io);
 app.disable('x-powered-by');
@@ -113,6 +116,40 @@ app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
   res.locals.isProduction = isProduction;
   next();
+});
+
+function isLaunchGateActive() {
+  return launchModeEnabled && Date.now() < launchAt.getTime();
+}
+
+function renderLaunch(req, res, statusCode = 200) {
+  res.status(statusCode).render('launch', {
+    title: 'Ouverture bientot',
+    launchAtIso: launchAt.toISOString(),
+    accessError: req.flash('launchError'),
+    disableI18n: true,
+  });
+}
+
+app.get('/launch', renderLaunch);
+app.post('/launch-access', (req, res) => {
+  const password = String(req.body.password || '');
+  if (password === launchPassword) {
+    req.session.launchAccess = true;
+    return res.redirect('/');
+  }
+  req.flash('launchError', 'Mot de passe incorrect');
+  return res.redirect('/launch');
+});
+app.post('/launch-exit', (req, res) => {
+  delete req.session.launchAccess;
+  res.redirect('/launch');
+});
+app.use((req, res, next) => {
+  if (!isLaunchGateActive()) return next();
+  if (req.session.launchAccess) return next();
+  if (req.path === '/launch' || req.path === '/launch-access') return next();
+  return renderLaunch(req, res);
 });
 
 app.use('/', require('./routes/index'));
