@@ -2,3 +2,4 @@
 {"visitor_id":"1ae60f0ca55d53c026b4b510743f8fd8d97c","choice":"burger","created_at":"2026-07-18T00:30:49.858Z","_id":"1cMmzslDB000Isqk"}
 {"visitor_id":"8797b8bacd9b4122f2f7e7789cb8d424bcba","choice":"tacos","created_at":"2026-07-18T00:23:52.932Z","_id":"wGSvbRkZz5kbqWML"}
 {"$$indexCreated":{"fieldName":"visitor_id","unique":true,"sparse":false}}
+{"visitor_id":"c432ba6a27f0a93ac290b026431f78c2cc4a","choice":"tacos","created_at":"2026-07-18T00:39:56.394Z","_id":"fvaikR6HxdnwKyKC"}

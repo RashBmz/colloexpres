@@ -217,7 +217,7 @@ app.post('/launch-exit', (req, res) => {
 app.use((req, res, next) => {
   if (!isLaunchGateActive()) return next();
   if (req.session.launchAccess) return next();
-  if (req.path === '/launch' || req.path === '/launch-access') return next();
+  if (['/launch', '/launch-access', '/launch-votes', '/launch-vote', '/launch-like', '/analytics/ping'].includes(req.path)) return next();
   return renderLaunch(req, res).catch(next);
 });
 
