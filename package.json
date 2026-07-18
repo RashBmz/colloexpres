@@ -1,7 +1,7 @@
 {
-  "name": "kolo-go",
+  "name": "koloo-go",
   "version": "1.0.0",
-  "description": "Plateforme de livraison rapide - Koloo Go, Collo, Algérie",
+  "description": "Plateforme de livraison rapide - Koloo Go, Collo, Algerie",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -19,14 +19,13 @@
     "connect-pg-simple": "^10.0.0",
     "dotenv": "^17.3.1",
     "ejs": "^3.1.10",
-    "express": "^4.19.2",
-    "express-session": "^1.18.0",
-    "firebase-admin": "^13.5.0",
+    "express": "^4.22.2",
+    "express-session": "^1.19.0",
+    "firebase-admin": "^13.10.0",
     "method-override": "^3.0.0",
-    "multer": "^1.4.5-lts.1",
     "nedb-promises": "^6.2.1",
     "pg": "^8.20.0",
-    "socket.io": "^4.7.5",
+    "socket.io": "^4.8.3",
     "web-push": "^3.6.7"
   },
   "devDependencies": {

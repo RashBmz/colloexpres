@@ -2,6 +2,8 @@
   const TAP_SELECTOR = 'a, button, [role="button"], input[type="submit"]';
   const MIN_SPLASH_MS = 950;
   const splashStartedAt = Date.now();
+  const prefetchedLinks = new Set();
+  let prefetchCount = 0;
 
   function getSplash() {
     return document.getElementById('app-splash');
@@ -42,14 +44,22 @@
   }
 
   function prefetchLink(link) {
-    if (!isLocalNavigationLink(link) || link.dataset.prefetched === '1') return;
-    link.dataset.prefetched = '1';
-    fetch(link.href, {
-      method: 'GET',
-      credentials: 'same-origin',
-      headers: { 'X-Prefetch': '1' },
-      priority: 'low',
-    }).catch(() => null);
+    if (!isLocalNavigationLink(link) || link.dataset.prefetch === 'off') return;
+    const url = new URL(link.href, location.href);
+    if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/auth/logout') || url.pathname.startsWith('/downloads')) return;
+    if (prefetchedLinks.has(url.href) || prefetchCount >= 8) return;
+    prefetchedLinks.add(url.href);
+    prefetchCount += 1;
+    const run = () => {
+      fetch(url.href, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { 'X-Prefetch': '1' },
+        priority: 'low',
+      }).catch(() => null);
+    };
+    if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 900 });
+    else window.setTimeout(run, 120);
   }
 
   document.addEventListener('pointerdown', (event) => {

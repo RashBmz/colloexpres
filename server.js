@@ -17,9 +17,31 @@ const { i18nMiddleware } = require('./utils/i18n');
 
 const app = express();
 const server = http.createServer(app);
+const allowedSocketOrigins = new Set([
+  process.env.PUBLIC_SITE_URL,
+  'https://koloogo.com',
+  'https://www.koloogo.com',
+  'https://colloexpres.onrender.com',
+  'https://colloexpress.onrender.com',
+].filter(Boolean));
 const io = new Server(server, {
   transports: ['websocket', 'polling'],
-  cors: { origin: true, credentials: true },
+  maxHttpBufferSize: 100000,
+  cors: {
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      try {
+        const url = new URL(origin);
+        if (allowedSocketOrigins.has(origin) || ['localhost', '127.0.0.1'].includes(url.hostname)) {
+          return callback(null, true);
+        }
+      } catch (error) {
+        return callback(error);
+      }
+      return callback(new Error('Origine Socket.IO non autorisee'));
+    },
+    credentials: true,
+  },
 });
 
 const sessionSecret = process.env.SESSION_SECRET || 'colloexpress-dev-secret-change-me';
@@ -32,18 +54,44 @@ const launchModeEnabled = process.env.LAUNCH_MODE === 'true' || (process.env.LAU
 app.set('io', io);
 app.disable('x-powered-by');
 app.set('trust proxy', process.env.TRUST_PROXY === 'false' ? false : 1);
+app.set('json escape', true);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view cache', isProduction);
-app.use(compression({
-  threshold: 1024,
-  filter: (req, res) => {
-    if (req.path.endsWith('.apk')) return false;
-    return compression.filter(req, res);
-  },
-}));
+if (process.env.ENABLE_NODE_COMPRESSION === 'true') {
+  app.use(compression({
+    threshold: 4096,
+    filter: (req, res) => {
+      if (req.path.endsWith('.apk')) return false;
+      if (req.headers.accept && req.headers.accept.includes('text/html')) return false;
+      if (req.headers['sec-fetch-mode'] === 'navigate') return false;
+      const contentType = String(res.getHeader('Content-Type') || '').toLowerCase();
+      if (contentType.includes('text/html')) return false;
+      return compression.filter(req, res);
+    },
+  }));
+}
 app.use(securityHeaders);
+app.use((req, res, next) => {
+  const wantsHtml = (req.get('accept') || '').includes('text/html') || req.get('sec-fetch-mode') === 'navigate';
+  if (wantsHtml) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private, no-transform');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.vary('Accept-Encoding');
+  }
+  next();
+});
+app.get('/healthz', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.status(200).json({
+    ok: true,
+    name: 'Koloo Go',
+    storage: db.isPostgres ? 'postgres' : 'local',
+    time: new Date().toISOString(),
+  });
+});
 function sendAndroidApk(req, res) {
   res.setHeader('Content-Type', 'application/vnd.android.package-archive');
   res.setHeader('Content-Disposition', 'attachment; filename="koloo-go.apk"');
@@ -58,8 +106,12 @@ app.use(express.static(path.join(__dirname, 'public'), {
   lastModified: true,
   maxAge: '7d',
   setHeaders(res, filePath) {
-    if (filePath.endsWith(`${path.sep}sw.js`) || filePath.endsWith(`${path.sep}manifest.webmanifest`) || /\.(css|js)$/i.test(filePath)) {
+    if (filePath.endsWith(`${path.sep}sw.js`) || filePath.endsWith(`${path.sep}manifest.webmanifest`)) {
       res.setHeader('Cache-Control', 'no-cache');
+      return;
+    }
+    if (/\.(css|js)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
       return;
     }
     if (/\.(svg|png|jpg|jpeg|webp|gif|ico)$/i.test(filePath)) {
@@ -67,8 +119,8 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
   },
 }));
-app.use(express.urlencoded({ extended: true, limit: '200kb' }));
-app.use(express.json({ limit: '200kb' }));
+app.use(express.urlencoded({ extended: true, limit: '160kb', parameterLimit: 220 }));
+app.use(express.json({ limit: '160kb', strict: true }));
 app.use(methodOverride('_method'));
 app.use(sameOriginWriteGuard);
 app.use(createRateLimiter({
@@ -91,6 +143,7 @@ const sessionConfig = {
     httpOnly: true,
     sameSite: 'lax',
     secure: isProduction,
+    priority: 'high',
   },
 };
 
@@ -152,6 +205,7 @@ function getVisitorId(req, res) {
 
 function shouldTrackVisit(req) {
   if (req.method !== 'GET') return false;
+  if (req.get('x-prefetch') === '1') return false;
   if (req.path.includes('.')) return false;
   if (req.path.startsWith('/socket.io')) return false;
   if (req.path.startsWith('/downloads')) return false;
@@ -172,6 +226,7 @@ async function renderLaunch(req, res, statusCode = 200) {
     db.getLaunchPoll().catch(() => ({})),
     db.getLaunchLikes ? db.getLaunchLikes().catch(() => 0) : 0,
   ]);
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private, no-transform');
   res.status(statusCode).render('launch', {
     title: 'Ouverture bientot',
     launchAtIso: launchAt.toISOString(),
@@ -183,10 +238,50 @@ async function renderLaunch(req, res, statusCode = 200) {
 }
 
 app.get('/launch', (req, res) => renderLaunch(req, res));
+app.get('/reset-cache', (req, res) => {
+  res.set('Clear-Site-Data', '"cache", "storage", "executionContexts"');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private, no-transform');
+  res.type('html').send(`<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reset Koloo Go</title>
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#090910;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+    main{text-align:center;padding:28px}
+    strong{color:#ff7a2f}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Nettoyage du cache...</h1>
+    <p>Koloo Go se relance dans un instant.</p>
+  </main>
+  <script>
+    (async function () {
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((reg) => reg.unregister()));
+        }
+        if (window.caches) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+      } catch (error) {}
+      location.replace('/?cache-reset=' + Date.now());
+    })();
+  </script>
+</body>
+</html>`);
+});
 app.get('/launch-votes', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.json({ votes: await db.getLaunchPoll() });
 });
 app.post('/launch-vote', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   const allowed = new Set(['tacos', 'pizza', 'burger', 'sandwich', 'poutine', 'chawarma']);
   const choice = String(req.body.choice || '').slice(0, 40);
   if (!allowed.has(choice)) return res.status(400).json({ error: 'Choix invalide' });
@@ -194,6 +289,7 @@ app.post('/launch-vote', async (req, res) => {
   res.json({ votes });
 });
 app.post('/launch-like', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   const likes = db.likeLaunch ? await db.likeLaunch(req.visitorId) : 0;
   res.json({ likes });
 });
@@ -217,7 +313,7 @@ app.post('/launch-exit', (req, res) => {
 app.use((req, res, next) => {
   if (!isLaunchGateActive()) return next();
   if (req.session.launchAccess) return next();
-  if (['/launch', '/launch-access', '/launch-votes', '/launch-vote', '/launch-like', '/analytics/ping'].includes(req.path)) return next();
+  if (['/launch', '/launch-access', '/reset-cache', '/launch-votes', '/launch-vote', '/launch-like', '/analytics/ping'].includes(req.path)) return next();
   return renderLaunch(req, res).catch(next);
 });
 
@@ -292,6 +388,9 @@ io.on('connection', (socket) => {
 app.set('connectedLivreurs', connectedLivreurs);
 
 const PORT = process.env.PORT || 3000;
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
+server.requestTimeout = 120000;
 
 async function startServer() {
   try {

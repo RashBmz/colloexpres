@@ -22,7 +22,7 @@ const registerLimiter = createRateLimiter({
 });
 
 router.get('/login', (req, res) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private, no-transform');
   const role = cleanRole(req.query.role || 'client');
   if (req.session.user) {
     if (req.session.user.role === role) {
@@ -37,7 +37,7 @@ router.get('/login', (req, res) => {
 });
 
 router.get('/register', (req, res) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private, no-transform');
   if (req.session.user) return res.redirect('/');
   res.render('auth/register');
 });

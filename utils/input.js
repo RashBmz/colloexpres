@@ -1,5 +1,12 @@
+function stripControlChars(value, { keepNewLines = false } = {}) {
+  const pattern = keepNewLines
+    ? /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
+    : /[\u0000-\u001F\u007F]/g;
+  return String(value || '').replace(pattern, '');
+}
+
 function cleanString(value, maxLength = 255) {
-  return String(value || '')
+  return stripControlChars(value)
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, maxLength);
@@ -22,8 +29,9 @@ function cleanRole(value) {
 }
 
 function cleanTextBlock(value, maxLength = 1000) {
-  return String(value || '')
+  return stripControlChars(value, { keepNewLines: true })
     .replace(/\r/g, '')
+    .replace(/\t/g, ' ')
     .trim()
     .slice(0, maxLength);
 }

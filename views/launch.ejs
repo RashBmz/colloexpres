@@ -462,7 +462,7 @@ function voteCount(key) {
 
   const likeButton = document.querySelector('[data-like-button]');
   const likeCount = document.querySelector('[data-like-count]');
-  const likedKey = 'koloo_launch_liked_v1';
+  const likedKey = 'koloo_launch_liked_v2';
   if (localStorage.getItem(likedKey) === '1') likeButton.classList.add('is-liked');
   likeButton.addEventListener('click', function () {
     if (localStorage.getItem(likedKey) === '1') return;
@@ -476,7 +476,7 @@ function voteCount(key) {
       .catch(function () {});
   });
 
-  const pollKey = 'koloo_launch_poll_v1';
+  const pollKey = 'koloo_launch_poll_v2';
   const picked = localStorage.getItem(pollKey);
   if (picked) {
     const pickedButton = document.querySelector('[data-poll-choice="' + picked + '"]');

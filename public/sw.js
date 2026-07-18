@@ -1,11 +1,13 @@
-const CACHE_NAME = 'koloo-go-v11';
-const PUBLIC_SITE_ORIGIN = 'https://colloexpres.onrender.com';
+const CACHE_NAME = 'koloo-go-v13';
+const PUBLIC_SITE_ORIGIN = 'https://koloogo.com';
 const STATIC_ASSETS = [
-  '/css/main.css?v=fluid-5',
+  '/css/main.css?v=launch-1',
   '/js/i18n.js?v=ar-3',
   '/js/push.js?v=pwa-push-3',
   '/js/permissions.js?v=1',
-  '/js/app-fast.js?v=fluid-5',
+  '/js/app-fast.js?v=launch-1',
+  '/js/analytics.js?v=2',
+  '/js/pwa.js?v=13',
   '/images/splash/apple-splash-1170x2532.png',
   '/images/splash/apple-splash-1125x2436.png',
   '/images/splash/apple-splash-1242x2688.png',
@@ -13,8 +15,7 @@ const STATIC_ASSETS = [
   '/images/splash/apple-splash-1290x2796.png',
   '/images/splash/apple-splash-1179x2556.png',
   '/images/splash/apple-splash-1080x1920.png',
-  '/js/pwa.js?v=6',
-  '/manifest.webmanifest',
+  '/manifest.webmanifest?v=launch-1',
   '/images/icons/icon-192.png',
   '/images/icons/icon-512.png'
 ];

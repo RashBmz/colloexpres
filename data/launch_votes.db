@@ -1,5 +1,7 @@
 {"visitor_id":"a57972fb135cc7f05ff20c9efa77d23d9b93","choice":"pizza","created_at":"2026-07-18T00:28:10.164Z","_id":"0r9XZzLXH0jXnQwb"}
 {"visitor_id":"1ae60f0ca55d53c026b4b510743f8fd8d97c","choice":"burger","created_at":"2026-07-18T00:30:49.858Z","_id":"1cMmzslDB000Isqk"}
-{"visitor_id":"8797b8bacd9b4122f2f7e7789cb8d424bcba","choice":"tacos","created_at":"2026-07-18T00:23:52.932Z","_id":"wGSvbRkZz5kbqWML"}
-{"$$indexCreated":{"fieldName":"visitor_id","unique":true,"sparse":false}}
+{"visitor_id":"c14c786c30764fe9dac4613236732b85ee42","choice":"burger","created_at":"2026-07-18T01:07:00.525Z","_id":"c1bAabrxrmMgoTAj"}
 {"visitor_id":"c432ba6a27f0a93ac290b026431f78c2cc4a","choice":"tacos","created_at":"2026-07-18T00:39:56.394Z","_id":"fvaikR6HxdnwKyKC"}
+{"visitor_id":"8797b8bacd9b4122f2f7e7789cb8d424bcba","choice":"tacos","created_at":"2026-07-18T00:23:52.932Z","_id":"wGSvbRkZz5kbqWML"}
+{"visitor_id":"20592b16d28c0752b29fe4c521b74b5ea566","choice":"tacos","created_at":"2026-07-18T01:02:29.387Z","_id":"ynTVqIzbS3uf5Hf1"}
+{"$$indexCreated":{"fieldName":"visitor_id","unique":true,"sparse":false}}

@@ -15,7 +15,7 @@ const adminWriteLimiter = createRateLimiter({
 });
 
 router.use((req, res, next) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private, no-transform');
   next();
 });
 

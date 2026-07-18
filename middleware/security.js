@@ -58,8 +58,13 @@ function securityHeaders(req, res, next) {
   const csp = [
     "default-src 'self'",
     "base-uri 'self'",
+    "object-src 'none'",
+    "frame-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
+    "manifest-src 'self'",
+    "worker-src 'self'",
+    "media-src 'self'",
     "img-src 'self' data: https://commons.wikimedia.org https://upload.wikimedia.org https://i.imgur.com https://imgur.com https://tile.openstreetmap.org https://*.tile.openstreetmap.org",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
     "script-src 'self' 'unsafe-inline' https://unpkg.com",
@@ -69,11 +74,17 @@ function securityHeaders(req, res, next) {
 
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-DNS-Prefetch-Control', 'on');
+  res.setHeader('X-Download-Options', 'noopen');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=()');
+  res.setHeader('Origin-Agent-Cluster', '?1');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=()');
   res.setHeader('Content-Security-Policy', csp);
+  if (req.secure || req.get('x-forwarded-proto') === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   next();
 }
 
