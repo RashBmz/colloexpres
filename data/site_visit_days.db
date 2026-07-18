@@ -1,0 +1,6 @@
+{"key":"2026-07-18|8797b8bacd9b4122f2f7e7789cb8d424bcba","day":"2026-07-18","visitor_id":"8797b8bacd9b4122f2f7e7789cb8d424bcba","hits":2,"first_seen":"2026-07-18T00:23:52.770Z","last_seen":"2026-07-18T00:23:52.981Z","_id":"DcKTd9Jgd2Tg7afB"}
+{"key":"2026-07-18|4e57620b7fd5af7cd53769cdc9b1b82cff0f","day":"2026-07-18","visitor_id":"4e57620b7fd5af7cd53769cdc9b1b82cff0f","hits":1,"first_seen":"2026-07-18T00:23:19.687Z","last_seen":"2026-07-18T00:23:19.687Z","_id":"W8M7CZYE6eZgypmR"}
+{"key":"2026-07-18|a57972fb135cc7f05ff20c9efa77d23d9b93","day":"2026-07-18","visitor_id":"a57972fb135cc7f05ff20c9efa77d23d9b93","hits":1,"first_seen":"2026-07-18T00:28:10.045Z","last_seen":"2026-07-18T00:28:10.045Z","_id":"bNWn2QVyO1MBbgmZ"}
+{"key":"2026-07-18|1ae60f0ca55d53c026b4b510743f8fd8d97c","day":"2026-07-18","visitor_id":"1ae60f0ca55d53c026b4b510743f8fd8d97c","hits":2,"first_seen":"2026-07-18T00:30:49.735Z","last_seen":"2026-07-18T00:30:49.823Z","_id":"x94oDTyZz7mqDJ8j"}
+{"$$indexCreated":{"fieldName":"key","unique":true,"sparse":false}}
+{"key":"2026-07-18|2c800753eef75f0732a402fe0de413fe02e1","day":"2026-07-18","visitor_id":"2c800753eef75f0732a402fe0de413fe02e1","hits":1,"first_seen":"2026-07-18T00:34:03.766Z","last_seen":"2026-07-18T00:34:03.766Z","_id":"3oexlTgm2CcPz4EV"}

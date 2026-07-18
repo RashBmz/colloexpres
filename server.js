@@ -9,6 +9,7 @@ const PgSession = require('connect-pg-simple')(session);
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const path = require('path');
+const crypto = require('crypto');
 const db = require('./models/db');
 const { requireAuth, requireRole } = require('./middleware/auth');
 const { createRateLimiter, getClientKey, securityHeaders, sameOriginWriteGuard } = require('./middleware/security');
@@ -122,16 +123,84 @@ function isLaunchGateActive() {
   return launchModeEnabled && Date.now() < launchAt.getTime();
 }
 
-function renderLaunch(req, res, statusCode = 200) {
+function parseCookies(cookieHeader = '') {
+  return String(cookieHeader || '')
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reduce((acc, part) => {
+      const index = part.indexOf('=');
+      if (index === -1) return acc;
+      acc[decodeURIComponent(part.slice(0, index))] = decodeURIComponent(part.slice(index + 1));
+      return acc;
+    }, {});
+}
+
+function getVisitorId(req, res) {
+  const cookies = parseCookies(req.headers.cookie || '');
+  const existing = String(cookies.koloo_vid || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 64);
+  if (existing) return existing;
+  const visitorId = crypto.randomBytes(18).toString('hex');
+  res.cookie('koloo_vid', visitorId, {
+    maxAge: 1000 * 60 * 60 * 24 * 365,
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: isProduction,
+  });
+  return visitorId;
+}
+
+function shouldTrackVisit(req) {
+  if (req.method !== 'GET') return false;
+  if (req.path.includes('.')) return false;
+  if (req.path.startsWith('/socket.io')) return false;
+  if (req.path.startsWith('/downloads')) return false;
+  return true;
+}
+
+app.use((req, res, next) => {
+  const visitorId = getVisitorId(req, res);
+  req.visitorId = visitorId;
+  if (shouldTrackVisit(req)) {
+    db.trackSiteVisit(visitorId).catch((error) => console.error('Erreur analytics visite:', error));
+  }
+  next();
+});
+
+async function renderLaunch(req, res, statusCode = 200) {
+  const [launchVotes, launchLikes] = await Promise.all([
+    db.getLaunchPoll().catch(() => ({})),
+    db.getLaunchLikes ? db.getLaunchLikes().catch(() => 0) : 0,
+  ]);
   res.status(statusCode).render('launch', {
     title: 'Ouverture bientot',
     launchAtIso: launchAt.toISOString(),
     accessError: req.flash('launchError'),
+    launchVotes,
+    launchLikes,
     disableI18n: true,
   });
 }
 
-app.get('/launch', renderLaunch);
+app.get('/launch', (req, res) => renderLaunch(req, res));
+app.get('/launch-votes', async (req, res) => {
+  res.json({ votes: await db.getLaunchPoll() });
+});
+app.post('/launch-vote', async (req, res) => {
+  const allowed = new Set(['tacos', 'pizza', 'burger', 'sandwich', 'poutine', 'chawarma']);
+  const choice = String(req.body.choice || '').slice(0, 40);
+  if (!allowed.has(choice)) return res.status(400).json({ error: 'Choix invalide' });
+  const votes = await db.voteLaunchPoll(req.visitorId, choice);
+  res.json({ votes });
+});
+app.post('/launch-like', async (req, res) => {
+  const likes = db.likeLaunch ? await db.likeLaunch(req.visitorId) : 0;
+  res.json({ likes });
+});
+app.post('/analytics/ping', (req, res) => {
+  db.trackSiteVisit(req.visitorId).catch((error) => console.error('Erreur analytics ping:', error));
+  res.json({ ok: true });
+});
 app.post('/launch-access', (req, res) => {
   const password = String(req.body.password || '');
   if (password === launchPassword) {
@@ -149,7 +218,7 @@ app.use((req, res, next) => {
   if (!isLaunchGateActive()) return next();
   if (req.session.launchAccess) return next();
   if (req.path === '/launch' || req.path === '/launch-access') return next();
-  return renderLaunch(req, res);
+  return renderLaunch(req, res).catch(next);
 });
 
 app.use('/', require('./routes/index'));

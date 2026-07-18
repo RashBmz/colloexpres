@@ -414,6 +414,32 @@ const ready = (async () => {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS site_visit_days (
+      day DATE NOT NULL,
+      visitor_id TEXT NOT NULL,
+      hits INTEGER NOT NULL DEFAULT 1,
+      first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (day, visitor_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS launch_votes (
+      visitor_id TEXT PRIMARY KEY,
+      choice TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS launch_likes (
+      visitor_id TEXT PRIMARY KEY,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders(client_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_livreur_id ON orders(livreur_id)');
@@ -431,6 +457,9 @@ const ready = (async () => {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_restaurants_open ON restaurants(open)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_driver_settlements_livreur_id ON driver_settlements(livreur_id)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_driver_settlements_period ON driver_settlements(period_start DESC, period_end DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_site_visit_days_day ON site_visit_days(day DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_site_visit_days_last_seen ON site_visit_days(last_seen DESC)');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_launch_votes_choice ON launch_votes(choice)');
 
   const existingRestaurants = await pool.query('SELECT COUNT(*)::int AS total FROM restaurants');
   if (Number(existingRestaurants.rows[0]?.total || 0) === 0) {
@@ -900,6 +929,125 @@ const db = {
        WHERE id = $1`,
       [livreurId, Number(deliveredCount || 0), Number(earningAmount || 0)]
     );
+  },
+
+  async trackSiteVisit(visitorId) {
+    await ensureReady();
+    const safeVisitorId = String(visitorId || '').slice(0, 80);
+    if (!safeVisitorId) return null;
+    await pool.query(
+      `INSERT INTO site_visit_days (day, visitor_id, hits, first_seen, last_seen)
+       VALUES ((NOW() AT TIME ZONE 'Africa/Algiers')::date, $1, 1, NOW(), NOW())
+       ON CONFLICT (day, visitor_id) DO UPDATE SET
+         hits = site_visit_days.hits + 1,
+         last_seen = NOW()`,
+      [safeVisitorId]
+    );
+    return true;
+  },
+
+  async getLaunchPoll() {
+    await ensureReady();
+    const { rows } = await pool.query(
+      `SELECT choice, COUNT(*)::int AS votes
+       FROM launch_votes
+       GROUP BY choice`
+    );
+    return rows.reduce((acc, row) => {
+      acc[row.choice] = Number(row.votes || 0);
+      return acc;
+    }, {});
+  },
+
+  async voteLaunchPoll(visitorId, choice) {
+    await ensureReady();
+    const safeVisitorId = String(visitorId || '').slice(0, 80);
+    const safeChoice = String(choice || '').slice(0, 40);
+    if (!safeVisitorId || !safeChoice) return this.getLaunchPoll();
+    await pool.query(
+      `INSERT INTO launch_votes (visitor_id, choice, created_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (visitor_id) DO NOTHING`,
+      [safeVisitorId, safeChoice]
+    );
+    return this.getLaunchPoll();
+  },
+
+  async getLaunchLikes() {
+    await ensureReady();
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS total FROM launch_likes');
+    return Number(rows[0]?.total || 0);
+  },
+
+  async likeLaunch(visitorId) {
+    await ensureReady();
+    const safeVisitorId = String(visitorId || '').slice(0, 80);
+    if (safeVisitorId) {
+      await pool.query(
+        `INSERT INTO launch_likes (visitor_id, created_at)
+         VALUES ($1, NOW())
+         ON CONFLICT (visitor_id) DO NOTHING`,
+        [safeVisitorId]
+      );
+    }
+    return this.getLaunchLikes();
+  },
+
+  async getAdminAnalytics(days = 14) {
+    await ensureReady();
+    const safeDays = Math.max(1, Math.min(60, Number(days || 14)));
+    const [visits, accounts, ordersByDay, activeVisitors, votes, likes] = await Promise.all([
+      pool.query(
+        `SELECT day::text AS day, COUNT(*)::int AS visitors, COALESCE(SUM(hits), 0)::int AS hits
+         FROM site_visit_days
+         WHERE day >= ((NOW() AT TIME ZONE 'Africa/Algiers')::date - ($1::int - 1))
+         GROUP BY day
+         ORDER BY day DESC`,
+        [safeDays]
+      ),
+      pool.query(
+        `SELECT (created_at AT TIME ZONE 'Africa/Algiers')::date::text AS day,
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE role = 'client')::int AS clients,
+                COUNT(*) FILTER (WHERE role = 'livreur')::int AS livreurs
+         FROM users
+         WHERE created_at >= NOW() - ($1::int || ' days')::interval
+         GROUP BY day
+         ORDER BY day DESC`,
+        [safeDays]
+      ),
+      pool.query(
+        `SELECT (created_at AT TIME ZONE 'Africa/Algiers')::date::text AS day,
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE type = 'food')::int AS food,
+                COUNT(*) FILTER (WHERE type IS DISTINCT FROM 'food')::int AS delivery
+         FROM orders
+         WHERE created_at >= NOW() - ($1::int || ' days')::interval
+         GROUP BY day
+         ORDER BY day DESC`,
+        [safeDays]
+      ),
+      pool.query(
+        `SELECT COUNT(DISTINCT visitor_id)::int AS total
+         FROM site_visit_days
+         WHERE last_seen >= NOW() - interval '5 minutes'`
+      ),
+      pool.query(
+        `SELECT choice, COUNT(*)::int AS votes
+         FROM launch_votes
+         GROUP BY choice
+         ORDER BY votes DESC, choice ASC`
+      ),
+      pool.query('SELECT COUNT(*)::int AS total FROM launch_likes'),
+    ]);
+    return {
+      activeVisitors: Number(activeVisitors.rows[0]?.total || 0),
+      visits: visits.rows,
+      accounts: accounts.rows,
+      ordersByDay: ordersByDay.rows,
+      launchVotes: votes.rows,
+      launchLikes: Number(likes.rows[0]?.total || 0),
+    };
   },
 
   async getRestaurants() {

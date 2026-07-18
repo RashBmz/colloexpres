@@ -115,7 +115,8 @@ router.get('/dashboard', async (req, res) => {
   const stats = await db.getStats();
   const recentOrders = (await db.getAllOrders()).slice(0, 8);
   const livreurs = (await db.getLivreursWithPerformance()).slice(0, 6);
-  res.render('admin/dashboard', { stats, recentOrders, livreurs });
+  const analytics = db.getAdminAnalytics ? await db.getAdminAnalytics(14) : null;
+  res.render('admin/dashboard', { stats, recentOrders, livreurs, analytics });
 });
 
 router.get('/', (req, res) => {

@@ -42,6 +42,46 @@
   grid-column: 1 / -1;
   border-color: rgba(255,92,26,0.3) !important;
 }
+.admin-analytics-panel {
+  padding: 0 16px;
+  margin-top: 14px;
+}
+.admin-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.admin-analytics-card {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+}
+.admin-analytics-card h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+.admin-analytics-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 7px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-analytics-row strong {
+  color: var(--text);
+  font-family: var(--font-m);
+}
+.admin-live-number {
+  font-family: var(--font-d);
+  font-size: 38px;
+  color: var(--green);
+  line-height: 1;
+}
 .admin-revenue-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -60,6 +100,9 @@
   }
   .admin-revenue-row > div:last-child {
     text-align: left;
+  }
+  .admin-analytics-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
@@ -135,6 +178,67 @@
       <a href="/admin/restaurants" class="quick-btn">Restaurants</a>
       <a href="/admin/livreurs" class="quick-btn">Livreurs</a>
       <a href="/admin/clients" class="quick-btn">Clients</a>
+    </div>
+  </div>
+
+  <% const adminAnalytics = (typeof analytics !== 'undefined' && analytics) ? analytics : { activeVisitors: 0, visits: [], accounts: [], ordersByDay: [], launchVotes: [], launchLikes: 0 }; %>
+  <div class="section admin-analytics-panel">
+    <div class="section-header" style="padding-left:0;padding-right:0">
+      <h3>Trafic & lancement</h3>
+    </div>
+    <div class="admin-analytics-grid">
+      <div class="admin-analytics-card">
+        <h4>Connect&eacute;s en direct</h4>
+        <div class="admin-live-number"><%= Number(adminAnalytics.activeVisitors || 0) %></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Visiteurs actifs sur les 5 derni&egrave;res minutes</div>
+      </div>
+      <div class="admin-analytics-card">
+        <h4>Votes page lancement</h4>
+        <div class="admin-analytics-row"><span>Likes projet</span><strong><%= Number(adminAnalytics.launchLikes || 0) %></strong></div>
+        <% if ((adminAnalytics.launchVotes || []).length) { %>
+          <% adminAnalytics.launchVotes.slice(0, 6).forEach(row => { %>
+            <div class="admin-analytics-row"><span><%= row.choice %></span><strong><%= row.votes %></strong></div>
+          <% }) %>
+        <% } else { %>
+          <div class="admin-analytics-row"><span>Aucun vote pour le moment</span><strong>0</strong></div>
+        <% } %>
+      </div>
+      <div class="admin-analytics-card">
+        <h4>Visites par jour</h4>
+        <% (adminAnalytics.visits || []).slice(0, 7).forEach(row => { %>
+          <div class="admin-analytics-row">
+            <span><%= row.day %> - <%= row.hits %> vues</span>
+            <strong><%= row.visitors %></strong>
+          </div>
+        <% }) %>
+        <% if (!(adminAnalytics.visits || []).length) { %>
+          <div class="admin-analytics-row"><span>Aucune visite enregistr&eacute;e</span><strong>0</strong></div>
+        <% } %>
+      </div>
+      <div class="admin-analytics-card">
+        <h4>Comptes cr&eacute;&eacute;s</h4>
+        <% (adminAnalytics.accounts || []).slice(0, 7).forEach(row => { %>
+          <div class="admin-analytics-row">
+            <span><%= row.day %> - clients <%= row.clients %>, livreurs <%= row.livreurs %></span>
+            <strong><%= row.total %></strong>
+          </div>
+        <% }) %>
+        <% if (!(adminAnalytics.accounts || []).length) { %>
+          <div class="admin-analytics-row"><span>Aucun compte r&eacute;cent</span><strong>0</strong></div>
+        <% } %>
+      </div>
+      <div class="admin-analytics-card" style="grid-column:1 / -1">
+        <h4>Commandes par jour</h4>
+        <% (adminAnalytics.ordersByDay || []).slice(0, 7).forEach(row => { %>
+          <div class="admin-analytics-row">
+            <span><%= row.day %> - resto <%= row.food %>, livraison <%= row.delivery %></span>
+            <strong><%= row.total %></strong>
+          </div>
+        <% }) %>
+        <% if (!(adminAnalytics.ordersByDay || []).length) { %>
+          <div class="admin-analytics-row"><span>Aucune commande r&eacute;cente</span><strong>0</strong></div>
+        <% } %>
+      </div>
     </div>
   </div>
 

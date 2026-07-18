@@ -1,4 +1,11 @@
 <%- include('partials/head', { title, bodyClass: 'page-launch', disableI18n: true }) %>
+<%
+const pollVotes = typeof launchVotes !== 'undefined' && launchVotes ? launchVotes : {};
+const likesCount = Number(typeof launchLikes !== 'undefined' ? launchLikes : 0);
+function voteCount(key) {
+  return Number(pollVotes[key] || 0);
+}
+%>
 
 <main class="launch-page">
   <section class="launch-hero">
@@ -33,7 +40,7 @@
     <div class="launch-actions">
       <button class="launch-like" type="button" data-like-button>
         <span>Je soutiens le projet</span>
-        <strong><span data-like-count>284</span> likes</strong>
+        <strong><span data-like-count><%= likesCount %></span> likes</strong>
       </button>
       <div class="launch-mini">
         <span>Collo</span>
@@ -45,12 +52,12 @@
     <div class="launch-poll" data-launch-poll>
       <div class="launch-poll-title">Vous preferez quoi pour le lancement ?</div>
       <div class="launch-poll-grid">
-        <button type="button" data-poll-choice="tacos"><span>Tacos</span><strong data-poll-count="tacos">87</strong></button>
-        <button type="button" data-poll-choice="pizza"><span>Pizza</span><strong data-poll-count="pizza">74</strong></button>
-        <button type="button" data-poll-choice="burger"><span>Burger</span><strong data-poll-count="burger">69</strong></button>
-        <button type="button" data-poll-choice="sandwich"><span>Sandwich</span><strong data-poll-count="sandwich">41</strong></button>
-        <button type="button" data-poll-choice="poutine"><span>Poutine</span><strong data-poll-count="poutine">28</strong></button>
-        <button type="button" data-poll-choice="chawarma"><span>Chawarma</span><strong data-poll-count="chawarma">53</strong></button>
+        <button type="button" data-poll-choice="tacos"><span>Tacos</span><strong data-poll-count="tacos"><%= voteCount('tacos') %></strong></button>
+        <button type="button" data-poll-choice="pizza"><span>Pizza</span><strong data-poll-count="pizza"><%= voteCount('pizza') %></strong></button>
+        <button type="button" data-poll-choice="burger"><span>Burger</span><strong data-poll-count="burger"><%= voteCount('burger') %></strong></button>
+        <button type="button" data-poll-choice="sandwich"><span>Sandwich</span><strong data-poll-count="sandwich"><%= voteCount('sandwich') %></strong></button>
+        <button type="button" data-poll-choice="poutine"><span>Poutine</span><strong data-poll-count="poutine"><%= voteCount('poutine') %></strong></button>
+        <button type="button" data-poll-choice="chawarma"><span>Chawarma</span><strong data-poll-count="chawarma"><%= voteCount('chawarma') %></strong></button>
       </div>
     </div>
   </section>
@@ -455,36 +462,21 @@
 
   const likeButton = document.querySelector('[data-like-button]');
   const likeCount = document.querySelector('[data-like-count]');
-  const seed = 284;
   const likedKey = 'koloo_launch_liked_v1';
-  const countKey = 'koloo_launch_likes_v1';
-  const stored = Number(localStorage.getItem(countKey) || seed);
-  likeCount.textContent = stored;
   if (localStorage.getItem(likedKey) === '1') likeButton.classList.add('is-liked');
   likeButton.addEventListener('click', function () {
     if (localStorage.getItem(likedKey) === '1') return;
-    const next = Number(localStorage.getItem(countKey) || seed) + 1;
-    localStorage.setItem(countKey, String(next));
-    localStorage.setItem(likedKey, '1');
-    likeCount.textContent = next;
-    likeButton.classList.add('is-liked');
+    fetch('/launch-like', { method: 'POST' })
+      .then(function (response) { return response.ok ? response.json() : Promise.reject(new Error('like')); })
+      .then(function (payload) {
+        localStorage.setItem(likedKey, '1');
+        likeCount.textContent = Number(payload.likes || 0);
+        likeButton.classList.add('is-liked');
+      })
+      .catch(function () {});
   });
 
-  const pollSeeds = {
-    tacos: 87,
-    pizza: 74,
-    burger: 69,
-    sandwich: 41,
-    poutine: 28,
-    chawarma: 53
-  };
   const pollKey = 'koloo_launch_poll_v1';
-  const pollCountsKey = 'koloo_launch_poll_counts_v1';
-  const savedCounts = JSON.parse(localStorage.getItem(pollCountsKey) || 'null') || pollSeeds;
-  Object.keys(pollSeeds).forEach(function (key) {
-    const countEl = document.querySelector('[data-poll-count="' + key + '"]');
-    if (countEl) countEl.textContent = savedCounts[key] || pollSeeds[key];
-  });
   const picked = localStorage.getItem(pollKey);
   if (picked) {
     const pickedButton = document.querySelector('[data-poll-choice="' + picked + '"]');
@@ -494,12 +486,22 @@
     button.addEventListener('click', function () {
       if (localStorage.getItem(pollKey)) return;
       const choice = button.getAttribute('data-poll-choice');
-      savedCounts[choice] = Number(savedCounts[choice] || pollSeeds[choice] || 0) + 1;
-      localStorage.setItem(pollCountsKey, JSON.stringify(savedCounts));
-      localStorage.setItem(pollKey, choice);
-      const countEl = document.querySelector('[data-poll-count="' + choice + '"]');
-      if (countEl) countEl.textContent = savedCounts[choice];
-      button.classList.add('is-picked');
+      fetch('/launch-vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ choice })
+      })
+        .then(function (response) { return response.ok ? response.json() : Promise.reject(new Error('vote')); })
+        .then(function (payload) {
+          const votes = payload.votes || {};
+          Object.keys(votes).forEach(function (key) {
+            const countEl = document.querySelector('[data-poll-count="' + key + '"]');
+            if (countEl) countEl.textContent = votes[key] || 0;
+          });
+          localStorage.setItem(pollKey, choice);
+          button.classList.add('is-picked');
+        })
+        .catch(function () {});
     });
   });
 

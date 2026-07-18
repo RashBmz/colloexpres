@@ -18,6 +18,9 @@ const notifs = Datastore.create({ filename: path.join(dbDir, 'notifs.db'), autol
 const restaurants = Datastore.create({ filename: path.join(dbDir, 'restaurants.db'), autoload: true });
 const pushSubscriptions = Datastore.create({ filename: path.join(dbDir, 'push_subscriptions.db'), autoload: true });
 const driverSettlements = Datastore.create({ filename: path.join(dbDir, 'driver_settlements.db'), autoload: true });
+const siteVisitDays = Datastore.create({ filename: path.join(dbDir, 'site_visit_days.db'), autoload: true });
+const launchVotes = Datastore.create({ filename: path.join(dbDir, 'launch_votes.db'), autoload: true });
+const launchLikes = Datastore.create({ filename: path.join(dbDir, 'launch_likes.db'), autoload: true });
 
 users.ensureIndex({ fieldName: 'phone', unique: true });
 restaurants.ensureIndex({ fieldName: 'id', unique: true });
@@ -25,6 +28,9 @@ pushSubscriptions.ensureIndex({ fieldName: 'endpoint', sparse: true });
 pushSubscriptions.ensureIndex({ fieldName: 'token', sparse: true });
 driverSettlements.ensureIndex({ fieldName: 'period_key', unique: true });
 driverSettlements.ensureIndex({ fieldName: 'livreur_id' });
+siteVisitDays.ensureIndex({ fieldName: 'key', unique: true });
+launchVotes.ensureIndex({ fieldName: 'visitor_id', unique: true });
+launchLikes.ensureIndex({ fieldName: 'visitor_id', unique: true });
 
 const normalizeOrder = (order) => (order ? { ...order, id: order.id || order._id } : order);
 const normalizeRestaurant = (restaurant) => (restaurant ? { ...restaurant, id: restaurant.id || restaurant._id } : restaurant);
@@ -594,6 +600,106 @@ const db = {
     );
   },
 
+  async trackSiteVisit(visitorId) {
+    const safeVisitorId = String(visitorId || '').slice(0, 80);
+    if (!safeVisitorId) return null;
+    const now = new Date();
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Algiers', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    const key = `${day}|${safeVisitorId}`;
+    const existing = await siteVisitDays.findOne({ key });
+    if (existing) {
+      await siteVisitDays.update({ _id: existing._id }, { $set: { hits: Number(existing.hits || 0) + 1, last_seen: now.toISOString() } });
+      return true;
+    }
+    await siteVisitDays.insert({ key, day, visitor_id: safeVisitorId, hits: 1, first_seen: now.toISOString(), last_seen: now.toISOString() });
+    return true;
+  },
+
+  async getLaunchPoll() {
+    const votes = await launchVotes.find({});
+    return votes.reduce((acc, vote) => {
+      acc[vote.choice] = (acc[vote.choice] || 0) + 1;
+      return acc;
+    }, {});
+  },
+
+  async voteLaunchPoll(visitorId, choice) {
+    const safeVisitorId = String(visitorId || '').slice(0, 80);
+    const safeChoice = String(choice || '').slice(0, 40);
+    if (!safeVisitorId || !safeChoice) return this.getLaunchPoll();
+    const existing = await launchVotes.findOne({ visitor_id: safeVisitorId });
+    if (!existing) {
+      await launchVotes.insert({ visitor_id: safeVisitorId, choice: safeChoice, created_at: new Date().toISOString() });
+    }
+    return this.getLaunchPoll();
+  },
+
+  async getLaunchLikes() {
+    return launchLikes.count({});
+  },
+
+  async likeLaunch(visitorId) {
+    const safeVisitorId = String(visitorId || '').slice(0, 80);
+    if (safeVisitorId) {
+      const existing = await launchLikes.findOne({ visitor_id: safeVisitorId });
+      if (!existing) await launchLikes.insert({ visitor_id: safeVisitorId, created_at: new Date().toISOString() });
+    }
+    return this.getLaunchLikes();
+  },
+  async getAdminAnalytics(days = 14) {
+    const safeDays = Math.max(1, Math.min(60, Number(days || 14)));
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(start.getDate() - (safeDays - 1));
+    start.setHours(0, 0, 0, 0);
+    const dayKey = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Algiers', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+    const visitRows = await siteVisitDays.find({});
+    const usersRows = await users.find({});
+    const orderRows = await orders.find({});
+    const voteRows = await launchVotes.find({});
+    const likeCount = await launchLikes.count({});
+    const addGrouped = (map, day, seed) => {
+      if (!map.has(day)) map.set(day, { day, ...seed });
+      return map.get(day);
+    };
+    const visitMap = new Map();
+    visitRows.forEach((row) => {
+      if (String(row.day) < dayKey(start)) return;
+      const current = addGrouped(visitMap, row.day, { visitors: 0, hits: 0 });
+      current.visitors += 1;
+      current.hits += Number(row.hits || 0);
+    });
+    const accountMap = new Map();
+    usersRows.forEach((row) => {
+      const created = new Date(row.created_at || 0);
+      if (created < start) return;
+      const current = addGrouped(accountMap, dayKey(created), { total: 0, clients: 0, livreurs: 0 });
+      current.total += 1;
+      if (row.role === 'client') current.clients += 1;
+      if (row.role === 'livreur') current.livreurs += 1;
+    });
+    const orderMap = new Map();
+    orderRows.forEach((row) => {
+      const created = new Date(row.created_at || 0);
+      if (created < start) return;
+      const current = addGrouped(orderMap, dayKey(created), { total: 0, food: 0, delivery: 0 });
+      current.total += 1;
+      if (row.type === 'food') current.food += 1;
+      else current.delivery += 1;
+    });
+    const activeSince = Date.now() - 5 * 60 * 1000;
+    const activeVisitors = new Set(visitRows.filter((row) => new Date(row.last_seen || 0).getTime() >= activeSince).map((row) => row.visitor_id)).size;
+    const voteMap = new Map();
+    voteRows.forEach((vote) => voteMap.set(vote.choice, (voteMap.get(vote.choice) || 0) + 1));
+    return {
+      activeVisitors,
+      visits: Array.from(visitMap.values()).sort((a, b) => String(b.day).localeCompare(String(a.day))),
+      accounts: Array.from(accountMap.values()).sort((a, b) => String(b.day).localeCompare(String(a.day))),
+      ordersByDay: Array.from(orderMap.values()).sort((a, b) => String(b.day).localeCompare(String(a.day))),
+      launchVotes: Array.from(voteMap.entries()).map(([choice, votes]) => ({ choice, votes })).sort((a, b) => b.votes - a.votes),
+      launchLikes: likeCount,
+    };
+  },
   async getRestaurants() {
     const list = await restaurants.find({});
     return list
@@ -663,3 +769,7 @@ const db = {
 })();
 
 module.exports = db;
+
+
+
+
