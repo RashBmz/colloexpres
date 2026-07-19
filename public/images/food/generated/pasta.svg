@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12111d"/>
+      <stop offset="1" stop-color="#2e160f"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="388" rx="276" ry="82" fill="#06070b" opacity=".35"/>
+  <circle cx="450" cy="305" r="150" fill="#fff4e5"/>
+  <path d="M330 313c65-83 188-84 244 4-54 70-190 76-244-4z" fill="#f4b347"/>
+  <g stroke="#ffd96c" stroke-width="14" stroke-linecap="round" fill="none">
+    <path d="M350 294c63 44 130 42 205-5"/>
+    <path d="M352 332c63 38 130 35 201-2"/>
+    <path d="M377 265c44 32 96 31 143-2"/>
+  </g>
+  <circle cx="521" cy="306" r="22" fill="#c43a28"/>
+  <text x="450" y="95" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="58" font-weight="900">PASTA</text>
+  <text x="450" y="132" text-anchor="middle" fill="#ffad3d" font-family="Arial, sans-serif" font-size="24" font-weight="700">sauce maison</text>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1">
+      <stop offset="0" stop-color="#101018"/>
+      <stop offset="1" stop-color="#32120c"/>
+    </linearGradient>
+    <linearGradient id="meat" x1="0" x2="1">
+      <stop offset="0" stop-color="#ff9b3f"/>
+      <stop offset="1" stop-color="#8d351b"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="405" rx="260" ry="76" fill="#06070b" opacity=".35"/>
+  <g transform="translate(330 158)">
+    <path d="M116 0c64 39 92 134 63 228-25 78-101 124-160 76 83-68 103-196 97-304z" fill="url(#meat)"/>
+    <path d="M62 36c62 33 90 96 78 163" fill="none" stroke="#ffcf61" stroke-width="18" stroke-linecap="round" opacity=".6"/>
+    <path d="M26 324h232" stroke="#f5d28a" stroke-width="22" stroke-linecap="round"/>
+  </g>
+  <path d="M236 365c81-65 293-68 427 3-71 60-342 72-427-3z" fill="#efb463"/>
+  <text x="450" y="95" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="58" font-weight="900">CHAWARMA</text>
+  <text x="450" y="132" text-anchor="middle" fill="#ffad3d" font-family="Arial, sans-serif" font-size="24" font-weight="700">viande grillee</text>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101018"/>
+      <stop offset="1" stop-color="#33200d"/>
+    </linearGradient>
+    <linearGradient id="bread" x1="0" x2="1">
+      <stop offset="0" stop-color="#f9d07b"/>
+      <stop offset="1" stop-color="#c57427"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="390" rx="270" ry="82" fill="#06070b" opacity=".35"/>
+  <g transform="translate(245 202)">
+    <path d="M20 110c62-97 330-94 393 4 26 40-10 91-103 108-100 18-238 2-286-48-21-22-21-39-4-64z" fill="url(#bread)"/>
+    <path d="M64 121c85 46 210 59 312 17" fill="none" stroke="#fff1c2" stroke-width="14" stroke-linecap="round"/>
+    <path d="M70 165c82 34 205 38 302 7" fill="none" stroke="#7a3c18" stroke-width="14" stroke-linecap="round" opacity=".45"/>
+  </g>
+  <text x="450" y="95" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="58" font-weight="900">CHAPATI</text>
+  <text x="450" y="132" text-anchor="middle" fill="#ffad3d" font-family="Arial, sans-serif" font-size="24" font-weight="700">pain chaud garni</text>
+</svg>

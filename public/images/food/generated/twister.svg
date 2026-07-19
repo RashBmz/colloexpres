@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#311018"/>
+    </linearGradient>
+    <linearGradient id="bread" x1="0" x2="1">
+      <stop offset="0" stop-color="#f7c56c"/>
+      <stop offset="1" stop-color="#dd7e2a"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="390" rx="276" ry="80" fill="#05060a" opacity=".35"/>
+  <g transform="translate(250 178)">
+    <path d="M36 85c100-55 255-36 332 49 31 34 23 89-31 114-85 40-237-2-300-75-33-39-34-69-1-88z" fill="url(#bread)"/>
+    <path d="M85 109c75 88 157 122 271 110" fill="none" stroke="#8e4519" stroke-width="18" stroke-linecap="round" opacity=".45"/>
+    <path d="M130 93c47 75 116 112 220 116" fill="none" stroke="#fff1bf" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="173" cy="167" r="20" fill="#e13d31"/>
+    <circle cx="238" cy="190" r="18" fill="#64c85c"/>
+  </g>
+  <text x="450" y="95" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="58" font-weight="900">TWISTER</text>
+  <text x="450" y="132" text-anchor="middle" fill="#ffad3d" font-family="Arial, sans-serif" font-size="24" font-weight="700">roule & croustillant</text>
+</svg>

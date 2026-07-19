@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#2b180d"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="398" rx="260" ry="74" fill="#05060a" opacity=".35"/>
+  <path d="M285 205h330l-42 214H327z" fill="#f4efe4"/>
+  <g stroke="#ffd45a" stroke-width="25" stroke-linecap="round">
+    <path d="M345 182l-26 198"/>
+    <path d="M403 170l-36 213"/>
+    <path d="M464 181l-30 204"/>
+    <path d="M525 172l-38 212"/>
+    <path d="M578 195l-48 184"/>
+  </g>
+  <circle cx="619" cy="371" r="44" fill="none" stroke="#f5c078" stroke-width="20"/>
+  <circle cx="676" cy="340" r="35" fill="none" stroke="#f5c078" stroke-width="17"/>
+  <text x="450" y="95" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="58" font-weight="900">SIDES</text>
+  <text x="450" y="132" text-anchor="middle" fill="#ffad3d" font-family="Arial, sans-serif" font-size="24" font-weight="700">frites & snacks</text>
+</svg>
