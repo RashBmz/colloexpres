@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12111d"/>
+      <stop offset="1" stop-color="#31170d"/>
+    </linearGradient>
+    <linearGradient id="bread" x1="0" x2="1">
+      <stop offset="0" stop-color="#ffd17a"/>
+      <stop offset="1" stop-color="#d98224"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="386" rx="280" ry="82" fill="#06070b" opacity=".34"/>
+  <g transform="translate(184 190)">
+    <path d="M70 144c92-124 334-144 471-27 45 38 13 94-76 113-125 27-336 11-429-38-35-18-45-35 34-48z" fill="url(#bread)"/>
+    <path d="M96 154c88 56 294 72 420 31" fill="none" stroke="#9f521f" stroke-width="18" stroke-linecap="round" opacity=".55"/>
+    <path d="M175 131c70 23 182 26 267-6" fill="none" stroke="#fff0c4" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="248" cy="166" r="18" fill="#6ac85b"/>
+    <circle cx="332" cy="148" r="17" fill="#df4331"/>
+    <circle cx="424" cy="174" r="18" fill="#6ac85b"/>
+  </g>
+  <text x="450" y="96" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="58" font-weight="900">MAKLOUB</text>
+  <text x="450" y="133" text-anchor="middle" fill="#ffad3d" font-family="Arial, sans-serif" font-size="24" font-weight="700">pain garni & grille</text>
+</svg>
