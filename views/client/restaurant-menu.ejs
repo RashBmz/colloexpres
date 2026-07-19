@@ -24,7 +24,6 @@ function compactCategoryLabel(label) {
 function safeImageUrl(url) {
   const clean = String(url || '').trim();
   if (!clean) return '';
-  if (/^\/images\/food\//i.test(clean)) return '';
   if (/^https?:\/\/commons\.wikimedia\.org\//i.test(clean)) return '';
   if (/\/undefined(?:$|[?#])/i.test(clean)) return '';
   if (/^https?:\/\/(?:www\.)?imgur\.com\/a\//i.test(clean)) return '';
@@ -452,14 +451,14 @@ const menuEntries = Object.entries(resto.menu || {})
     </div>
   </div>
   <div class="cat-tabs" id="cat-tabs">
-    <% menuEntries.forEach(({ key, cat }, i) => { const catImage = categoryImage(key); %>
+    <% menuEntries.forEach(({ key, cat }, i) => { const catImage = optimizedImageUrl(cat.image, 's') || categoryImage(key); %>
     <button class="cat-tab <%= i===0?'active':'' %>" onclick="scrollToSection('<%= key %>', this)">
       <img src="<%= catImage %>" alt="<%= cleanLabel(cat.label) %>" loading="lazy">
       <span><%= compactCategoryLabel(cat.label) %></span>
     </button>
     <% }) %>
   </div>
-  <% menuEntries.forEach(({ key, cat }) => { const catImage = categoryImage(key); const catLabel = cleanLabel(cat.label); %>
+  <% menuEntries.forEach(({ key, cat }) => { const catImage = optimizedImageUrl(cat.image, 's') || categoryImage(key); const catLabel = cleanLabel(cat.label); %>
   <div class="menu-section" id="section-<%= key %>">
     <div class="menu-section-title">
       <img src="<%= catImage %>" alt="<%= catLabel %>" loading="lazy">
