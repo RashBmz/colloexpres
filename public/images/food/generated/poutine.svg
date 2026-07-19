@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1">
+      <stop offset="0" stop-color="#11131e"/>
+      <stop offset="1" stop-color="#241014"/>
+    </linearGradient>
+    <linearGradient id="cheese" x1="0" x2="1">
+      <stop offset="0" stop-color="#ffd34f"/>
+      <stop offset="1" stop-color="#ff7a24"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="360" rx="260" ry="96" fill="#111" opacity=".35"/>
+  <path d="M242 202h416l-42 226H284z" fill="#f5efe4"/>
+  <path d="M264 235h372l-31 165H295z" fill="#2a1714"/>
+  <g stroke="#ffce55" stroke-width="28" stroke-linecap="round">
+    <path d="M324 210l-36 182"/>
+    <path d="M390 201l-46 204"/>
+    <path d="M460 207l-34 195"/>
+    <path d="M532 205l-42 196"/>
+    <path d="M592 222l-50 173"/>
+  </g>
+  <path d="M306 286c80 42 202-18 295 37 36 22 20 64-34 73-87 15-178-50-261-18-63 24-79-58 0-92z" fill="url(#cheese)" opacity=".95"/>
+  <text x="450" y="98" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="60" font-weight="900">POUTINE</text>
+</svg>

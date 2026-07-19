@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <radialGradient id="bg" cx="48%" cy="42%" r="75%">
+      <stop offset="0" stop-color="#33231b"/>
+      <stop offset="1" stop-color="#101018"/>
+    </radialGradient>
+    <linearGradient id="top" x1="0" x2="1">
+      <stop offset="0" stop-color="#ffcf61"/>
+      <stop offset="1" stop-color="#d14c1f"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="392" rx="255" ry="82" fill="#09090d" opacity=".4"/>
+  <path d="M245 268c50-82 360-82 410 0 22 34-10 110-61 142-72 45-216 47-292 0-54-33-77-107-57-142z" fill="#f6eee3"/>
+  <path d="M278 265c56-58 286-58 344 0 20 20-2 60-45 78-76 32-179 30-254 0-43-18-63-58-45-78z" fill="url(#top)"/>
+  <path d="M351 287c47 28 151 25 204-2" fill="none" stroke="#8b2d18" stroke-width="16" stroke-linecap="round" opacity=".45"/>
+  <text x="450" y="98" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="60" font-weight="900">SOUFFLE</text>
+</svg>

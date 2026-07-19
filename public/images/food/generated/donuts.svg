@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1">
+      <stop offset="0" stop-color="#171018"/>
+      <stop offset="1" stop-color="#321022"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <g transform="translate(222 180)">
+    <circle cx="115" cy="115" r="94" fill="#e7a146"/>
+    <circle cx="115" cy="115" r="48" fill="#151018"/>
+    <path d="M40 98c37-72 146-76 170 8-43 35-117 37-170-8z" fill="#f17caf"/>
+  </g>
+  <g transform="translate(448 185)">
+    <circle cx="115" cy="115" r="94" fill="#e7a146"/>
+    <circle cx="115" cy="115" r="48" fill="#151018"/>
+    <path d="M45 105c33-75 137-70 166 2-43 35-114 36-166-2z" fill="#6b321f"/>
+  </g>
+  <text x="450" y="94" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="58" font-weight="900">DONUTS</text>
+</svg>

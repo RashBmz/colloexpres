@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171019"/>
+      <stop offset="1" stop-color="#32180d"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" rx="44" fill="url(#bg)"/>
+  <ellipse cx="450" cy="385" rx="270" ry="85" fill="#000" opacity=".34"/>
+  <path d="M225 330c124-96 358-101 451 8-87 77-332 94-451-8z" fill="#e8aa55"/>
+  <path d="M284 321c90-53 231-61 332 4-90 56-231 59-332-4z" fill="#f1c476"/>
+  <path d="M311 309c73 42 180 47 286 8" fill="none" stroke="#6b2c16" stroke-width="15" stroke-linecap="round"/>
+  <circle cx="418" cy="319" r="22" fill="#fff0d8"/>
+  <circle cx="493" cy="306" r="18" fill="#fff0d8"/>
+  <text x="450" y="94" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="58" font-weight="900">CREPE</text>
+</svg>
