@@ -47,7 +47,7 @@ const io = new Server(server, {
 const sessionSecret = process.env.SESSION_SECRET || 'colloexpress-dev-secret-change-me';
 const isProduction = process.env.NODE_ENV === 'production';
 const hasRemoteDatabase = Boolean(process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('[YOUR-PASSWORD]'));
-const launchAt = new Date(process.env.LAUNCH_AT || '2026-07-19T09:00:00.000Z');
+const launchAt = new Date(process.env.LAUNCH_AT || '2026-07-19T10:00:00.000Z');
 const launchPassword = process.env.LAUNCH_PASSWORD || 'khlcollo';
 const launchModeEnabled = process.env.LAUNCH_MODE === 'true' || (process.env.LAUNCH_MODE !== 'false' && Date.now() < launchAt.getTime());
 
