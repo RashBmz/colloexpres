@@ -14,8 +14,7 @@ const clientWriteLimiter = createRateLimiter({
   message: 'Trop d actions en peu de temps, reessayez dans quelques minutes',
 });
 
-const DELIVERY_PRICES = { petit: 150, moyen: 250, grand: 400 };
-const ALLOWED_PARCEL_SIZES = new Set(Object.keys(DELIVERY_PRICES));
+const ALLOWED_PARCEL_SIZES = new Set(['petit', 'moyen', 'grand']);
 const ALLOWED_REQUEST_KINDS = new Set(['colis', 'courses']);
 
 function clampCoord(value, min, max) {
@@ -156,7 +155,7 @@ router.get('/dashboard', async (req, res) => {
 });
 
 router.get('/nouvelle-commande', (req, res) => {
-  res.render('client/new-order');
+  res.render('client/new-order', { deliveryPricing: getPublicDeliveryPricing() });
 });
 
 router.get('/restaurants', async (req, res) => {
@@ -321,6 +320,10 @@ router.post('/commandes', clientWriteLimiter, async (req, res) => {
   const fromLng = isCourses ? null : clampCoord(req.body.from_lng, -180, 180);
   const toLat = clampCoord(req.body.to_lat, -90, 90);
   const toLng = clampCoord(req.body.to_lng, -180, 180);
+  if (toLat == null || toLng == null) {
+    req.flash('error', 'Placez le point de livraison sur la carte pour calculer le bon tarif');
+    return res.redirect('/client/nouvelle-commande');
+  }
   const price = calculateDeliveryFee({
     toLat,
     toLng,

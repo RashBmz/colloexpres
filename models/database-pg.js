@@ -499,17 +499,28 @@ const ready = (async () => {
 
   const defaultAdminLogin = process.env.DEFAULT_ADMIN_LOGIN || 'rbm';
   const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'khlbmz21*';
-  const existingAdmin = await pool.query('SELECT id FROM users WHERE phone = $1 OR role = $2 LIMIT 1', [defaultAdminLogin, 'admin']);
-  if (existingAdmin.rowCount === 0) {
-    await pool.query(
-      'INSERT INTO users (id, name, phone, password, role, available, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [uid(), 'Admin Koloo Go', defaultAdminLogin, bcrypt.hashSync(defaultAdminPassword, 10), 'admin', false, new Date().toISOString()]
-    );
-  } else {
-    await pool.query(
-      'UPDATE users SET name = $2, phone = $3, password = $4, role = $5, available = $6 WHERE id = $1',
-      [existingAdmin.rows[0].id, 'Admin Koloo Go', defaultAdminLogin, bcrypt.hashSync(defaultAdminPassword, 10), 'admin', false]
-    );
+  const defaultAdminHash = bcrypt.hashSync(defaultAdminPassword, 10);
+  const adminUpdate = await pool.query(
+    `UPDATE users
+     SET name = $2, password = $3, role = $4, available = $5
+     WHERE phone = $1`,
+    [defaultAdminLogin, 'Admin Koloo Go', defaultAdminHash, 'admin', false]
+  );
+  if (adminUpdate.rowCount === 0) {
+    try {
+      await pool.query(
+        'INSERT INTO users (id, name, phone, password, role, available, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [uid(), 'Admin Koloo Go', defaultAdminLogin, defaultAdminHash, 'admin', false, new Date().toISOString()]
+      );
+    } catch (error) {
+      if (error?.code !== '23505') throw error;
+      await pool.query(
+        `UPDATE users
+         SET name = $2, password = $3, role = $4, available = $5
+         WHERE phone = $1`,
+        [defaultAdminLogin, 'Admin Koloo Go', defaultAdminHash, 'admin', false]
+      );
+    }
   }
 })();
 

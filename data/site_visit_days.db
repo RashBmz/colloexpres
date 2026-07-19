@@ -7,6 +7,7 @@
 {"key":"2026-07-18|28d16dac87681c22cf49e4f3a9c55aa3feaf","day":"2026-07-18","visitor_id":"28d16dac87681c22cf49e4f3a9c55aa3feaf","hits":2,"first_seen":"2026-07-18T02:04:54.429Z","last_seen":"2026-07-18T02:04:54.514Z","_id":"GWcGsIdkl3me5p7i"}
 {"key":"2026-07-18|0f9b6e7586da230c1da97c81726db4b594f2","day":"2026-07-18","visitor_id":"0f9b6e7586da230c1da97c81726db4b594f2","hits":1,"first_seen":"2026-07-18T01:09:24.004Z","last_seen":"2026-07-18T01:09:24.004Z","_id":"PcoomjHTQfkUlKoJ"}
 {"key":"2026-07-18|82e544d5666765a0f4786d0d6dba55946c6e","day":"2026-07-18","visitor_id":"82e544d5666765a0f4786d0d6dba55946c6e","hits":1,"first_seen":"2026-07-18T01:08:52.438Z","last_seen":"2026-07-18T01:08:52.438Z","_id":"RvZrfc6cWKwkMtYP"}
+{"key":"2026-07-19|874365052dc4046c80ed32755eef2b4de76b","day":"2026-07-19","visitor_id":"874365052dc4046c80ed32755eef2b4de76b","hits":1,"first_seen":"2026-07-19T01:58:37.839Z","last_seen":"2026-07-19T01:58:37.839Z","_id":"Sy4GXPEg0TDCp3vT"}
 {"key":"2026-07-18|4e57620b7fd5af7cd53769cdc9b1b82cff0f","day":"2026-07-18","visitor_id":"4e57620b7fd5af7cd53769cdc9b1b82cff0f","hits":1,"first_seen":"2026-07-18T00:23:19.687Z","last_seen":"2026-07-18T00:23:19.687Z","_id":"W8M7CZYE6eZgypmR"}
 {"key":"2026-07-18|a57972fb135cc7f05ff20c9efa77d23d9b93","day":"2026-07-18","visitor_id":"a57972fb135cc7f05ff20c9efa77d23d9b93","hits":1,"first_seen":"2026-07-18T00:28:10.045Z","last_seen":"2026-07-18T00:28:10.045Z","_id":"bNWn2QVyO1MBbgmZ"}
 {"key":"2026-07-18|68c84e13694246612da61da4e749de032355","day":"2026-07-18","visitor_id":"68c84e13694246612da61da4e749de032355","hits":1,"first_seen":"2026-07-18T01:01:44.237Z","last_seen":"2026-07-18T01:01:44.237Z","_id":"eGzb3OAQZtTUSnr2"}
@@ -16,6 +17,6 @@
 {"key":"2026-07-18|9cea94cfea2e58947ea69a63411c83195c59","day":"2026-07-18","visitor_id":"9cea94cfea2e58947ea69a63411c83195c59","hits":1,"first_seen":"2026-07-18T00:39:24.068Z","last_seen":"2026-07-18T00:39:24.068Z","_id":"um66n4n452mhnqj7"}
 {"key":"2026-07-18|20592b16d28c0752b29fe4c521b74b5ea566","day":"2026-07-18","visitor_id":"20592b16d28c0752b29fe4c521b74b5ea566","hits":2,"first_seen":"2026-07-18T01:02:29.315Z","last_seen":"2026-07-18T01:02:29.446Z","_id":"wIT3tBqsD6EeKwgp"}
 {"key":"2026-07-18|1ae60f0ca55d53c026b4b510743f8fd8d97c","day":"2026-07-18","visitor_id":"1ae60f0ca55d53c026b4b510743f8fd8d97c","hits":2,"first_seen":"2026-07-18T00:30:49.735Z","last_seen":"2026-07-18T00:30:49.823Z","_id":"x94oDTyZz7mqDJ8j"}
-{"$$indexCreated":{"fieldName":"key","unique":true,"sparse":false}}
 {"key":"2026-07-19|eafdc1580a08e3bb3ab1b72522090cba7849","day":"2026-07-19","visitor_id":"eafdc1580a08e3bb3ab1b72522090cba7849","hits":1,"first_seen":"2026-07-19T01:58:37.580Z","last_seen":"2026-07-19T01:58:37.580Z","_id":"yxyZVAtrkDHgwRtL"}
-{"key":"2026-07-19|874365052dc4046c80ed32755eef2b4de76b","day":"2026-07-19","visitor_id":"874365052dc4046c80ed32755eef2b4de76b","hits":1,"first_seen":"2026-07-19T01:58:37.839Z","last_seen":"2026-07-19T01:58:37.839Z","_id":"Sy4GXPEg0TDCp3vT"}
+{"$$indexCreated":{"fieldName":"key","unique":true,"sparse":false}}
+{"key":"2026-07-19|b5dd1a591d467da1b5ba9cd6bc1ff7287350","day":"2026-07-19","visitor_id":"b5dd1a591d467da1b5ba9cd6bc1ff7287350","hits":1,"first_seen":"2026-07-19T02:20:35.808Z","last_seen":"2026-07-19T02:20:35.808Z","_id":"Y7Npy1bNvl6zYTkA"}
