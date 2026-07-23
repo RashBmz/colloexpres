@@ -35,7 +35,7 @@
           class="field-input"
           type="text"
           name="phone"
-          placeholder="<%= role === 'client' ? '05 XX XX XX XX' : role === 'livreur' ? 'livreur01' : 'admin' %>"
+          placeholder="<%= role === 'client' ? '05 XX XX XX XX' : role === 'livreur' ? 'livreur01' : 'rbm' %>"
           autocomplete="username"
           autocapitalize="off"
           spellcheck="false"
@@ -66,12 +66,6 @@
     <div class="demo-box">
       <p>🔑 Comptes demo :</p>
       <p>livreur01 / livreur02 ... livreur06 - mot de passe : <strong>1234</strong></p>
-    </div>
-    <% } %>
-
-    <% if (role === 'admin') { %>
-    <div class="demo-box">
-      <p>🔑 Demo : <strong>admin</strong> / <strong>admin123</strong></p>
     </div>
     <% } %>
 

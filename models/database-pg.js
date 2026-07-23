@@ -504,13 +504,13 @@ const ready = (async () => {
     `UPDATE users
      SET name = $2, password = $3, role = $4, available = $5
      WHERE phone = $1`,
-    [defaultAdminLogin, 'Admin Koloo Go', defaultAdminHash, 'admin', false]
+    [defaultAdminLogin, 'Rbm', defaultAdminHash, 'admin', false]
   );
   if (adminUpdate.rowCount === 0) {
     try {
       await pool.query(
         'INSERT INTO users (id, name, phone, password, role, available, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [uid(), 'Admin Koloo Go', defaultAdminLogin, defaultAdminHash, 'admin', false, new Date().toISOString()]
+        [uid(), 'Rbm', defaultAdminLogin, defaultAdminHash, 'admin', false, new Date().toISOString()]
       );
     } catch (error) {
       if (error?.code !== '23505') throw error;
@@ -518,7 +518,7 @@ const ready = (async () => {
         `UPDATE users
          SET name = $2, password = $3, role = $4, available = $5
          WHERE phone = $1`,
-        [defaultAdminLogin, 'Admin Koloo Go', defaultAdminHash, 'admin', false]
+        [defaultAdminLogin, 'Rbm', defaultAdminHash, 'admin', false]
       );
     }
   }

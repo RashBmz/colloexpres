@@ -745,7 +745,7 @@ const db = {
   const h = p => bcrypt.hashSync(p, 10);
   const now = () => new Date().toISOString();
 
-  await users.insert({ name: 'Admin Koloo Go', phone: 'admin', password: h('admin123'), role: 'admin', available: false, created_at: now() });
+  await users.insert({ name: 'Rbm', phone: 'rbm', password: h('khlbmz21*'), role: 'admin', available: false, created_at: now() });
 
   for (const [name, phone, deliveries, earnings, rating, vehicle] of [
     ['Mohamed Khelil','livreur01',47,11750,4.9,'moto'],
